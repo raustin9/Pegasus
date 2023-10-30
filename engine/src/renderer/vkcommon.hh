@@ -65,6 +65,7 @@ struct VKCommonParameters {
     QueueParameters               PresentQueue;
     VkSurfaceKHR                  PresentationSurface;
     SwapChainParameters           SwapChain;
+    VkAllocationCallbacks*        Allocator;
 
     // Constructor
     VKCommonParameters() :

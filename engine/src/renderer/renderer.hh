@@ -1,12 +1,9 @@
-/*
-
 #pragma once
 
 #include "stdafx.hh"
 #include "vkcommon.hh"
 #include "platform/platform.hh"
 
-// #include <vulkan/vulkan.h>
 #include <cstdint>
 
 class Renderer {
@@ -40,40 +37,23 @@ class Renderer {
         void SetupPipeline();
 
         void CreateInstance();
-        void CreateSurface();
-        void CreateSynchronizationObjects();
-        void CreateDevice(VkQueueFlags requestedQueueTypes);
-        void CreateSwapchain(
-            uint32_t* width,
-            uint32_t* height,
-            bool vsync);
-        void CreateRenderPass();
-        void AllocateCommandBuffers();
-        void CreateFramebuffers();
 
-        void populate_command_buffer(uint32_t current_buffer_index, uint32_t current_image_index);
-        void submit_command_buffer(uint32_t current_buffer_index);
-        void present_image(uint32_t image_index);
-
+        std::string m_title;
         uint32_t m_width;
         uint32_t m_height;
         float m_aspect_ratio;
+        Platform m_platform;
 
-        uint64_t m_framecounter;
-        std::string m_title;
-        // std::string m_assetpath;
         bool m_initialized;
 
+        uint64_t m_framecounter;
         uint32_t m_command_buffer_index = 0;
         uint32_t m_command_buffer_count = 0;
 
-        Platform m_platform;
 
         VKCommonParameters m_vkparams;
 
-        VkPhysicalDeviceProperties m_deviceProperties;
-        VkPhysicalDeviceMemoryProperties m_DeviceMemoryProperties;
-        VkPhysicalDeviceFeatures m_deviceFeatures;
+//        VkPhysicalDeviceProperties m_deviceProperties;
+//        VkPhysicalDeviceMemoryProperties m_DeviceMemoryProperties;
+//        VkPhysicalDeviceFeatures m_deviceFeatures;
 };
-
-*/

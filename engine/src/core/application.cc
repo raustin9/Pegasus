@@ -1,20 +1,28 @@
 #include "application.hh"
 
-Application::Application(std::string name, uint32_t width, uint32_t height)
-    : _name(name), _platform{name, width, height} {
-    std::cout << "Got past platform init" << std::endl;
-    _should_quit = false;
+Settings Application::settings = {};
 
-    _platform.create_window();
-    std::cout << "Got past window init" << std::endl;
+Application::Application(std::string name, uint32_t width, uint32_t height)
+    : m_name(name), m_platform{name, width, height}, m_renderer{name, width, height} {
+
+    // TODO: set this to be configurable
+    Application::settings.enableValidation = true;
+    m_should_quit = false;
+
+    std::cout << "Platform created" << std::endl;
+
+    m_platform.create_window();
+    std::cout << "Window created" << std::endl;
+
+    m_renderer.OnInit();
 }
 
 bool
 Application::run() {
-    while (!_should_quit) {
-        _should_quit = _platform.pump_messages();
+    while (!m_should_quit) {
+        m_should_quit = m_platform.pump_messages();
 
-        if (!_should_quit) {
+        if (!m_should_quit) {
             // update and render
         }
     }
