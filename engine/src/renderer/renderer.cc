@@ -1,6 +1,10 @@
 #include "renderer.hh"
 #include "core/application.hh"
+#include "renderer/vkcommon.hh"
+#include "renderer/debug.hh"
+
 #include <vulkan/vulkan_core.h>
+#include <stdlib.h>
 
 Renderer::Renderer(std::string name, uint32_t width, uint32_t height)
     : m_title(name), 
@@ -42,13 +46,18 @@ Renderer::CreateInstance() {
     appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appinfo.pApplicationName = GetTitle();
     appinfo.pEngineName = GetTitle();
-    appinfo.apiVersion = VK_API_VERSION_1_0;
+    appinfo.apiVersion = VK_API_VERSION_1_2;
 
     std::vector<const char*> instanceExtensions = {
         VK_KHR_SURFACE_EXTENSION_NAME
     };
 
     // TODO: platform specific ext names
+//#if defined(Q_PLATFORM_LINUX)
+//    instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+//#elif defined (Q_PLATFORM_WINDOWS)
+//    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+//#endif
 
     // Validation layer ext
     if (Application::settings.enableValidation) {
@@ -95,7 +104,39 @@ Renderer::CreateInstance() {
         }
 
         // set extension to enable
-        createInfo.enabledLayerCount = static_cast<uint32_t>(instanceExtensions.size());
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
         createInfo.ppEnabledExtensionNames = instanceExtensions.data();
+    }
+
+    // Validation layer setup
+    const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
+    if (Application::settings.enableValidation) {
+        // Check if this layer is available at instance level
+        uint32_t instanceLayerCount;
+        vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
+        std::vector <VkLayerProperties> instanceLayerProps(instanceLayerCount);
+        vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayerProps.data());
+        bool validationPresent = false;
+
+        for (size_t i = 0; i < instanceLayerProps.size(); i++) {
+            if (strcmp(instanceLayerProps[i].layerName, validationLayerName) == 0) {
+                validationPresent = true;
+                break;
+            }
+        }
+
+        if (validationPresent) {
+            createInfo.enabledLayerCount = 1;
+            createInfo.ppEnabledLayerNames = &validationLayerName;
+        } else {
+            std::cout << "Validation layer VK_LAYER_KHRONOS_validation not present. Validation is disabled" << std::endl;
+            exit(1);
+        }
+
+        VK_CHECK(vkCreateInstance(&createInfo, m_vkparams.Allocator, &m_vkparams.Instance));
+
+        // Set callback to handle validation
+        if (Application::settings.enableValidation)
+            setupDebugUtil(m_vkparams.Instance);
     }
 }

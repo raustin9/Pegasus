@@ -79,6 +79,8 @@ struct VKCommonParameters {
     }
 };
 
+std::string errorString(VkResult errorCode);
+
 // Macro to easily check the result of a vulkan api call to make
 // sure that we get the correct result
 #define VK_CHECK(f)																			                                  \
