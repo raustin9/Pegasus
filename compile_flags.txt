@@ -3,6 +3,8 @@
 -shared
 -fPIC
 -g
+-Wall
+-Wextra
 -shared
 -fdeclspec
 -DQ_PLATFORM_LINUX
