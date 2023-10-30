@@ -73,8 +73,6 @@ struct VKDeviceParameters {
 // command buffers, etc
 struct VKCommonParameters {
     VkInstance                    Instance;
-    // VkPhysicalDevice              PhysicalDevice;
-    // VkDevice                      Device;
     QueueParameters               GraphicsQueue;
     QueueParameters               PresentQueue;
     VkSurfaceKHR                  PresentationSurface;
@@ -85,8 +83,6 @@ struct VKCommonParameters {
     // Constructor
     VKCommonParameters() :
         Instance(VK_NULL_HANDLE),
-        // PhysicalDevice(VK_NULL_HANDLE),
-        // Device(VK_NULL_HANDLE),
         GraphicsQueue(),
         PresentQueue(),
         PresentationSurface(VK_NULL_HANDLE),
