@@ -1,0 +1,14 @@
+#pragma once
+
+#include "renderer/vkcommon.hh"
+#include "stdafx.hh"
+
+bool CheckPhysicalDeviceProperties(const VkPhysicalDevice &physicalDevice, VKCommonParameters &params);
+
+void GetDeviceQueue(const VkDevice &device, uint32_t graphicsQueueFamilyIndex, VkQueue& graphicsQueue);
+
+VkResult CreateLogicalDevice(
+    std::vector<VkDeviceQueueCreateInfo> &queueInfos,
+    std::vector<const char*> &deviceExtensions,
+    std::vector<std::string> &supportedDeviceExtensions,
+    VKCommonParameters &params);

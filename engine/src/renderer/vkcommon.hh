@@ -65,6 +65,7 @@ struct VKCommonParameters {
     QueueParameters               PresentQueue;
     VkSurfaceKHR                  PresentationSurface;
     SwapChainParameters           SwapChain;
+    VkAllocationCallbacks*        Allocator;
 
     // Constructor
     VKCommonParameters() :
@@ -77,6 +78,8 @@ struct VKCommonParameters {
         SwapChain() {
     }
 };
+
+std::string errorString(VkResult errorCode);
 
 // Macro to easily check the result of a vulkan api call to make
 // sure that we get the correct result
