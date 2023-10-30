@@ -8,7 +8,7 @@
 
 class Renderer {
     public:
-        Renderer(std::string name, uint32_t width, uint32_t height);
+        Renderer(std::string name, uint32_t width, uint32_t height, Platform& platform);
 
         void OnInit();
         void OnUpdate();
@@ -37,12 +37,18 @@ class Renderer {
         void SetupPipeline();
 
         void CreateInstance();
+        void CreateSurface();
+        void CreateDevice();
+
+        void DestroyInstance();
+        void DestroySurface();
+
 
         std::string m_title;
         uint32_t m_width;
         uint32_t m_height;
         float m_aspect_ratio;
-        Platform m_platform;
+        Platform &m_platform;
 
         bool m_initialized;
 
@@ -50,6 +56,9 @@ class Renderer {
         uint32_t m_command_buffer_index = 0;
         uint32_t m_command_buffer_count = 0;
 
+        VkPhysicalDeviceProperties m_deviceProperties;
+        VkPhysicalDeviceFeatures m_deviceFeatures;
+        VkPhysicalDeviceMemoryProperties m_deviceMemoryProperties;
 
         VKCommonParameters m_vkparams;
 

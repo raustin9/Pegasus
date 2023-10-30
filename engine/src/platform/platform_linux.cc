@@ -5,6 +5,8 @@
  */
 
 #include "platform.hh"
+#include "renderer/vkcommon.hh"
+#include <vulkan/vulkan_core.h>
 
 #ifdef Q_PLATFORM_LINUX
 
@@ -38,21 +40,21 @@ Platform::create_window() {
 
     // Create the window
     unsigned long white = WhitePixel(display, DefaultScreen(display));
-    Window win = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, width, height, 0, white, white);
+    handle = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, width, height, 0, white, white);
 
     // Set the event types the window wants to be notified by the X server
-    XSelectInput(display, win, KeyPressMask | KeyReleaseMask);
+    XSelectInput(display, handle, KeyPressMask | KeyReleaseMask);
 
     // Also request to be notified when the window is deleted
-    // Atom wm_protocols = XInternAtom(display, "WM_PROTOCOLS", true);
+    Atom wm_protocols = XInternAtom(display, "WM_PROTOCOLS", true);
     wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", true);
 
-    XSetWMProtocols(display, win, &wm_delete_window, 1);
+    XSetWMProtocols(display, handle, &wm_delete_window, 1);
 
     // Set window and icon names
     XSetStandardProperties(
         display,
-        win,
+        handle,
         name.c_str(),
         "Icon name",
         None,
@@ -67,10 +69,10 @@ Platform::create_window() {
     sizehints.min_height = 360;
 
     // Tell window manager our hints about the minimum window size
-    XSetWMSizeHints(display, win, &sizehints, XA_WM_NORMAL_HINTS);
+    XSetWMSizeHints(display, handle, &sizehints, XA_WM_NORMAL_HINTS);
 
     // Request to display the window on the screen, and flush teh request buffer
-    XMapWindow(display, win);
+    XMapWindow(display, handle);
     XFlush(display);
 }
 
@@ -110,4 +112,18 @@ Platform::pump_messages() {
     }
 
     return should_quit;
+}
+
+// Linux specific vulkan surface creation
+bool
+Platform::create_vulkan_surface(VKCommonParameters &params) {
+    VkResult err = VK_SUCCESS;
+
+    VkXlibSurfaceCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    createInfo.dpy = display;
+    createInfo.window = handle;
+    err = vkCreateXlibSurfaceKHR(params.Instance, &createInfo, params.Allocator, &params.PresentationSurface);
+
+    return (err == VK_SUCCESS) ? true : false;
 }

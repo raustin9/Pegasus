@@ -2,15 +2,17 @@
 #include "core/application.hh"
 #include "renderer/vkcommon.hh"
 #include "renderer/debug.hh"
+#include "renderer/vkdevice.hh"
 
+#include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
 
-Renderer::Renderer(std::string name, uint32_t width, uint32_t height)
+Renderer::Renderer(std::string name, uint32_t width, uint32_t height, Platform& platform)
     : m_title(name), 
     m_width(width), 
     m_height(height),
-    m_platform{name, width, height}
+    m_platform(platform)
 {
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
@@ -30,13 +32,18 @@ Renderer::OnRender() {
 }
 
 
+// Destroy in reverse order of creation
 void
 Renderer::OnDestroy() {
+    DestroySurface();
+    DestroyInstance();
 }
 
 void 
 Renderer::InitVulkan() {
     CreateInstance();
+    CreateSurface();
+    CreateDevice();
 }
 
 
@@ -53,11 +60,11 @@ Renderer::CreateInstance() {
     };
 
     // TODO: platform specific ext names
-//#if defined(Q_PLATFORM_LINUX)
-//    instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-//#elif defined (Q_PLATFORM_WINDOWS)
-//    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-//#endif
+#if defined(Q_PLATFORM_LINUX)
+    instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+#elif defined (Q_PLATFORM_WINDOWS)
+    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#endif
 
     // Validation layer ext
     if (Application::settings.enableValidation) {
@@ -139,4 +146,108 @@ Renderer::CreateInstance() {
         if (Application::settings.enableValidation)
             setupDebugUtil(m_vkparams.Instance);
     }
+}
+
+// Create the window surface
+void
+Renderer::CreateSurface() {
+    // Use platform-specific surface creation function
+    m_platform.create_vulkan_surface(m_vkparams);
+}
+
+void
+Renderer::CreateDevice() {
+    // Get the physical device
+    uint32_t gpuCount = 0;
+
+    // Get number of physical devices
+    vkEnumeratePhysicalDevices(m_vkparams.Instance, &gpuCount, nullptr);
+    if (gpuCount == 0) {
+        std::cout << "No device with Vulkan support found" << std::endl;
+        exit(1);
+    }
+
+    // Enumerate the devices
+    std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
+    VkResult err = vkEnumeratePhysicalDevices(m_vkparams.Instance, &gpuCount, &physicalDevices.front());
+    if (err) {
+        throw std::runtime_error("Could not enumerate physical devices\n");
+    }
+
+    // Select physical device that has a graphics queue
+    for (size_t i = 0; i < gpuCount; i++) {
+        if (CheckPhysicalDeviceProperties(physicalDevices[i], m_vkparams)) {
+            m_vkparams.PhysicalDevice = physicalDevices[i];
+            vkGetPhysicalDeviceProperties(m_vkparams.PhysicalDevice, &m_deviceProperties);
+            break;
+        }
+    }
+   
+    // Make sure we have a valid physical device
+    if (m_vkparams.PhysicalDevice == VK_NULL_HANDLE
+        || m_vkparams.GraphicsQueue.FamilyIndex == UINT32_MAX) {
+        throw std::runtime_error("Could not select physical device based on chosen properties\n");
+    } else {
+        vkGetPhysicalDeviceFeatures(m_vkparams.PhysicalDevice, &m_deviceFeatures);
+        vkGetPhysicalDeviceMemoryProperties(m_vkparams.PhysicalDevice, &m_deviceMemoryProperties);
+    }
+
+    // Desired queues need to be requested upon logical devices
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+
+    // Array of normalized vector floating point values (between 0 and 1 inclusive)
+    // specifying priotities of work to each requested queue.
+    // Higher vals mean higher prio with 0.0 being the lowest
+    // Within the same device, queues with higher prio may be allotted more 
+    // processing time than queues with lower prio
+    const float queuePriorities[] = {1.0f};
+
+    // Request a single graphics queue
+    VkDeviceQueueCreateInfo queueInfo{};
+    queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueInfo.queueFamilyIndex = m_vkparams.GraphicsQueue.FamilyIndex;
+    queueInfo.queueCount = 1;
+    queueInfo.pQueuePriorities = queuePriorities;
+    queueCreateInfos.push_back(queueInfo);
+
+    // Add swapchain extension
+    std::vector <const char*> deviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+    // Get the list of supported device extensions
+    uint32_t extCount = 0;
+    std::vector <std::string> supportedDeviceExtensions;
+    vkEnumerateDeviceExtensionProperties(m_vkparams.PhysicalDevice, nullptr, &extCount, nullptr);
+    if (extCount > 0) {
+        std::vector <VkExtensionProperties> extensions(extCount);
+        if (vkEnumerateDeviceExtensionProperties(m_vkparams.PhysicalDevice, nullptr, &extCount, &extensions.front()) == VK_SUCCESS) {
+            for (size_t i = 0; i < extensions.size(); i++) {
+                supportedDeviceExtensions.push_back(extensions[i].extensionName);
+            }
+        }
+    }
+
+
+    // Create the logical device
+    if (CreateLogicalDevice(queueCreateInfos, deviceExtensions, supportedDeviceExtensions, m_vkparams) != VK_SUCCESS) {
+        throw std::runtime_error("CreateLogicalDevice() could not create vulkan logical device");
+    }
+}
+
+
+//
+// Destroy Vulkan items
+//
+
+
+void
+Renderer::DestroyInstance() {
+    // TODO: destroy vulkan instance
+}
+
+
+void
+Renderer::DestroySurface() {
+    // TODO: destroy vulkan surface 
 }
