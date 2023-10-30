@@ -1,0 +1,9 @@
+-Iengine
+-Iengine/src
+-shared
+-fPIC
+-g
+-shared
+-fdeclspec
+-DQ_PLATFORM_LINUX
+-D_DEBUG
