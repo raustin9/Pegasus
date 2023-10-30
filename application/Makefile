@@ -1,7 +1,7 @@
 CXX=clang++
 CCFLAGS=-std=c++17 -g -fdeclspec -fPIC
 INCLUDES=-Isrc -I../engine/src
-LDFLAGS=-L../bin/ -lengine -Wl,-rpath,./bin/ -lX11 -lvulkan
+LDFLAGS=-L../bin/ -lengine -Wl,-rpath,./bin/ #-lX11 -lvulkan
 CCFILES=$(shell find . -type f -name "*.cc")
 DEFINES=-DQIMPORT -D_DEBUG
 
