@@ -55,27 +55,43 @@ struct SwapChainParameters {
     } 
 };
 
+struct VKDeviceParameters {
+    VkPhysicalDevice PhysicalDevice;
+    VkDevice Device;
+    VkPhysicalDeviceProperties PhysicalDeviceProperties;
+    VkPhysicalDeviceMemoryProperties DeviceMemoryProperties;
+    VkPhysicalDeviceFeatures DeviceFeatures;
+
+    VKDeviceParameters() :
+        PhysicalDevice(VK_NULL_HANDLE),
+        Device(VK_NULL_HANDLE) {
+    }
+
+};
+
 // Holds commonly used fields in vulkan like logical/physical devices,
 // command buffers, etc
 struct VKCommonParameters {
     VkInstance                    Instance;
-    VkPhysicalDevice              PhysicalDevice;
-    VkDevice                      Device;
+    // VkPhysicalDevice              PhysicalDevice;
+    // VkDevice                      Device;
     QueueParameters               GraphicsQueue;
     QueueParameters               PresentQueue;
     VkSurfaceKHR                  PresentationSurface;
     SwapChainParameters           SwapChain;
     VkAllocationCallbacks*        Allocator;
+    VKDeviceParameters            Device;
 
     // Constructor
     VKCommonParameters() :
         Instance(VK_NULL_HANDLE),
-        PhysicalDevice(VK_NULL_HANDLE),
-        Device(VK_NULL_HANDLE),
+        // PhysicalDevice(VK_NULL_HANDLE),
+        // Device(VK_NULL_HANDLE),
         GraphicsQueue(),
         PresentQueue(),
         PresentationSurface(VK_NULL_HANDLE),
-        SwapChain() {
+        SwapChain() ,
+        Device() {
     }
 };
 

@@ -61,8 +61,4 @@ class Renderer {
         VkPhysicalDeviceMemoryProperties m_deviceMemoryProperties;
 
         VKCommonParameters m_vkparams;
-
-//        VkPhysicalDeviceProperties m_deviceProperties;
-//        VkPhysicalDeviceMemoryProperties m_DeviceMemoryProperties;
-//        VkPhysicalDeviceFeatures m_deviceFeatures;
 };

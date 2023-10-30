@@ -153,6 +153,7 @@ void
 Renderer::CreateSurface() {
     // Use platform-specific surface creation function
     m_platform.create_vulkan_surface(m_vkparams);
+    std::cout << "Surface created" << std::endl;
 }
 
 void
@@ -177,19 +178,20 @@ Renderer::CreateDevice() {
     // Select physical device that has a graphics queue
     for (size_t i = 0; i < gpuCount; i++) {
         if (CheckPhysicalDeviceProperties(physicalDevices[i], m_vkparams)) {
-            m_vkparams.PhysicalDevice = physicalDevices[i];
-            vkGetPhysicalDeviceProperties(m_vkparams.PhysicalDevice, &m_deviceProperties);
+            m_vkparams.Device.PhysicalDevice = physicalDevices[i];
+            vkGetPhysicalDeviceProperties(m_vkparams.Device.PhysicalDevice, &m_deviceProperties);
             break;
         }
     }
+    std::cout << "GOT HERE" <<std::endl;
    
     // Make sure we have a valid physical device
-    if (m_vkparams.PhysicalDevice == VK_NULL_HANDLE
+    if (m_vkparams.Device.PhysicalDevice == VK_NULL_HANDLE
         || m_vkparams.GraphicsQueue.FamilyIndex == UINT32_MAX) {
         throw std::runtime_error("Could not select physical device based on chosen properties\n");
     } else {
-        vkGetPhysicalDeviceFeatures(m_vkparams.PhysicalDevice, &m_deviceFeatures);
-        vkGetPhysicalDeviceMemoryProperties(m_vkparams.PhysicalDevice, &m_deviceMemoryProperties);
+        vkGetPhysicalDeviceFeatures(m_vkparams.Device.PhysicalDevice, &m_vkparams.Device.DeviceFeatures);
+        vkGetPhysicalDeviceMemoryProperties(m_vkparams.Device.PhysicalDevice, &m_vkparams.Device.DeviceMemoryProperties);
     }
 
     // Desired queues need to be requested upon logical devices
@@ -218,10 +220,10 @@ Renderer::CreateDevice() {
     // Get the list of supported device extensions
     uint32_t extCount = 0;
     std::vector <std::string> supportedDeviceExtensions;
-    vkEnumerateDeviceExtensionProperties(m_vkparams.PhysicalDevice, nullptr, &extCount, nullptr);
+    vkEnumerateDeviceExtensionProperties(m_vkparams.Device.PhysicalDevice, nullptr, &extCount, nullptr);
     if (extCount > 0) {
         std::vector <VkExtensionProperties> extensions(extCount);
-        if (vkEnumerateDeviceExtensionProperties(m_vkparams.PhysicalDevice, nullptr, &extCount, &extensions.front()) == VK_SUCCESS) {
+        if (vkEnumerateDeviceExtensionProperties(m_vkparams.Device.PhysicalDevice, nullptr, &extCount, &extensions.front()) == VK_SUCCESS) {
             for (size_t i = 0; i < extensions.size(); i++) {
                 supportedDeviceExtensions.push_back(extensions[i].extensionName);
             }
@@ -233,6 +235,8 @@ Renderer::CreateDevice() {
     if (CreateLogicalDevice(queueCreateInfos, deviceExtensions, supportedDeviceExtensions, m_vkparams) != VK_SUCCESS) {
         throw std::runtime_error("CreateLogicalDevice() could not create vulkan logical device");
     }
+
+    std::cout << "Device created" << std::endl;
 }
 
 
