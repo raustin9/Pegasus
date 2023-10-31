@@ -7,6 +7,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height)
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
+    Application::settings.enableVsync = false; // disable vsync for higher fps
     m_should_quit = false;
 
     std::cout << "Platform created" << std::endl;

@@ -4,6 +4,7 @@
 
 struct Settings {
     bool enableValidation = false;
+    bool enableVsync = false;
 };
 
 class Application {

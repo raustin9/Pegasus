@@ -39,6 +39,7 @@ class Renderer {
         void CreateInstance();
         void CreateSurface();
         void CreateDevice();
+        void CreateSwapchain(uint32_t *w, uint32_t *h, bool vsync);
 
         void DestroyInstance();
         void DestroySurface();
