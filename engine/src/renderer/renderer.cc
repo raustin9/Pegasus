@@ -49,6 +49,7 @@ Renderer::InitVulkan() {
             m_vkparams.GraphicsQueue.FamilyIndex, 
             m_vkparams.GraphicsQueue.Handle);
     CreateSwapchain(&m_width, &m_height, Application::settings.enableVsync);
+    CreateRenderPass();
 }
 
 
@@ -409,6 +410,75 @@ Renderer::CreateSwapchain(uint32_t *width, uint32_t *height, bool vsync) {
         colorAttachmentView.image = m_vkparams.SwapChain.Images[i].Handle;
         VK_CHECK(vkCreateImageView(m_vkparams.Device.Device, &colorAttachmentView, m_vkparams.Allocator, &m_vkparams.SwapChain.Images[i].View));
     }
+
+    std::cout << "Swapchain Created" << std::endl;
+}
+
+// Creata a renderpass object
+void
+Renderer::CreateRenderPass() {
+    // This will use a single renderpass with one subpass
+
+    // Descriptors for the attachments used by this renderpass
+    std::array<VkAttachmentDescription, 1> attachments = {};
+
+    // Color attachment
+    attachments[0].format = m_vkparams.SwapChain.Format;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Setup attachment references
+    VkAttachmentReference colorRef = {};
+    colorRef.attachment = 0;                                    // attachment 0 is color
+    colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // attachment layout is used as color during the subpass
+    
+    // Setup a single subpass reference
+    VkSubpassDescription subdesc = {};
+    subdesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subdesc.colorAttachmentCount = 1;            // subpass uses one color attachment
+    subdesc.pColorAttachments = &colorRef;       // reference to the color attachment in slot 0
+    subdesc.pDepthStencilAttachment = nullptr;   // (Depth attachments cannot be used by this sample)
+    subdesc.inputAttachmentCount = 0;            // Input attachments can be used to sample from contents of a previous subpass
+    subdesc.pInputAttachments = nullptr;         // Input attachments not used yet
+    subdesc.preserveAttachmentCount = 0;         // Preserved attachments can be used to loop (and preserve) attachments through subpasses
+    subdesc.pPreserveAttachments = nullptr;      // (Preserve attachments not used yet) 
+    subdesc.pResolveAttachments = nullptr;       // Resolve attachments are resolved at the end of a sub pass and can be used for things like multisampling
+
+    // Setup subpass dependencies
+    std::array<VkSubpassDependency, 1> dependencies = {};
+
+    // Setup dependency and add implicit layout transition from final
+    // to initial layout for the color attachment
+    // (The actual usage layout is preserved through the layout specified in the attachmetn reference)
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_NONE;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+    // Create the render pass object
+    VkRenderPassCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());  // number of attachments used by this render pass
+    createInfo.pAttachments = attachments.data();  // descriptions of attachments used by the render pass
+    createInfo.subpassCount = 1;                                             // we only use one subpass for now
+    createInfo.pSubpasses = &subdesc;                                        // Description of the subpass we are using
+    createInfo.dependencyCount = static_cast<uint32_t>(dependencies.size()); // number of subpass dependencies
+    createInfo.pDependencies = dependencies.data();                          // subpass dependencies used by the render pass
+    
+    VK_CHECK(vkCreateRenderPass(
+            m_vkparams.Device.Device,
+            &createInfo,
+            m_vkparams.Allocator,
+            &m_graphics.RenderPass));
+
+    std::cout << "Renderpass Created" << std::endl;
 }
 
 void
