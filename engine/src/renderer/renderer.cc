@@ -39,6 +39,40 @@ Renderer::OnUpdate() {
 
 void
 Renderer::WindowResize(uint32_t w, uint32_t h) {
+    if (!m_initialized)
+        return;
+
+    m_initialized = false;
+
+    // Ensure all operations on GPU are done before destroying resources
+    vkDeviceWaitIdle(m_vkparams.Device.Device);
+
+    // Recreate swapchain
+    m_width = w;
+    m_height = h;
+    CreateSwapchain(&w, &h, false);
+
+    // Recreate the framebuffers
+    for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
+        vkDestroyFramebuffer(
+                m_vkparams.Device.Device,
+                m_graphics.Framebuffers[i],
+                m_vkparams.Allocator);
+    }
+    CreateFrameBuffers();
+
+    // Command buffers need to be recreated as they may store
+    // references to the recreated framebuffer
+    vkFreeCommandBuffers(
+            m_vkparams.Device.Device,
+            m_graphics.GraphicsCommandPool,
+            static_cast<uint32_t>(m_graphics.GraphicsCommandBuffers.size()),
+            m_graphics.GraphicsCommandBuffers.data());
+
+    AllocateCommandBuffers();
+
+    vkDeviceWaitIdle(m_vkparams.Device.Device);
+    m_initialized = true;
 }
 
 // Render the scene
