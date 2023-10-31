@@ -6,6 +6,7 @@ CCFILES=$(shell find . -type f -name "*.cc")
 DEFINES=-DQIMPORT -D_DEBUG
 
 all: ../bin/application
+	echo "application built successfully"
 
 ../bin/application: $(CCFILES)
 	$(CXX) $(CCFILES) $(CCFLAGS) -o $@ $(DEFINES) $(INCLUDES) $(LDFLAGS)

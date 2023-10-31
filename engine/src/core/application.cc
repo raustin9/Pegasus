@@ -23,11 +23,14 @@ Application::run() {
     while (!m_should_quit) {
         m_should_quit = m_platform.pump_messages();
 
-        if (!m_should_quit) {
+        if (!m_should_quit && m_renderer.IsInitialized()) {
+            m_renderer.OnUpdate();
+            m_renderer.OnRender();
             // update and render
         }
     }
 
     std::cout << "Shutting down application" << std::endl;
+    m_renderer.OnDestroy();
     return false; 
 }

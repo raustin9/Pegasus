@@ -11,6 +11,7 @@
 #include <X11/Xatom.h>
 #define VK_USE_PLATFORM_XLIB_KHR
 #define VK_NO_PLATFORM_XCB_KHR
+#include <time.h>
 #endif
 
 // std
