@@ -3,6 +3,8 @@
 #include "renderer/vkcommon.hh"
 #include "stdafx.hh"
 
+void PickPhysicalDevice(VKCommonParameters &params);
+
 bool CheckPhysicalDeviceProperties(const VkPhysicalDevice &physicalDevice, VKCommonParameters &params);
 
 void GetDeviceQueue(const VkDevice &device, uint32_t graphicsQueueFamilyIndex, VkQueue& graphicsQueue);

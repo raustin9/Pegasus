@@ -94,5 +94,5 @@ CreateLogicalDevice(
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     }
 
-    return vkCreateDevice(params.PhysicalDevice, &createInfo, params.Allocator, &params.Device);
+    return vkCreateDevice(params.Device.PhysicalDevice, &createInfo, params.Allocator, &params.Device.Device);
 }

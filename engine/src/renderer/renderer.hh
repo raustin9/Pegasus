@@ -39,6 +39,8 @@ class Renderer {
         void CreateInstance();
         void CreateSurface();
         void CreateDevice();
+        void CreateSwapchain(uint32_t *w, uint32_t *h, bool vsync);
+        void CreateRenderPass();
 
         void DestroyInstance();
         void DestroySurface();
@@ -61,8 +63,5 @@ class Renderer {
         VkPhysicalDeviceMemoryProperties m_deviceMemoryProperties;
 
         VKCommonParameters m_vkparams;
-
-//        VkPhysicalDeviceProperties m_deviceProperties;
-//        VkPhysicalDeviceMemoryProperties m_DeviceMemoryProperties;
-//        VkPhysicalDeviceFeatures m_deviceFeatures;
+        VKGraphicsParameters m_graphics;
 };
