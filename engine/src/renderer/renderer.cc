@@ -3,7 +3,9 @@
 #include "renderer/vkcommon.hh"
 #include "renderer/debug.hh"
 #include "renderer/vkdevice.hh"
+#include "renderer/vkswapchain.hh"
 
+#include <cstdint>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
@@ -12,31 +14,300 @@ Renderer::Renderer(std::string name, uint32_t width, uint32_t height, Platform& 
     : m_title(name), 
     m_width(width), 
     m_height(height),
-    m_platform(platform)
+    m_platform(platform),
+    m_timer{}
 {
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
+    m_framecounter = 0;
 }
 
 void
 Renderer::OnInit() {
     InitVulkan();
+    SetupPipeline();
 }
 
 void
 Renderer::OnUpdate() {
+    m_timer.Tick(nullptr);
+
+    // Update FPS and framecount
+    snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
+    m_framecounter++;
 }
 
 void
+Renderer::WindowResize(uint32_t w, uint32_t h) {
+}
+
+// Render the scene
+void
 Renderer::OnRender() {
+    // Get the index of the next available image in the swapchain
+    uint32_t imageIndex;
+    VkResult acquire = vkAcquireNextImageKHR( // acquires the next image in the swapchain
+            m_vkparams.Device.Device, 
+            m_vkparams.SwapChain.Handle, 
+            UINT64_MAX,
+            m_graphics.ImageAvailableSemaphore,
+            nullptr,
+            &imageIndex);
+    if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
+        if (acquire == VK_ERROR_OUT_OF_DATE_KHR)
+            WindowResize(m_width, m_height);
+        else
+            VK_CHECK(acquire);
+    }
+
+    PopulateCommandBuffer(m_command_buffer_index, imageIndex);
+    SubmitCommandBuffer(m_command_buffer_index);
+    PresentImage(imageIndex);
+
+    // Wait for the GPU to complete the frame before continuing is best practice
+    // vkQueueWaitIdle is used for simplicity
+    // (so that we can reuse the command buffer indexed with m_command_buffer_index)
+    // THIS IS SUBOPTIMAL because we are waiting on GPU to complete 1 image at a time 
+    // before the CPU creates anther. We can use a fence or semaphores later on
+    // to do better synchronization, but for now this works fine
+    VK_CHECK(vkQueueWaitIdle(m_vkparams.GraphicsQueue.Handle)); // "wait for GPU to idle"
+
+    // Update the command buffer
+    m_command_buffer_index = (m_command_buffer_index + 1) % m_command_buffer_count;
+}
+
+void
+Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.pNext = nullptr;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    // We use a single color attachment that is cleared at the start of the sub pass
+    VkClearValue clearValues[1];
+    clearValues[0].color = {
+        {0.0f, 0.2f, 0.4f, 1.0f},
+    };
+
+    VkRenderPassBeginInfo beginRenderpassInfo = {};
+    beginRenderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    beginRenderpassInfo.pNext = nullptr;
+    // set the render area that is affected by the render pass instance
+    beginRenderpassInfo.renderArea.offset.x = 0;
+    beginRenderpassInfo.renderArea.offset.y = 0;
+    beginRenderpassInfo.renderArea.extent.width = m_width;
+    beginRenderpassInfo.renderArea.extent.height = m_height;
+    // Set clear values for all framebuffer attachments with loadOp set to clear
+    beginRenderpassInfo.clearValueCount = 1;
+    beginRenderpassInfo.pClearValues = clearValues;
+    // Set the renderpass object used to begin an instance of
+    beginRenderpassInfo.renderPass = m_graphics.RenderPass;
+    // Set the framebuffer to specify the color attachment (render target) where to draw the current frame
+    beginRenderpassInfo.framebuffer = m_graphics.Framebuffers[imgIndex];
+
+    // Puts the command buffer into a recording state
+    // ONE_TIME_SUBMIT means each recording of the command buffer will
+    // be submitted once, and the command buffer will be reset and rerecorded
+    // between each submission.
+    VK_CHECK(vkBeginCommandBuffer(
+                m_graphics.GraphicsCommandBuffers[bufferIndex],
+                &beginInfo));
+
+    // Begin the render pass instance
+    // This will clear the color attachment
+    // The render pass provides the actual image views for the attachment descriptors
+    // After beginnign the render pass, command buffers are ready to record the commands
+    // for the first subpass of that render pass.
+    // The application can record the commands one subpass at a time (if the render pass
+    // is composed of multiple subpasses) before ending the render pass instance.
+    vkCmdBeginRenderPass(
+            m_graphics.GraphicsCommandBuffers[bufferIndex],
+            &beginRenderpassInfo,
+            VK_SUBPASS_CONTENTS_INLINE);
+
+    // Update the dynamic viewport state
+    // Defines rectangular area withing the framebuffer that rendering operations
+    // will be mapped to.
+    VkViewport viewport = {};
+    viewport.height = static_cast<float>(m_height);
+    viewport.width = static_cast<float>(m_width);
+    viewport.minDepth = static_cast<float>(0.0f);
+    viewport.maxDepth = static_cast<float>(1.0f);
+    vkCmdSetViewport(
+            m_graphics.GraphicsCommandBuffers[bufferIndex],
+            0,
+            1,
+            &viewport);
+
+    // Update dynaic scissor state
+    // Scissor defines a rectangular area withing the framebuffer where rendering
+    // operations will be restricted.
+    VkRect2D scissor = {};
+    scissor.extent.width = m_width;
+    scissor.extent.height = m_height;
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    vkCmdSetScissor(
+            m_graphics.GraphicsCommandBuffers[bufferIndex],
+            0,
+            1,
+            &scissor);
+
+    // Ending the render pass will add an implicit barrier, transitioning the frame buffer
+    // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
+    vkCmdEndRenderPass(m_graphics.GraphicsCommandBuffers[bufferIndex]);
+
+    VK_CHECK(vkEndCommandBuffer(m_graphics.GraphicsCommandBuffers[bufferIndex]));
+}
+
+void
+Renderer::SubmitCommandBuffer(uint64_t index) {
+    // Pipeline stage at which the queue submission will wait (via a semaphore)
+    VkPipelineStageFlags waitStateMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    // The submit info structure specifies a command buffer queue submission batch
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pWaitDstStageMask = &waitStateMask;                          // pointer to the list of pipeline stages that the semaphore waits will happen at
+    submitInfo.waitSemaphoreCount = 1;                                      // one wait semaphore
+    submitInfo.signalSemaphoreCount =1;                                     // one signal semaphore
+    submitInfo.pCommandBuffers = &m_graphics.GraphicsCommandBuffers[index]; // command buffers(s) to execute in this batch (submission)
+    submitInfo.commandBufferCount = 1;                                      // one command buffer
+
+    submitInfo.pWaitSemaphores = &m_graphics.ImageAvailableSemaphore;      // semaphore(s) to wait upon before the submitted command buffers begin executing
+    submitInfo.pSignalSemaphores = &m_graphics.RenderingFinishedSemaphore; // semaphore(s) to signal when command buffers have been completed
+
+    VK_CHECK(vkQueueSubmit(
+                m_vkparams.GraphicsQueue.Handle,
+                1,
+                &submitInfo,
+                VK_NULL_HANDLE));
+}
+
+void
+Renderer::PresentImage(uint32_t index) {
+    // Present current image to the presentation engine
+    // Pass the semaphore from the submit info as the wait semaphore for swap chain presentation
+    // This ensures that the image is not presented to the windowing system until all commands have been executed
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &m_vkparams.SwapChain.Handle;
+    presentInfo.pImageIndices = &index;
+
+    // Check if a wait semaphore has been specified to wait for before presenting the image
+    if (m_graphics.RenderingFinishedSemaphore != VK_NULL_HANDLE) {
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &m_graphics.RenderingFinishedSemaphore;
+    }
+
+    VkResult present = vkQueuePresentKHR(m_vkparams.GraphicsQueue.Handle, &presentInfo);
+    if (!((present == VK_SUCCESS) || (present == VK_SUBOPTIMAL_KHR))) {
+        if (present == VK_ERROR_OUT_OF_DATE_KHR)
+            WindowResize(m_width, m_height);
+        else 
+            VK_CHECK(present)
+    }
 }
 
 
 // Destroy in reverse order of creation
 void
 Renderer::OnDestroy() {
-    DestroySurface();
-    DestroyInstance();
+    std::cout << "Destroying renderer" << std::endl;
+    m_initialized = false;
+
+    // Ensure all operations on the device have finished before destroying resources
+    vkDeviceWaitIdle(m_vkparams.Device.Device);
+
+    std::cout << "Destroying Framebuffers... ";
+    // Destroy frame buffers
+    for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
+        vkDestroyFramebuffer(
+                m_vkparams.Device.Device,
+                m_graphics.Framebuffers[i],
+                m_vkparams.Allocator);
+    }
+    std::cout << "Destroyed" << std::endl;
+
+    std::cout << "Destroying Swapchain Images... ";
+    // Destroy the swapchain and its images
+    for (size_t i = 0; i < m_vkparams.SwapChain.Images.size(); i++) {
+        vkDestroyImageView(
+                m_vkparams.Device.Device,
+                m_vkparams.SwapChain.Images[i].View,
+                m_vkparams.Allocator);
+    }
+    std::cout << "destroyed" << std::endl;
+
+    std::cout << "Destroying Swapchain... ";
+    vkDestroySwapchainKHR(
+            m_vkparams.Device.Device,
+            m_vkparams.SwapChain.Handle,
+            m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+    // Free allocated commad buffers
+    std::cout << "Freeing Graphics Command Pool... ";
+    vkFreeCommandBuffers(
+            m_vkparams.Device.Device,
+            m_graphics.GraphicsCommandPool,
+            static_cast<uint32_t>(m_graphics.GraphicsCommandBuffers.size()),
+            m_graphics.GraphicsCommandBuffers.data());
+    std::cout << "freed" << std::endl;
+
+    // Destroy the renderpass
+    std::cout << "Destroying Renderpass... ";
+    vkDestroyRenderPass(
+            m_vkparams.Device.Device,
+            m_graphics.RenderPass,
+            m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+    // Destroy semaphores
+    std::cout << "Destroying Semaphores... ";
+    vkDestroySemaphore(
+            m_vkparams.Device.Device,
+            m_graphics.ImageAvailableSemaphore,
+            m_vkparams.Allocator);
+    vkDestroySemaphore(
+            m_vkparams.Device.Device,
+            m_graphics.RenderingFinishedSemaphore,
+            m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+    // Destroy command pool
+    std::cout << "Destroying Command Pool... ";
+    vkDestroyCommandPool(
+            m_vkparams.Device.Device,
+            m_graphics.GraphicsCommandPool,
+            m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+    // Destroy device
+    std::cout << "Destroying Device... ";
+    vkDestroyDevice(m_vkparams.Device.Device, m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+    // Destroy surface
+    std::cout << "Destroying Surface... ";
+    vkDestroySurfaceKHR(m_vkparams.Instance, m_vkparams.PresentationSurface, m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+    // Destroy debug messenger
+    if (Application::settings.enableValidation) {
+        std::cout << "Destroying Debug Messenger... ";
+        pfnDestroyDebugUtilsMessengerEXT(m_vkparams.Instance, debugUtilsMessenger, m_vkparams.Allocator);
+        std::cout << "destroyed" << std::endl;
+    }
+
+    m_platform.destroy_window();
+
+    // Destroy vulkan instance
+    std::cout << "Destroying Instance... ";
+    vkDestroyInstance(m_vkparams.Instance, m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
 }
 
 void 
@@ -50,6 +321,14 @@ Renderer::InitVulkan() {
             m_vkparams.GraphicsQueue.Handle);
     CreateSwapchain(&m_width, &m_height, Application::settings.enableVsync);
     CreateRenderPass();
+    CreateFrameBuffers();
+    AllocateCommandBuffers();
+    CreateSyncObjects();
+}
+
+void
+Renderer::SetupPipeline() {
+    m_initialized = true;
 }
 
 
@@ -169,248 +448,7 @@ Renderer::CreateSurface() {
 //       window resizing
 void
 Renderer::CreateSwapchain(uint32_t *width, uint32_t *height, bool vsync) {
-    // Store the current swap chain handle so we can use it later to ease recreation
-    VkSwapchainKHR oldSwapchain = m_vkparams.SwapChain.Handle;
-
-    // Get the physical device surface capabilities
-    VkSurfaceCapabilitiesKHR surfCaps;
-    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-                m_vkparams.Device.PhysicalDevice, 
-                m_vkparams.PresentationSurface, 
-                &surfCaps));
-
-    // Get the available present modes
-    uint32_t presentModeCount = 0;
-    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-                m_vkparams.Device.PhysicalDevice,
-                m_vkparams.PresentationSurface,
-                &presentModeCount,
-                NULL));
-
-    if (!(presentModeCount > 0))
-        throw std::runtime_error("Swapchain Recreation: presentModeCount is not > 0");
-
-    std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-                m_vkparams.Device.PhysicalDevice,
-                m_vkparams.PresentationSurface,
-                &presentModeCount,
-                presentModes.data()));
-
-    // Select present mode for the swapchain
-    VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-
-    // If v-sync is not requested, try to find a mailbox mode
-    // It's the lowest latency non-tearing present mode available
-    if (!vsync) {
-        std::cout << "Disable Vsync" << std::endl;
-        for (size_t i = 0; i < presentModeCount; i++) {
-            if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-                swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-                break;
-            }
-            if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-                swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-            }
-        }
-    }
-
-    // Print the present mode
-    switch(swapchainPresentMode) {
-        case VK_PRESENT_MODE_MAILBOX_KHR:
-              std::cout << "Present Mode: Mailbox" << std::endl;
-              break;
-        case VK_PRESENT_MODE_IMMEDIATE_KHR:
-              std::cout << "Present Mode: Immediate" << std::endl;
-              break;
-        case VK_PRESENT_MODE_FIFO_KHR:
-              std::cout << "Present Mode: FIFO" << std::endl;
-              break;
-        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
-              std::cout << "Present Mode: FIFO Relaxed" << std::endl;
-              break;
-        case VK_PRESENT_MODE_MAX_ENUM_KHR:
-              std::cout << "Present Mode: MAX ENUM" << std::endl;
-              break;
-        case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
-              std::cout << "Present Mode: Shared Demand Refresh" << std::endl;
-              break;
-        case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
-              std::cout << "Present Mode: Continuous Refresh" << std::endl;
-              break;
-        default:
-              std::cout << "Present Mode: Unknown" << std::endl;
-              break;
-    }
-
-    // Determine the number of images and set the number of command buffers
-    uint32_t desiredSwapchainImageCount = m_command_buffer_count = surfCaps.minImageCount+1;
-    if ( (surfCaps.maxImageCount > 0) && (desiredSwapchainImageCount > surfCaps.maxImageCount) ) {
-        desiredSwapchainImageCount = surfCaps.maxImageCount;
-    }
-
-    // Find a surface-supported transformation to apply the image prior to presentation
-    VkSurfaceTransformFlagsKHR preTransform;
-    if (surfCaps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
-        // We prefer a non-rotated transform
-        preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    } else {
-        // otherwise, use the current transform relative to the presentation engine's natural orientaion
-        preTransform = surfCaps.currentTransform;
-    }
-
-    // Get the extend
-    VkExtent2D swapchainExtent = {};
-
-    // if the width and height equal the special value of 0xFFFFFFFF,
-    // the size of the surface is undefined
-    if (surfCaps.currentExtent.width == (uint32_t)-1) {
-        // The size is set to the size of the window's client area
-        swapchainExtent.width = *width;
-        swapchainExtent.height = *height;
-    } else {
-        // If the surface size is defined, the size of the swapchain images must match
-        swapchainExtent = surfCaps.currentExtent;
-
-        // Save the result in case the inferred surface size and the size of the client area mismatch
-        *width = surfCaps.currentExtent.width;
-        *height = surfCaps.currentExtent.height;
-    }
-
-    // Save the size of the swapchain images
-    m_vkparams.SwapChain.Extent = swapchainExtent;
-
-    // Get list of supported surface formats
-    uint32_t formatCount;
-    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-                m_vkparams.Device.PhysicalDevice,
-                m_vkparams.PresentationSurface, 
-                &formatCount,
-                NULL));
-
-    if (!(formatCount > 0))
-        throw std::runtime_error("Swapchain Recreation: formatCount is not > 0");
-
-    std::vector <VkSurfaceFormatKHR> surfaceFormats(formatCount);
-    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-                m_vkparams.Device.PhysicalDevice,
-                m_vkparams.PresentationSurface, 
-                &formatCount,
-                surfaceFormats.data()));
-
-    // Iterate over the list of available surface format and check for the presence of a 
-    // four-component, 32-bit unsigned normalized format with 8 bits per component
-    bool preferredFormatFound = false;
-    for (size_t i = 0; i < surfaceFormats.size(); i++) {
-        if (surfaceFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM
-            || surfaceFormats[i].format == VK_FORMAT_R8G8B8A8_UNORM) {
-            m_vkparams.SwapChain.Format = surfaceFormats[i].format;
-            m_vkparams.SwapChain.ColorSpace = surfaceFormats[i].colorSpace;
-            preferredFormatFound = true;
-            break;
-        }
-    }
-
-    // Could not find our preferred formats
-    // Falling back to the first format exposed
-    // Rendering may be incorrect
-    if (!preferredFormatFound) {
-        m_vkparams.SwapChain.Format = surfaceFormats[0].format;
-        m_vkparams.SwapChain.ColorSpace = surfaceFormats[0].colorSpace;
-        std::cout << "WARNING: unable to find preferred surface format. Rendering may be incorrect" << std::endl;
-    }
-
-    // Find a supported composite alpha-mode (not all devices support alpha opaque)
-    VkCompositeAlphaFlagBitsKHR compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    // Select the first alpha composite mode available
-    std::vector <VkCompositeAlphaFlagBitsKHR> compositeAlphaFlags = {
-        VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
-        VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
-        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
-    };
-
-    for (size_t i = 0; i < compositeAlphaFlags.size(); i++) {
-        if (surfCaps.supportedCompositeAlpha & compositeAlphaFlags[i]) {
-            compositeAlpha = compositeAlphaFlags[i];
-            break;
-        }
-    }
-
-    VkSwapchainCreateInfoKHR createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = m_vkparams.PresentationSurface;
-    createInfo.minImageCount = desiredSwapchainImageCount;
-    createInfo.imageFormat = m_vkparams.SwapChain.Format;
-    createInfo.imageColorSpace = m_vkparams.SwapChain.ColorSpace;
-    createInfo.imageExtent = { swapchainExtent.width, swapchainExtent.height };
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    createInfo.preTransform = (VkSurfaceTransformFlagBitsKHR)preTransform;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.presentMode = swapchainPresentMode;
-    // Setting oldwapchain to the saved handle of the previous swapchain aids resource reuse
-    // and makes sure that we can still present already acquired images
-    createInfo.oldSwapchain = oldSwapchain;
-    // Setting clipped to VK_TRUE allows the implementation to discard rendering outside of the surface area
-    createInfo.clipped = VK_TRUE;
-    createInfo.compositeAlpha = compositeAlpha;
-
-    // Enable transfer source on swap chain images if supported
-    if (surfCaps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
-        createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    }
-
-    if (surfCaps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
-        createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-
-    VK_CHECK(vkCreateSwapchainKHR(
-                m_vkparams.Device.Device,
-                &createInfo,
-                m_vkparams.Allocator,
-                &m_vkparams.SwapChain.Handle));
-
-    // If an existing swapchain is re-created, destroy the old swapchain
-    if (oldSwapchain != VK_NULL_HANDLE) {
-        for (uint32_t i = 0; i < m_vkparams.SwapChain.Images.size(); i++) {
-            vkDestroyImageView(m_vkparams.Device.Device, m_vkparams.SwapChain.Images[i].View, m_vkparams.Allocator);
-        }
-
-        vkDestroySwapchainKHR(m_vkparams.Device.Device, oldSwapchain, m_vkparams.Allocator);
-    }
-
-    uint32_t imageCount = 0;
-    VK_CHECK(vkGetSwapchainImagesKHR(m_vkparams.Device.Device, m_vkparams.SwapChain.Handle, &imageCount, NULL));
-
-    m_vkparams.SwapChain.Images.resize(imageCount);
-    std::vector<VkImage> images(imageCount);
-    VK_CHECK(vkGetSwapchainImagesKHR(m_vkparams.Device.Device, m_vkparams.SwapChain.Handle, &imageCount, images.data()));
-
-    VkImageViewCreateInfo colorAttachmentView = {};
-    colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    colorAttachmentView.format = m_vkparams.SwapChain.Format;
-    colorAttachmentView.components = {
-        VK_COMPONENT_SWIZZLE_R,
-        VK_COMPONENT_SWIZZLE_G,
-        VK_COMPONENT_SWIZZLE_B,
-        VK_COMPONENT_SWIZZLE_A,
-    };
-
-    colorAttachmentView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    colorAttachmentView.subresourceRange.baseMipLevel = 0;
-    colorAttachmentView.subresourceRange.levelCount = 1;
-    colorAttachmentView.subresourceRange.baseArrayLayer = 0;
-    colorAttachmentView.subresourceRange.layerCount = 1;
-    colorAttachmentView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-
-    // Create the image views, and save them (along with the image objects)
-    for (uint32_t i = 0; i < imageCount; i++) {
-        m_vkparams.SwapChain.Images[i].Handle = images[i];
-        colorAttachmentView.image = m_vkparams.SwapChain.Images[i].Handle;
-        VK_CHECK(vkCreateImageView(m_vkparams.Device.Device, &colorAttachmentView, m_vkparams.Allocator, &m_vkparams.SwapChain.Images[i].View));
-    }
-
+    RecreateSwapchain(m_vkparams, width, height, vsync, m_command_buffer_count);
     std::cout << "Swapchain Created" << std::endl;
 }
 
@@ -561,6 +599,90 @@ Renderer::CreateDevice() {
     }
 
     std::cout << "Device created" << std::endl;
+}
+
+// Create a framebuffer to attach color to
+// We need to create one for each image in the swapchain
+void
+Renderer::CreateFrameBuffers() {
+    VkImageView attachments[1] = {};
+    
+    VkFramebufferCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    createInfo.pNext = nullptr;
+    createInfo.renderPass = m_graphics.RenderPass;
+    createInfo.attachmentCount = 1;
+    createInfo.pAttachments = attachments;
+    createInfo.width = m_width;
+    createInfo.height = m_height;
+    createInfo.layers = 1;
+
+    // Create a framebuffer for each swapchain image
+    m_graphics.Framebuffers.resize(m_vkparams.SwapChain.Images.size());
+    for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
+        attachments[0] = m_vkparams.SwapChain.Images[i].View;
+        VK_CHECK(vkCreateFramebuffer(
+                    m_vkparams.Device.Device,
+                    &createInfo,
+                    m_vkparams.Allocator,
+                    &m_graphics.Framebuffers[i]));
+    }
+
+    std::cout << "Framebuffers Created: [" << m_graphics.Framebuffers.size() << "]" << std::endl;
+}
+
+void
+Renderer::AllocateCommandBuffers() {
+    if (!m_graphics.GraphicsCommandPool) {
+        VkCommandPoolCreateInfo cmdPoolInfo = {};
+        cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        cmdPoolInfo.pNext = nullptr;
+        cmdPoolInfo.queueFamilyIndex = m_vkparams.GraphicsQueue.FamilyIndex;
+        cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        VK_CHECK(vkCreateCommandPool(m_vkparams.Device.Device, &cmdPoolInfo, m_vkparams.Allocator, &m_graphics.GraphicsCommandPool));
+    }
+
+    // Create one command buffer for each image in the swapchain
+    m_graphics.GraphicsCommandBuffers.resize(m_command_buffer_count);
+
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = m_graphics.GraphicsCommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(m_graphics.GraphicsCommandBuffers.size());
+
+    VK_CHECK(vkAllocateCommandBuffers(
+                m_vkparams.Device.Device,
+                &allocInfo,
+                m_graphics.GraphicsCommandBuffers.data()));
+
+    std::cout << "Command Buffers Allocated: [" << m_graphics.GraphicsCommandBuffers.size() << "]" << std::endl;
+}
+
+void
+Renderer::CreateSyncObjects() {
+    // Create semaphores to synchronize acquiring presentable images before
+    // rendering and waiting for drawing to be completed before presenting
+    VkSemaphoreCreateInfo semInfo = {};
+    semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semInfo.pNext = nullptr;
+
+    // Return an unsignaled semaphore
+    VK_CHECK(vkCreateSemaphore(
+                m_vkparams.Device.Device,
+                &semInfo,
+                m_vkparams.Allocator,
+                &m_graphics.ImageAvailableSemaphore));
+
+    // Return an unsignaled semaphore
+    VK_CHECK(vkCreateSemaphore(
+                m_vkparams.Device.Device,
+                &semInfo,
+                m_vkparams.Allocator,
+                &m_graphics.RenderingFinishedSemaphore));
+
+    std::cout << "Sync Objects Created" << std::endl;
+    
 }
 
 

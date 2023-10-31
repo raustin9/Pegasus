@@ -26,6 +26,7 @@ class Renderer {
         uint64_t GetFrameCounter() const { return m_framecounter; }
         const char* GetTitle() const { return m_title.c_str(); }
         const std::string GetStringTitle() const { return m_title; }
+        bool IsInitialized() const { return m_initialized; }
 
         // Mutators
         void SetWidth(uint32_t width) { m_width = width; }
@@ -41,6 +42,13 @@ class Renderer {
         void CreateDevice();
         void CreateSwapchain(uint32_t *w, uint32_t *h, bool vsync);
         void CreateRenderPass();
+        void CreateFrameBuffers();
+        void AllocateCommandBuffers();
+        void CreateSyncObjects();
+
+        void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
+        void SubmitCommandBuffer(uint64_t index);
+        void PresentImage(uint32_t index);
 
         void DestroyInstance();
         void DestroySurface();
@@ -51,6 +59,7 @@ class Renderer {
         uint32_t m_height;
         float m_aspect_ratio;
         Platform &m_platform;
+        StepTimer m_timer;
 
         bool m_initialized;
 
@@ -64,4 +73,6 @@ class Renderer {
 
         VKCommonParameters m_vkparams;
         VKGraphicsParameters m_graphics;
+
+        char m_lastFPS[32]; // string to hold frames per second
 };

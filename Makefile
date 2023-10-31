@@ -3,8 +3,8 @@ ENGINE=engine/
 APPLICATION=application/
 
 all: $(ENGINE)Makefile $(APPLICATION)Makefile
-	make -C engine
-	make -C application
+	@make -s -C engine
+	@make -s -C application
 
 run: all
 	./bin/application

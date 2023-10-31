@@ -77,6 +77,12 @@ Platform::create_window() {
 }
 
 void
+Platform::destroy_window() {
+    XDestroyWindow(display, handle);
+    XCloseDisplay(display);
+}
+
+void
 Platform::handle_x11_event(XEvent& event) {
     switch (event.type) {
         case ClientMessage:

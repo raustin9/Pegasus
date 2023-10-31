@@ -6,6 +6,7 @@ CCFILES=$(shell find . -type f -name "*.cc")
 DEFINES=-DQEXPORT -DDEBUG
 
 engine: ../bin/libengine.so
+	echo "engine built successfully"
 
 ../bin/libengine.so: $(CCFILES)
 	$(CXX) $(INCLUDES) -o $@ $(CCFLAGS) $(CCFILES) $(LDFLAGS)
