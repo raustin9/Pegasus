@@ -1,5 +1,7 @@
 #pragma once
 #include "renderer/vkcommon.hh"
+#include "core/input.hh"
+#include "core/events.hh"
 #include "linux_timer.hh"
 #include "stdafx.hh"
 #include <cstdint>
@@ -8,7 +10,7 @@
 
 class Platform {
 public:
-    Platform(std::string name, uint32_t width, uint32_t height);
+    Platform(std::string name, uint32_t width, uint32_t height, EventHandler &eh);
     void create_window();
     void destroy_window();
     bool pump_messages();
@@ -31,4 +33,7 @@ public:
     std::string name;
     uint32_t width;
     uint32_t height;
+
+private:
+    InputHandler m_inputHandler;
 };
