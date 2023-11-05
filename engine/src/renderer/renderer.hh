@@ -5,10 +5,12 @@
 #include "platform/platform.hh"
 
 #include <cstdint>
+#include <vulkan/vulkan_core.h>
+
 
 class Renderer {
     public:
-        Renderer(std::string name, uint32_t width, uint32_t height, Platform& platform);
+        Renderer(std::string name, std::string assetPath,  uint32_t width, uint32_t height, Platform& platform);
 
         void OnInit();
         void OnUpdate();
@@ -26,6 +28,7 @@ class Renderer {
         uint64_t GetFrameCounter() const { return m_framecounter; }
         const char* GetTitle() const { return m_title.c_str(); }
         const std::string GetStringTitle() const { return m_title; }
+        std::string GetAssetsPath() { return m_assetPath; }
         bool IsInitialized() const { return m_initialized; }
 
         // Mutators
@@ -53,8 +56,29 @@ class Renderer {
         void DestroyInstance();
         void DestroySurface();
 
+        void CreateVertexBuffer();
+        void CreatePipelineLayout();
+        void CreatePipelineObjects();
+
+        uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
+
+        VkShaderModule LoadShader(std::string filename);
+
+        // Vertex layout
+        struct Vertex {
+            float position[3];
+            float color[4];
+        };
+
+        // Vertex buffer
+        struct {
+            VkDeviceMemory memory; // handle to the device memory backing the vertex buffer
+            VkBuffer buffer;       // handle to the vulkan buffer object that the memory is bound to
+        } m_vertices;
+
 
         std::string m_title;
+        std::string m_assetPath;
         uint32_t m_width;
         uint32_t m_height;
         float m_aspect_ratio;

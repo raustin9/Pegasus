@@ -4,7 +4,7 @@
 Settings Application::settings = {};
 
 Application::Application(std::string name, uint32_t width, uint32_t height)
-    :  m_eventHandler{}, m_platform{name, width, height, m_eventHandler},  m_renderer{name, width, height, m_platform}, m_name(name) {
+    :  m_eventHandler{}, m_platform{name, width, height, m_eventHandler},  m_renderer{name, "./assets", width, height, m_platform}, m_name(name) {
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
