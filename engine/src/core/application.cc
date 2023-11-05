@@ -1,4 +1,5 @@
 #include "application.hh"
+#include "core/events.hh"
 
 Settings Application::settings = {};
 
@@ -10,10 +11,26 @@ Application::Application(std::string name, uint32_t width, uint32_t height)
     Application::settings.enableVsync = false; // disable vsync for higher fps
     m_should_quit = false;
 
-    // Register to receive events for these codes
-    m_eventHandler.Register<Application>(EVENT_CODE_APPLICATION_QUIT, nullptr, &Application::OnEvent);
-    m_eventHandler.Register<Application>(EVENT_CODE_KEY_PRESSED, nullptr, &Application::OnKey);
-    m_eventHandler.Register<Application>(EVENT_CODE_KEY_RELEASED, nullptr, &Application::OnKey);
+    m_eventHandler.Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+            this->OnEvent(code, sender, listener, data);
+            return true;
+    });
+
+    m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnKey(code, sender, listener, data);
+        return true;
+    });
+
+    m_eventHandler.Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnMouseMove(code, sender, listener, data);
+        return true;
+    });
+    
+    m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnKey(code, sender, listener, data);
+        return true;
+    });
+
 
     std::cout << "Platform created" << std::endl;
 
@@ -30,7 +47,8 @@ Application::~Application() {
 bool
 Application::run() {
     while (!m_should_quit) {
-        m_should_quit = m_platform.pump_messages();
+        if (m_platform.pump_messages() == true)
+            m_should_quit = true;
 
         if (!m_should_quit && m_renderer.IsInitialized()) {
             m_renderer.OnUpdate();
@@ -44,12 +62,17 @@ Application::run() {
     return false; 
 }
 
-// Callback function to handle events
+//// Callback function to handle events
 bool 
 Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
     switch(code) {
         case EVENT_CODE_APPLICATION_QUIT: {
+            std::cout << "EVENT_CODE_APPLICATION_QUIT received. Shutting down..." << std::endl;
             m_should_quit = true;
+            return true;
         }; break;
         default:
             break;
@@ -58,13 +81,49 @@ Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext c
     return false;
 }
 
-bool
-Application::OnKey(uint16_t code, void* sender, void* listener, EventContext context) {
-    if (code == EVENT_CODE_KEY_PRESSED) {
-        uint16_t keycode = context.u16[0];
-    } else if (code == EVENT_CODE_KEY_RELEASED) {
-
+bool 
+Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
+    switch(code) {
+        case EVENT_CODE_MOUSE_MOVED: {
+            printf("X: %i, Y: %i\n", context.u16[0], context.u16[1]);
+            return true;
+        }; break;
+        default:
+            break;
     }
 
-    return true;
+    return false;
+}
+
+
+bool
+Application::OnKey(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
+    if (code == EVENT_CODE_KEY_PRESSED) {
+        uint16_t keycode = context.u16[0];
+        if (keycode == KEY_ESCAPE) {
+            EventContext data = {};
+            m_eventHandler.Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+
+            return true;
+        } else if (keycode == KEY_A) {
+            std::cout << "Explicit -- A key pressed" << std::endl;
+        } else {
+            printf("'%c' key pressed in window\n", static_cast<char>(keycode));
+        }
+    } else if (code == EVENT_CODE_KEY_RELEASED) {
+        uint16_t keycode = context.u16[0];
+        if (keycode == KEY_B) {
+            std::cout << "Explicit -- B key released" << std::endl;
+        } else {
+            printf("'%c' key released in window\n", keycode);
+        }
+    }
+
+    return false;
 }

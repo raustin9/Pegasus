@@ -1,4 +1,5 @@
 #include "input.hh"
+#include "core/events.hh"
 
 InputHandler::InputHandler(EventHandler &eh) 
     : m_eventHandler(eh),
@@ -32,6 +33,12 @@ InputHandler::ProcessKey(Keys key, bool pressed) {
         m_keyboardCurrent.keys[key] = pressed;
 
         // TODO: Fire an event for immediate processing
+        EventContext data = {};
+        data.u16[0] = static_cast<uint16_t>(key);
+        m_eventHandler.Fire(
+                pressed ? EVENT_CODE_KEY_PRESSED : EVENT_CODE_KEY_RELEASED,
+                0,
+                data);
     }
 }
 
@@ -43,7 +50,11 @@ InputHandler::ProcessMouseMove(int32_t x, int32_t y) {
         m_mouseCurrent.y = y;
 
         // TODO: fire an event
-        printf("Mouse pos: [%d, %d]\n", x, y);
+        EventContext data = {};
+        data.u16[0] = x;
+        data.u16[1] = y;
+        m_eventHandler.Fire(EVENT_CODE_MOUSE_MOVED, nullptr, data);
+
     }
 }
 

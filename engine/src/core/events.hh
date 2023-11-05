@@ -60,20 +60,21 @@ enum EventCodes {
     MAX_EVENT_CODE = 0xFF
 };
 
-// typedef std::function<bool (uint16_t code, void* sender, void* listener, EventContext data)> PFN_on_event;
+using  CallbackFunc = std::function <bool (uint16_t code, void* sender, void* listener, EventContext data)>;
+
 // Holds a pointer to the listener and the callback
 // function to be used to communicate to them
-template <class T>
 struct RegisteredEvent {
-
     void* listener;
 
-    bool (T::*callback)(uint16_t code, void* sender, void* listener, EventContext data);
+    CallbackFunc callback;
+    // bool (T::*callback)(uint16_t code, void* sender, void* listener, EventContext data);
 };
 
 // Holds a vector of registered events
 struct EventCodeEntry {
-    std::vector <void*> events;
+    
+    std::vector <RegisteredEvent>  events;
 };
 
 // Holds an array of events
@@ -102,27 +103,22 @@ class EventHandler {
 
         // Registers to listen to events that are sent with the specified code
         // listener/callback combos won't be registered twice, and will return 'false' if that is attempted
-        // bool Register(uint16_t code, void* listener, PFN_on_event on_event);
-        // bool Register(uint16_t code, void* listener, bool (T::*)(uint16_t, void*, void*, EventContext));
-        template <class T>
         bool Register(
                 uint16_t code,
                 void* listener,
-                bool (T::*on_event)(uint16_t code, void* sender, void* listener, EventContext data)) {
+                CallbackFunc callback
+        ) {
             // Check if the listener has already been registered
             size_t registered_count = m_state.registered[code].events.size();
             for (size_t i = 0; i < registered_count; i++) {
-                if (reinterpret_cast<RegisteredEvent<T>*>(m_state.registered[code].events[i])->listener 
-                        == listener) {
+                if (m_state.registered[code].events[i].listener == listener)
                     return false;
-                }
             }
 
             // Proceed with registration since it has not been registered yet
-            RegisteredEvent<T>* event = new RegisteredEvent<T>;
-            event->listener = listener;
-            std::cout << "GOT HERE\n";
-            event->callback = on_event;
+            RegisteredEvent event = {};
+            event.listener = listener;
+            event.callback = callback;
             m_state.registered[code].events.push_back(event);
             return true;
         }
@@ -130,11 +126,10 @@ class EventHandler {
         // Unregister an event with the specified code from the listener
         // bool Unregister(uint16_t code, void* listener, PFN_on_event on_event);
         // bool Unregister(uint16_t code, void* listener, bool (T::*)(uint16_t, void*, void*, EventContext));
-        template <class T>
         bool Unregister(
                 uint16_t code,
-                void* listener,
-                bool (T::*on_event)(uint16_t code, void* sender, void* listener, EventContext data)) {
+                void* listener
+        ) {
             // Check that the listener is actually registered for the event
             if (m_state.registered[code].events.size() == 0)
                 return false;
@@ -147,8 +142,8 @@ class EventHandler {
             // that would be registered for an event, so even in worst case it is not that bad
             size_t registered_count = m_state.registered[code].events.size();
             for (size_t i = 0; i < registered_count; i++) {
-                RegisteredEvent<T> ev = *reinterpret_cast<RegisteredEvent<T>*>(m_state.registered[code].events[i]);
-                if (ev.listener == listener && ev.callback == on_event) {
+                RegisteredEvent ev = m_state.registered[code].events[i];
+                if (ev.listener == listener) {
                     m_state.registered[code].events.erase(m_state.registered[code].events.begin() + i);
                     return true;
                 }
@@ -160,13 +155,14 @@ class EventHandler {
         // Fire an event with the input code
         // If the handler returns true, the event is considered handled
         // If not, the handler passes on to any more listeners
-        template <class T>
         bool Fire(uint16_t code, void* sender, EventContext context) {
             if (m_state.registered[code].events.size() == 0)
                 return false;
 
             for (size_t i = 0; i < m_state.registered[code].events.size(); i++) {
-                RegisteredEvent<T> ev = *reinterpret_cast<RegisteredEvent<T>*>(m_state.registered[code].events[i]);
+                RegisteredEvent ev = m_state.registered[code].events[i];
+                // RegisteredEvent<T>* ev = reinterpret_cast<RegisteredEvent<T>*>(m_state.registered[code].events[i]);
+                auto func = ev.callback;
                 if (ev.callback(code, sender, ev.listener, context)) {
                     // message was handled if callback returned true
                     return true;
