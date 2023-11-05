@@ -12,6 +12,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugUtilsMessengerCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
+    (void)pUserData;
+    (void)messageType;
+
     // Select prefix depending on flags passed to the callback
     std::string prefix("");
 

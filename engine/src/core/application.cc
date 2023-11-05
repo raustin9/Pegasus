@@ -1,14 +1,36 @@
 #include "application.hh"
+#include "core/events.hh"
 
 Settings Application::settings = {};
 
 Application::Application(std::string name, uint32_t width, uint32_t height)
-    : m_name(name), m_platform{name, width, height}, m_renderer{name, width, height, m_platform} {
+    :  m_eventHandler{}, m_platform{name, width, height, m_eventHandler},  m_renderer{name, width, height, m_platform}, m_name(name) {
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
     Application::settings.enableVsync = false; // disable vsync for higher fps
     m_should_quit = false;
+
+    m_eventHandler.Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+            this->OnEvent(code, sender, listener, data);
+            return true;
+    });
+
+    m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnKey(code, sender, listener, data);
+        return true;
+    });
+
+    m_eventHandler.Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnMouseMove(code, sender, listener, data);
+        return true;
+    });
+    
+    m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnKey(code, sender, listener, data);
+        return true;
+    });
+
 
     std::cout << "Platform created" << std::endl;
 
@@ -18,10 +40,15 @@ Application::Application(std::string name, uint32_t width, uint32_t height)
     m_renderer.OnInit();
 }
 
+Application::~Application() {
+    
+}
+
 bool
 Application::run() {
     while (!m_should_quit) {
-        m_should_quit = m_platform.pump_messages();
+        if (m_platform.pump_messages() == true)
+            m_should_quit = true;
 
         if (!m_should_quit && m_renderer.IsInitialized()) {
             m_renderer.OnUpdate();
@@ -33,4 +60,70 @@ Application::run() {
     std::cout << "Shutting down application" << std::endl;
     m_renderer.OnDestroy();
     return false; 
+}
+
+//// Callback function to handle events
+bool 
+Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
+    switch(code) {
+        case EVENT_CODE_APPLICATION_QUIT: {
+            std::cout << "EVENT_CODE_APPLICATION_QUIT received. Shutting down..." << std::endl;
+            m_should_quit = true;
+            return true;
+        }; break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool 
+Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
+    switch(code) {
+        case EVENT_CODE_MOUSE_MOVED: {
+            printf("X: %i, Y: %i\n", context.u16[0], context.u16[1]);
+            return true;
+        }; break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+
+bool
+Application::OnKey(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
+    if (code == EVENT_CODE_KEY_PRESSED) {
+        uint16_t keycode = context.u16[0];
+        if (keycode == KEY_ESCAPE) {
+            EventContext data = {};
+            m_eventHandler.Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+
+            return true;
+        } else if (keycode == KEY_A) {
+            std::cout << "Explicit -- A key pressed" << std::endl;
+        } else {
+            printf("'%c' key pressed in window\n", static_cast<char>(keycode));
+        }
+    } else if (code == EVENT_CODE_KEY_RELEASED) {
+        uint16_t keycode = context.u16[0];
+        if (keycode == KEY_B) {
+            std::cout << "Explicit -- B key released" << std::endl;
+        } else {
+            printf("'%c' key released in window\n", keycode);
+        }
+    }
+
+    return false;
 }
