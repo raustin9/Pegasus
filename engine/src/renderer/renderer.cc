@@ -433,7 +433,7 @@ Renderer::CreateVertexBuffer() {
     // requiring the explicit flushing of cached memory
     vkGetBufferMemoryRequirements(m_vkparams.Device.Device, m_vertices.buffer, &memReqs);
     memAlloc.allocationSize = static_cast<uint32_t>(memReqs.size);
-    memAlloc.memoryTypeIndex = GetMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_vkparams.Device.DeviceMemoryProperties);
+    memAlloc.memoryTypeIndex = GetMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vkparams.Device.DeviceMemoryProperties);
     VK_CHECK(
         vkAllocateMemory(m_vkparams.Device.Device, &memAlloc, m_vkparams.Allocator, &m_vertices.memory));
 
