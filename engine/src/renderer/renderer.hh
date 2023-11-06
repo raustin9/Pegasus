@@ -3,6 +3,7 @@
 #include "stdafx.hh"
 #include "vkcommon.hh"
 #include "platform/platform.hh"
+#include "renderer/vkmodel.hh"
 
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
@@ -37,6 +38,7 @@ class Renderer {
         void SetWidth(uint32_t width) { m_width = width; }
         void SetHeight(uint32_t height) { m_height = height; }
         
+        static uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
 
     private:
         void InitVulkan();
@@ -62,7 +64,7 @@ class Renderer {
         void CreatePipelineLayout();
         void CreatePipelineObjects();
 
-        uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
+        std::unique_ptr<VKModel> m_model;
 
         VkShaderModule LoadShader(std::string filename);
 

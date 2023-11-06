@@ -4,6 +4,7 @@
 #include "renderer/debug.hh"
 #include "renderer/vkdevice.hh"
 #include "renderer/vkswapchain.hh"
+#include "renderer/vkmodel.hh"
 
 #include <cstdint>
 #include <stdexcept>
@@ -205,17 +206,20 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     // Bind the graphics pipeline
     vkCmdBindPipeline(m_graphics.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics.GraphicsPipeline);
 
-    // Bind the triangle vertex buffer (contains position and color)
-    VkDeviceSize offsets[1] = { 0 };
-    vkCmdBindVertexBuffers(
-            m_graphics.GraphicsCommandBuffers[bufferIndex],
-            0,
-            1,
-            &m_vertices.buffer,
-            offsets);
+    m_model->Bind(m_graphics.GraphicsCommandBuffers[bufferIndex]);
+    m_model->Draw(m_graphics.GraphicsCommandBuffers[bufferIndex]);
 
-    // Draw triangle
-    vkCmdDraw(m_graphics.GraphicsCommandBuffers[bufferIndex], 3, 1, 0, 0);
+    // Bind the triangle vertex buffer (contains position and color)
+//    VkDeviceSize offsets[1] = { 0 };
+//    vkCmdBindVertexBuffers(
+//            m_graphics.GraphicsCommandBuffers[bufferIndex],
+//            0,
+//            1,
+//            &m_vertices.buffer,
+//            offsets);
+
+//     // Draw triangle
+//     vkCmdDraw(m_graphics.GraphicsCommandBuffers[bufferIndex], 3, 1, 0, 0);
 
     // Ending the render pass will add an implicit barrier, transitioning the frame buffer
     // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
@@ -412,59 +416,13 @@ Renderer::SetupPipeline() {
 
 void
 Renderer::CreateVertexBuffer() {
-    std::vector <Vertex> vertexBuffer = {
-        { { 0.0f, 0.25f * m_aspect_ratio, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },     // v0 (red)
-    	{ { -0.25f, -0.25f * m_aspect_ratio, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },  // v1 (green)
-        { { 0.25f, -0.25f * m_aspect_ratio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }    // v2 (blue)
+    std::vector <VKModel::Vertex> vertices {
+        { { 0.0f, 0.25f * m_aspect_ratio, 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
+    	{ { -0.25f, -0.25f * m_aspect_ratio, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
+        { { 0.25f, -0.25f * m_aspect_ratio, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
     };
 
-    uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(Vertex);
-
-    // Create the vertex buffer in host-visible device memory
-    // This is not good because it will lower rendering performance
-
-    // Used to request an allocation of a specific size from a certain memory type
-    VkMemoryAllocateInfo memAlloc = {};
-    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    VkMemoryRequirements memReqs;
-
-    // Pointer to map host-visible device memry to the virtual address space of the application
-    // The application can copy data to host-visible device memory only using this pointer
-    void *data;
-
-    // Create the vertex buffer object
-    VkBufferCreateInfo vertexBufferCreateInfo = {};
-    vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    vertexBufferCreateInfo.size = vertexBufferSize;
-    vertexBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    VK_CHECK(
-        vkCreateBuffer(m_vkparams.Device.Device, &vertexBufferCreateInfo, m_vkparams.Allocator, &m_vertices.buffer));
-    
-    // Request a memory allocation from coherent, host-visible device memory that 
-    // is large enough to hold the vertex buffer
-    // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT makes sure that writes performed
-    // by the host (application) will be directly visible to the device without 
-    // requiring the explicit flushing of cached memory
-    vkGetBufferMemoryRequirements(m_vkparams.Device.Device, m_vertices.buffer, &memReqs);
-    memAlloc.allocationSize = static_cast<uint32_t>(memReqs.size);
-    memAlloc.memoryTypeIndex = GetMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vkparams.Device.DeviceMemoryProperties);
-    VK_CHECK(
-        vkAllocateMemory(m_vkparams.Device.Device, &memAlloc, m_vkparams.Allocator, &m_vertices.memory));
-
-    // Map the host-visible device memory and copy the vertex data
-    // Once finished, we can unmap it since we no longer need to access
-    // the vertex buffer from the application
-    VK_CHECK(
-        vkMapMemory(m_vkparams.Device.Device, m_vertices.memory, 0, memAlloc.allocationSize, 0, &data)
-    );
-    memcpy(data, vertexBuffer.data(), vertexBufferSize);
-    vkUnmapMemory(m_vkparams.Device.Device, m_vertices.memory);
-    
-    // Bind the vertex buffer object to the backing host-visible device memory
-    // we just allocated
-    VK_CHECK(
-        vkBindBufferMemory(m_vkparams.Device.Device, m_vertices.buffer, m_vertices.memory, 0)
-    );
+    m_model = std::make_unique<VKModel>(m_vkparams, vertices);
 }
 
 // Create the layout for the pipeline
@@ -494,28 +452,20 @@ Renderer::CreatePipelineObjects() {
     // will bound. This uses a single vertex buffer at binding point 0
     VkVertexInputBindingDescription vertexInputBinding = {};
     vertexInputBinding.binding = 0;
-    vertexInputBinding.stride = sizeof(Vertex);
+    vertexInputBinding.stride = sizeof(VKModel::Vertex);
+    // vertexInputBinding.stride = sizeof(Vertex);
     vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     // Vertex attribute descriptions describe the vertex shader attribute locations and memory layouts
     // as well as the binding points from which the input assembler should retrieve data to pass
     // to the corresponding vertex shader input attributes
-    std::array<VkVertexInputAttributeDescription, 2> vertexInputAttributes;
     // These match the following shader layout
     // layout (location = 0) in vec3 inPos;
     // layout (location = 0) in vec4 inColor;
     // Attribute location 0: position from vertex buffer at binding point 0
-    vertexInputAttributes[0].binding = 0;
-    vertexInputAttributes[0].location = 0;
-    // Position attribute is 3 32-bit signed floats (R32 G32 B32)
-    vertexInputAttributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertexInputAttributes[0].offset = offsetof(Vertex, position);
-    // Attribute location 1: color from vertex buffer at binding point 0
-    vertexInputAttributes[1].binding = 0;
-    vertexInputAttributes[1].location = 1;
-    // Color attribute is 4 32-bit signed floats (R32 G32 B32 A32)
-    vertexInputAttributes[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    vertexInputAttributes[1].offset = offsetof(Vertex, color);
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions = VKModel::Vertex::GetBindingDesc();
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions = VKModel::Vertex::GetAttribDesc();
+
 
     // Vertex input state used for pipeline creation
     // Vulkan spec uses it to specify the input of the entire pipeline
@@ -524,9 +474,9 @@ Renderer::CreatePipelineObjects() {
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputState.vertexBindingDescriptionCount = 1;
-    vertexInputState.pVertexBindingDescriptions = &vertexInputBinding;
+    vertexInputState.pVertexBindingDescriptions = bindingDescriptions.data();;
     vertexInputState.vertexAttributeDescriptionCount = 2;
-    vertexInputState.pVertexAttributeDescriptions = vertexInputAttributes.data();
+    vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Input assembly state describes how primitives are assembled by the input assembler
     // This pipeline will assemble vertex data as triangle lists (though we only have one triangle)
