@@ -161,7 +161,6 @@ class EventHandler {
 
             for (size_t i = 0; i < m_state.registered[code].events.size(); i++) {
                 RegisteredEvent ev = m_state.registered[code].events[i];
-                // RegisteredEvent<T>* ev = reinterpret_cast<RegisteredEvent<T>*>(m_state.registered[code].events[i]);
                 auto func = ev.callback;
                 if (ev.callback(code, sender, ev.listener, context)) {
                     // message was handled if callback returned true

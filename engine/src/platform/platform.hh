@@ -15,6 +15,7 @@ public:
     void destroy_window();
     bool pump_messages();
     bool create_vulkan_surface(VKCommonParameters &params);
+    void set_title(std::string title);
 
 
     // WINDOWING INFO

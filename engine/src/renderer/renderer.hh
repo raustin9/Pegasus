@@ -17,6 +17,8 @@ class Renderer {
         void OnRender();
         void OnDestroy();
 
+        const std::string GetWindowTitle();
+
         void WindowResize(uint32_t width, uint32_t height);
 
         void OnKeyDown(uint8_t) {}

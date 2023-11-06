@@ -11,6 +11,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     Application::settings.enableVsync = false; // disable vsync for higher fps
     m_should_quit = false;
 
+    // Register for events
     m_eventHandler.Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
             this->OnEvent(code, sender, listener, data);
             return true;
@@ -18,6 +19,11 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
 
     m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
+        return true;
+    });
+
+    m_eventHandler.Register(EVENT_CODE_RESIZED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        this->OnResize(code, sender, listener, data);
         return true;
     });
 
@@ -44,6 +50,7 @@ Application::~Application() {
     
 }
 
+// Event loop of the application
 bool
 Application::run() {
     while (!m_should_quit) {
@@ -51,9 +58,13 @@ Application::run() {
             m_should_quit = true;
 
         if (!m_should_quit && m_renderer.IsInitialized()) {
+            // update and render
             m_renderer.OnUpdate();
             m_renderer.OnRender();
-            // update and render
+        }
+        
+        if (m_renderer.GetFrameCounter() % 300 == 0) {
+            m_platform.set_title(m_renderer.GetWindowTitle());
         }
     }
 
@@ -62,7 +73,8 @@ Application::run() {
     return false; 
 }
 
-//// Callback function to handle events
+// Behavior for events
+// FOR NOW: handle application shutdown signal
 bool 
 Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext context) {
     (void)context;
@@ -81,6 +93,8 @@ Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext c
     return false;
 }
 
+// TODO: register an event for when the mouse moves
+//       print out the location of the mouse
 bool 
 Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context) {
     (void)context;
@@ -98,7 +112,21 @@ Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventConte
     return false;
 }
 
+// Resize callback for resizing the window
+bool 
+Application::OnResize(uint16_t code, void* sender, void* listener, EventContext context) {
+    (void)context;
+    (void)listener;
+    (void)sender;
 
+    uint32_t w = context.u32[0];
+    uint32_t h = context.u32[1];
+
+    m_renderer.WindowResize(w, h);
+    return false;
+}
+
+// Behavior for keyboard press events
 bool
 Application::OnKey(uint16_t code, void* sender, void* listener, EventContext context) {
     (void)context;
@@ -111,18 +139,12 @@ Application::OnKey(uint16_t code, void* sender, void* listener, EventContext con
             m_eventHandler.Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
 
             return true;
-        } else if (keycode == KEY_A) {
-            std::cout << "Explicit -- A key pressed" << std::endl;
         } else {
             printf("'%c' key pressed in window\n", static_cast<char>(keycode));
         }
     } else if (code == EVENT_CODE_KEY_RELEASED) {
         uint16_t keycode = context.u16[0];
-        if (keycode == KEY_B) {
-            std::cout << "Explicit -- B key released" << std::endl;
-        } else {
-            printf("'%c' key released in window\n", keycode);
-        }
+        printf("'%c' key released in window\n", keycode);
     }
 
     return false;

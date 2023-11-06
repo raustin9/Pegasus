@@ -18,12 +18,22 @@ InputHandler::~InputHandler() {
 
 void
 InputHandler::Update(double deltaTime) {
+    (void)deltaTime;
     if (!m_initialized)
         return;
 
     // Copy current state to the previous states
     m_keyboardPrev = m_keyboardCurrent;
     m_mousePrev = m_mouseCurrent;
+}
+
+void
+InputHandler::ProcessResize(uint32_t w, uint32_t h) {
+    EventContext data = {};
+    data.u32[0] = static_cast<uint32_t>(w);
+    data.u32[1] = static_cast<uint32_t>(h);
+
+    m_eventHandler.Fire(EVENT_CODE_RESIZED, nullptr, data);
 }
 
 void

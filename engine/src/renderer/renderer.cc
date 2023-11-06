@@ -10,6 +10,8 @@
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
 
+// Constructor for the renderer 
+// and startup behavior
 Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint32_t height, Platform& platform)
     : m_title(name), 
     m_assetPath(assetPath),
@@ -23,12 +25,14 @@ Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint
     m_framecounter = 0;
 }
 
+// Init behavior
 void
 Renderer::OnInit() {
     InitVulkan();
     SetupPipeline();
 }
 
+// Update behavior
 void
 Renderer::OnUpdate() {
     m_timer.Tick(nullptr);
@@ -38,6 +42,16 @@ Renderer::OnUpdate() {
     m_framecounter++;
 }
 
+// Set the window's title text
+const std::string 
+Renderer::GetWindowTitle() {
+    std::string device(m_deviceProperties.deviceName);
+    std::string windowTitle;
+    windowTitle = m_title + " - " + device + " - " + std::string(m_lastFPS);
+    return windowTitle;
+}
+
+// Resize behavior
 void
 Renderer::WindowResize(uint32_t w, uint32_t h) {
     if (!m_initialized)
@@ -51,7 +65,7 @@ Renderer::WindowResize(uint32_t w, uint32_t h) {
     // Recreate swapchain
     m_width = w;
     m_height = h;
-    CreateSwapchain(&w, &h, false);
+    CreateSwapchain(&m_width, &m_height, false);
 
     // Recreate the framebuffers
     for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
@@ -275,13 +289,13 @@ Renderer::OnDestroy() {
     std::cout << "Destroying vertex buffer and memory...";
     vkDestroyBuffer(m_vkparams.Device.Device, m_vertices.buffer, m_vkparams.Allocator);
     vkFreeMemory(m_vkparams.Device.Device, m_vertices.memory, m_vkparams.Allocator);
-    std::cout << "Destroyed" << std::endl;
+    std::cout << "destroyed & freed" << std::endl;
 
     // Destroy pipeline layout and pipeline layout objects
     std::cout << "Destroying pipeline layout and graphics pipeline...";
     vkDestroyPipelineLayout(m_vkparams.Device.Device, m_graphics.PipelineLayout, m_vkparams.Allocator);
     vkDestroyPipeline(m_vkparams.Device.Device, m_graphics.GraphicsPipeline, m_vkparams.Allocator);
-    std::cout << "Destroyed" << std::endl;
+    std::cout << "destroyed" << std::endl;
 
     std::cout << "Destroying Framebuffers... ";
     // Destroy frame buffers
@@ -291,7 +305,7 @@ Renderer::OnDestroy() {
                 m_graphics.Framebuffers[i],
                 m_vkparams.Allocator);
     }
-    std::cout << "Destroyed" << std::endl;
+    std::cout << "destroyed" << std::endl;
 
     std::cout << "Destroying Swapchain Images... ";
     // Destroy the swapchain and its images

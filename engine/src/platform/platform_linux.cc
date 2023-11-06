@@ -33,6 +33,20 @@ Platform::Platform(std::string name, uint32_t width, uint32_t height, EventHandl
     this->should_quit = false;
 }
 
+// Set the title of the window
+void
+Platform::set_title(std::string title) {
+    XSetStandardProperties(
+            display,
+            handle,
+            title.c_str(),
+            title.c_str(),
+            None,
+            nullptr,
+            0,
+            nullptr);
+}
+
 // Create an instance of a window
 void
 Platform::create_window() {
@@ -41,13 +55,23 @@ Platform::create_window() {
 
     // Create the window
     unsigned long white = WhitePixel(display, DefaultScreen(display));
-    handle = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, width, height, 0, white, white);
+    handle = XCreateSimpleWindow(
+            display, 
+            DefaultRootWindow(display), 
+            0, 
+            0, 
+            width, 
+            height, 
+            0, 
+            white, 
+            white);
 
     // Set the event types the window wants to be notified by the X server
-    XSelectInput(display, handle, KeyPressMask | KeyReleaseMask);
+    XSelectInput(display, handle, KeyPressMask | KeyReleaseMask | StructureNotifyMask | ExposureMask);
 
     // Also request to be notified when the window is deleted
     Atom wm_protocols = XInternAtom(display, "WM_PROTOCOLS", true);
+    (void)wm_protocols;;
     wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", true);
 
     XSetWMProtocols(display, handle, &wm_delete_window, 1);
@@ -94,6 +118,15 @@ Platform::handle_x11_event(XEvent& event) {
                 should_quit = true;
             }
             break;
+        case ConfigureNotify:
+            if (static_cast<uint32_t>(event.xconfigure.width) != width
+                || static_cast<uint32_t>(event.xconfigure.height) != height) {
+                m_inputHandler.ProcessResize(
+                    static_cast<uint32_t>(event.xconfigure.width), 
+                    static_cast<uint32_t>(event.xconfigure.height));
+            }
+
+            break;
         
         case KeyPress:
             code = event.xkey.keycode;
@@ -121,6 +154,7 @@ Platform::pump_messages() {
         XNextEvent(display, &event);
         handle_x11_event(event);
     }
+    XFlush(display);
 
     return should_quit;
 }
