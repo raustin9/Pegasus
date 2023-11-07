@@ -291,8 +291,9 @@ Renderer::OnDestroy() {
 
     // Destroy vertex buffer object and deallocate backing memory
     std::cout << "Destroying vertex buffer and memory...";
-    vkDestroyBuffer(m_vkparams.Device.Device, m_vertices.buffer, m_vkparams.Allocator);
-    vkFreeMemory(m_vkparams.Device.Device, m_vertices.memory, m_vkparams.Allocator);
+    m_model->Destroy();
+//    vkDestroyBuffer(m_vkparams.Device.Device, m_vertices.buffer, m_vkparams.Allocator);
+//    vkFreeMemory(m_vkparams.Device.Device, m_vertices.memory, m_vkparams.Allocator);
     std::cout << "destroyed & freed" << std::endl;
 
     // Destroy pipeline layout and pipeline layout objects

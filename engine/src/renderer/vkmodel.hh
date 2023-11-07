@@ -32,7 +32,8 @@ class VKModel {
             _create_vertex_buffers(vertices);
             // _create_index_buffers(builder.indices);
         }
-        ~VKModel() {}
+        ~VKModel() {
+        }
         VKModel(const VKModel&) = delete;
         VKModel &operator=(const VKModel&) = delete;
 
@@ -40,6 +41,7 @@ class VKModel {
         
         void Bind(VkCommandBuffer cmdBuffer);
         void Draw(VkCommandBuffer cmdBuffer);
+        void Destroy();
 
     private:
         void _create_vertex_buffers(const std::vector <Vertex> &vertices);

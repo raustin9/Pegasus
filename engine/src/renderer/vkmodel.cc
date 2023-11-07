@@ -1,6 +1,5 @@
 #include "vkmodel.hh"
 #include "renderer.hh"
-#include <vulkan/vulkan_core.h>
 
 void
 VKModel::_create_index_buffers(const std::vector<uint32_t> &indices) {
@@ -8,6 +7,12 @@ VKModel::_create_index_buffers(const std::vector<uint32_t> &indices) {
     m_hasIndexBuffer = m_indexCount > 0; 
 }
 
+// Destroy and free the vertex buffer and its bound memory
+void
+VKModel::Destroy() {
+    vkDestroyBuffer(m_vkparams.Device.Device, m_vertexBuffer, m_vkparams.Allocator);
+    vkFreeMemory(m_vkparams.Device.Device, m_vertexBufferMemory, m_vkparams.Allocator);
+}
 
 void
 VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
@@ -100,3 +105,5 @@ VKModel::Vertex::GetAttribDesc() {
     attribDescriptions[1].offset = offsetof(Vertex, color);
     return attribDescriptions;
 }
+
+
