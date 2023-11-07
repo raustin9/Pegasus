@@ -19,6 +19,7 @@ class Application {
         bool OnEvent(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnKey(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context);
+        bool OnResize(uint16_t code, void* sender, void* listener, EventContext context);
     private:
         std::string m_name;
         std::string m_assetPath;

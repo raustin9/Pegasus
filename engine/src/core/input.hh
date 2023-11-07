@@ -167,6 +167,7 @@ class InputHandler {
         void ProcessMouseMove(int32_t x, int32_t y);
         void ProcessMouseWheel(int16_t z_delta);
         void GetMousePosition(int32_t& x, int32_t& y);
+        void ProcessResize(uint32_t w, uint32_t h);
 
 
     private:

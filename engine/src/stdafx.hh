@@ -12,6 +12,7 @@
 #define VK_USE_PLATFORM_XLIB_KHR
 #define VK_NO_PLATFORM_XCB_KHR
 #include <time.h>
+#include <glm/glm.hpp>
 #endif
 
 // std
