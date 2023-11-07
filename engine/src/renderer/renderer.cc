@@ -205,7 +205,8 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
             &scissor);
 
     // Bind the graphics pipeline
-    vkCmdBindPipeline(m_graphics.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics.GraphicsPipeline);
+    m_pipeline->Bind(m_graphics.GraphicsCommandBuffers[bufferIndex]);
+    // vkCmdBindPipeline(m_graphics.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics.GraphicsPipeline);
 
     // Bind the triangle vertex buffer (contains position and color)
     m_model->Bind(m_graphics.GraphicsCommandBuffers[bufferIndex]);
@@ -282,14 +283,11 @@ Renderer::OnDestroy() {
     // Destroy vertex buffer object and deallocate backing memory
     std::cout << "Destroying vertex buffer and memory...";
     m_model->Destroy();
-//    vkDestroyBuffer(m_vkparams.Device.Device, m_vertices.buffer, m_vkparams.Allocator);
-//    vkFreeMemory(m_vkparams.Device.Device, m_vertices.memory, m_vkparams.Allocator);
     std::cout << "destroyed & freed" << std::endl;
 
     // Destroy pipeline layout and pipeline layout objects
     std::cout << "Destroying pipeline layout and graphics pipeline...";
-    vkDestroyPipelineLayout(m_vkparams.Device.Device, m_graphics.PipelineLayout, m_vkparams.Allocator);
-    vkDestroyPipeline(m_vkparams.Device.Device, m_graphics.GraphicsPipeline, m_vkparams.Allocator);
+    m_pipeline->Destroy();
     std::cout << "destroyed" << std::endl;
 
     std::cout << "Destroying Framebuffers... ";

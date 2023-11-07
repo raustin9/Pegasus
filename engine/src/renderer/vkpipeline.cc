@@ -10,7 +10,7 @@ VKPipeline::VKPipeline(
     m_vkgraphics(graphics), 
     m_config(config)
 {
-
+    (void)m_config;
 }
 
 VKPipeline::~VKPipeline() {
@@ -24,6 +24,12 @@ VKPipeline::~VKPipeline() {
 void
 VKPipeline::Bind(VkCommandBuffer commandBuffer) {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkgraphics.GraphicsPipeline);
+}
+
+void
+VKPipeline::Destroy() {
+    vkDestroyPipelineLayout(m_vkparams.Device.Device, m_vkgraphics.PipelineLayout, m_vkparams.Allocator);
+    vkDestroyPipeline(m_vkparams.Device.Device, m_vkgraphics.GraphicsPipeline, m_vkparams.Allocator);
 }
 
 // Create the graphics pipeline

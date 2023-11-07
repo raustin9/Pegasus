@@ -32,6 +32,7 @@ class VKPipeline {
         VKPipeline& operator= (const VKPipeline&) = delete;
 
         void Bind(VkCommandBuffer commandBuffer);
+        void Destroy();
 
         // TODO: default pipeline config
         void CreateGraphicsPipeline(

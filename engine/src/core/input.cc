@@ -70,7 +70,7 @@ InputHandler::ProcessMouseMove(int32_t x, int32_t y) {
 
 void
 InputHandler::ProcessMouseWheel(int16_t zDelta) {
-
+    (void)zDelta;
 }
 
 // Set the parameters to the current position of the mouse's x and y positions
