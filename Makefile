@@ -1,6 +1,6 @@
 #Build the whole project
 ENGINE=engine/
-APPLICATION=application/
+APPLICATION=testbed/
 GLSLC=/usr/local/bin/glslc
 
 # Compile the shaders
@@ -12,10 +12,10 @@ fragobjfiles = $(patsubst %.frag, %.frag.spv, $(fragsources))
 
 all: $(ENGINE)Makefile $(APPLICATION)Makefile $(vertobjfiles) $(fragobjfiles)
 	@make -s -C engine
-	@make -s -C application
+	@make -s -C testbed
 
 run: all
-	./bin/application
+	./bin/testbed
 
 # Shader targets
 %.spv: %

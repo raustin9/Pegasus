@@ -5,8 +5,8 @@ LDFLAGS=-L../bin/ -lengine -Wl,-rpath,./bin/ #-lX11 -lvulkan
 CCFILES=$(shell find . -type f -name "*.cc")
 DEFINES=-DQIMPORT -D_DEBUG
 
-all: ../bin/application
-	echo "application built successfully"
+all: ../bin/testbed
+	echo "testbed built successfully"
 
-../bin/application: $(CCFILES)
+../bin/testbed: $(CCFILES)
 	$(CXX) $(CCFILES) $(CCFLAGS) -o $@ $(DEFINES) $(INCLUDES) $(LDFLAGS)

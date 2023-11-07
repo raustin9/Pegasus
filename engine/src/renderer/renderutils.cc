@@ -3,7 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 VkShaderModule
-Renderer::LoadShader(std::string filename) {
+Renderer::LoadShader(VKCommonParameters& vkparams, std::string filename) {
     size_t shaderSize;
     char* shaderCode = NULL;
 
@@ -28,7 +28,7 @@ Renderer::LoadShader(std::string filename) {
 
         VkShaderModule shaderModule;
         VK_CHECK(
-            vkCreateShaderModule(m_vkparams.Device.Device, &moduleCreateInfo, m_vkparams.Allocator, &shaderModule));
+            vkCreateShaderModule(vkparams.Device.Device, &moduleCreateInfo, vkparams.Allocator, &shaderModule));
 
         delete[] shaderCode;
         return shaderModule;

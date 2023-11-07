@@ -4,6 +4,7 @@
 #include "vkcommon.hh"
 #include "platform/platform.hh"
 #include "renderer/vkmodel.hh"
+#include "renderer/vkpipeline.hh"
 
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
@@ -39,6 +40,7 @@ class Renderer {
         void SetHeight(uint32_t height) { m_height = height; }
         
         static uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
+        static VkShaderModule LoadShader(VKCommonParameters& vkparams, std::string filename);
 
     private:
         void InitVulkan();
@@ -65,8 +67,8 @@ class Renderer {
         void CreatePipelineObjects();
 
         std::unique_ptr<VKModel> m_model;
+        std::unique_ptr<VKPipeline> m_pipeline;
 
-        VkShaderModule LoadShader(std::string filename);
 
         // Vertex layout
         struct Vertex {

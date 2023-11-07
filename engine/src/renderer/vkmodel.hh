@@ -1,7 +1,6 @@
 #pragma once
 #include "vkcommon.hh"
 #include <glm/glm.hpp>
-#include <vulkan/vulkan_core.h>
 
 // Structure for a model
 class VKModel {
