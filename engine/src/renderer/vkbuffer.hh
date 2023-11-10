@@ -35,8 +35,8 @@ class VKBuffer {
 
         void Destroy();
         
-        static void CreateBuffer(const VKCommonParameters& params, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-        static void CopyBuffer(const VKCommonParameters& params, VkBuffer dst, VkDeviceSize size);
+        static void CreateBuffer(VKCommonParameters& params, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        static void CopyBuffer(VKCommonParameters& params, VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
         // Accessors
         VkBuffer GetBuffer() const { return m_buffer; }

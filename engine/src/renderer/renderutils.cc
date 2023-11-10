@@ -58,14 +58,34 @@ Renderer::GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkP
 // For one time commands
 VkCommandBuffer 
 Renderer::BeginSingleTimeCommands(VKCommonParameters& params) {
-//    VkCommandBufferAllocateInfo allocinfo = {};
-//    allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//    allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-//    allocinfo.commandPool = 
-    return VK_NULL_HANDLE;
+    VkCommandBufferAllocateInfo allocinfo = {};
+    allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocinfo.commandPool = params.GraphicsCommandPool;
+    allocinfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer = {};
+    vkAllocateCommandBuffers(params.Device.Device, &allocinfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo begininfo = {};
+    begininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &begininfo);
+    return commandBuffer;
 }
 
-// For 
+// End one time command buffer
 void Renderer::EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer) {
-    return;
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitinfo = {};
+    submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitinfo.commandBufferCount = 1;
+    submitinfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(params.GraphicsQueue.Handle, 1, &submitinfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(params.GraphicsQueue.Handle);
+
+    vkFreeCommandBuffers(params.Device.Device, params.GraphicsCommandPool, 1, &commandBuffer);
 }

@@ -17,7 +17,7 @@ VKBuffer::GetAllignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAllignm
 
 // Static function to create a buffer
 void 
-VKBuffer::CreateBuffer(const VKCommonParameters &params, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+VKBuffer::CreateBuffer(VKCommonParameters &params, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -35,12 +35,22 @@ VKBuffer::CreateBuffer(const VKCommonParameters &params, VkDeviceSize size, VkBu
     allocInfo.memoryTypeIndex = Renderer::GetMemoryTypeIndex(memReqs.memoryTypeBits, props, params.Device.DeviceMemoryProperties);
 
     VK_CHECK(vkAllocateMemory(params.Device.Device, &allocInfo, params.Allocator, &bufferMemory));
+
+    VK_CHECK(vkBindBufferMemory(params.Device.Device, buffer, bufferMemory, 0));
 }
 
 // Copy one buffer to another
 void 
-CopyBuffer(const VKCommonParameters& params, VkBuffer dst, VkDeviceSize size) {
-    // VkCommandBuffer commandBuffer = Renderer::BeginSingleTimeCommands();
+VKBuffer::CopyBuffer(VKCommonParameters& params, VkBuffer src,  VkBuffer dst, VkDeviceSize size) {
+    VkCommandBuffer commandBuffer = Renderer::BeginSingleTimeCommands(params);
+
+    VkBufferCopy copyRegion = {};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
+
+    Renderer::EndSingleTimeCommands(params, commandBuffer);
 }
 
 
@@ -70,7 +80,7 @@ VKBuffer::VKBuffer(
 // Destroy buffer objects
 void
 VKBuffer::Destroy() {
-    Unmap();
+    // Unmap();
     vkDestroyBuffer(m_vkparams.Device.Device, m_buffer, m_vkparams.Allocator);
     vkFreeMemory(m_vkparams.Device.Device, m_memory, m_vkparams.Allocator);
 }

@@ -11,8 +11,7 @@ VKModel::_create_index_buffers(const std::vector<uint32_t> &indices) {
 // Destroy and free the vertex buffer and its bound memory
 void
 VKModel::Destroy() {
-    vkDestroyBuffer(m_vkparams.Device.Device, m_vertexBuffer, m_vkparams.Allocator);
-    vkFreeMemory(m_vkparams.Device.Device, m_vertexBufferMemory, m_vkparams.Allocator);
+    m_vbuffer->Destroy();
 }
 
 
@@ -21,71 +20,32 @@ VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
     m_vertexCount = static_cast<uint32_t>(vertices.size());
     
     // The application can copy data to host-visible device memory only using this pointer
-    void *data;
     VkDeviceSize bufferSize = sizeof(vertices[0]) * m_vertexCount;
 
-//    VKBuffer stagingBuffer {
-//        m_vkparams,
-//        bufferSize, 
-//        m_vertexCount,
-//        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-//        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-//    };
-//
-//    stagingBuffer.Map();
-//    stagingBuffer.WriteToBuffer((void*)vertices.data());
+    VKBuffer stagingBuffer {
+        m_vkparams,
+        bufferSize, 
+        m_vertexCount,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    };
 
-//    m_vbuffer = std::make_unique<VKBuffer>(
-//        m_vkparams,
-//        bufferSize,
-//        m_vertexCount,
-//        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-//        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-//    );
-    
-    // Create the vertex buffer in host-visible device memory
-    // This is not good because it will lower rendering performance
+    stagingBuffer.Map();
+    stagingBuffer.WriteToBuffer((void*)vertices.data());
 
-    // Used to request an allocation of a specific size from a certain memory type
-    VkMemoryAllocateInfo memAlloc = {};
-    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    VkMemoryRequirements memReqs;
-
-    // Pointer to map host-visible device memry to the virtual address space of the application
-
-    // Create the vertex buffer object
-    VkBufferCreateInfo vertexBufferCreateInfo = {};
-    vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    vertexBufferCreateInfo.size = bufferSize;
-    vertexBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    VK_CHECK(
-        vkCreateBuffer(m_vkparams.Device.Device, &vertexBufferCreateInfo, m_vkparams.Allocator, &m_vertexBuffer));
-    
-    // Request a memory allocation from coherent, host-visible device memory that 
-    // is large enough to hold the vertex buffer
-    // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT makes sure that writes performed
-    // by the host (application) will be directly visible to the device without 
-    // requiring the explicit flushing of cached memory
-    vkGetBufferMemoryRequirements(m_vkparams.Device.Device, m_vertexBuffer, &memReqs);
-    memAlloc.allocationSize = static_cast<uint32_t>(memReqs.size);
-    memAlloc.memoryTypeIndex = Renderer::GetMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vkparams.Device.DeviceMemoryProperties);
-    VK_CHECK(
-        vkAllocateMemory(m_vkparams.Device.Device, &memAlloc, m_vkparams.Allocator, &m_vertexBufferMemory));
-
-    // Map the host-visible device memory and copy the vertex data
-    // Once finished, we can unmap it since we no longer need to access
-    // the vertex buffer from the application
-    VK_CHECK(
-        vkMapMemory(m_vkparams.Device.Device, m_vertexBufferMemory, 0, memAlloc.allocationSize, 0, &data)
+    m_vbuffer = std::make_unique<VKBuffer>(
+        m_vkparams,
+        bufferSize,
+        m_vertexCount,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
     );
-    memcpy(data, vertices.data(), bufferSize);
-    vkUnmapMemory(m_vkparams.Device.Device, m_vertexBufferMemory);
-    
-    // Bind the vertex buffer object to the backing host-visible device memory
-    // we just allocated
-    VK_CHECK(
-        vkBindBufferMemory(m_vkparams.Device.Device, m_vertexBuffer, m_vertexBufferMemory, 0)
-    );
+
+    VKBuffer::CopyBuffer(m_vkparams, stagingBuffer.GetBuffer(), m_vbuffer->GetBuffer(), bufferSize);
+
+    stagingBuffer.Unmap();
+    stagingBuffer.Destroy();
+    m_vbuffer->Unmap();
 }
 
 void
@@ -95,7 +55,8 @@ VKModel::Draw(VkCommandBuffer cmdBuffer) {
 
 void
 VKModel::Bind(VkCommandBuffer cmdBuffer) {
-    VkBuffer buffers [] = {m_vertexBuffer};
+    // VkBuffer buffers [] = {m_vertexBuffer};
+    VkBuffer buffers [] = {m_vbuffer->GetBuffer()};
     VkDeviceSize offsets[1] = {0};
     vkCmdBindVertexBuffers(cmdBuffer, 0, 1, buffers, offsets);
 }
