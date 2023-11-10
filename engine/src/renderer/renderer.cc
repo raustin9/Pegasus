@@ -405,13 +405,28 @@ Renderer::SetupPipeline() {
 
 void
 Renderer::CreateVertexBuffer() {
-    std::vector <VKModel::Vertex> vertices {
-        { { 0.0f, 0.25f , 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
-    	{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
-        { { 0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
+//    std::vector <VKModel::Vertex> vertices {
+//        { { 0.0f, 0.25f , 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
+//    	{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
+//        { { 0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
+//    };
+
+    std::vector<VKModel::Vertex> vertices {
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
     };
 
-    m_model = std::make_unique<VKModel>(m_vkparams, vertices);
+    std::vector<uint32_t> indices {
+        0, 1, 2, 2, 3, 0 
+    };
+
+    VKModel::Builder triangleBuilder = VKModel::Builder();
+    triangleBuilder.vertices = vertices;
+    triangleBuilder.indices = indices;
+
+    m_model = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
 }
 
 // Create the layout for the pipeline

@@ -6,12 +6,47 @@ void
 VKModel::_create_index_buffers(const std::vector<uint32_t> &indices) {
     m_indexCount = static_cast<uint32_t>(indices.size());
     m_hasIndexBuffer = m_indexCount > 0; 
+
+    // Check if we have an index buffer
+    if (!m_hasIndexBuffer)
+        return;
+
+    VkDeviceSize bufferSize = sizeof(indices[0]) * m_indexCount;
+    uint32_t indexSize = sizeof(indices[0]);
+    
+    VKBuffer stagingBuffer {
+        m_vkparams,
+        indexSize,
+        m_indexCount,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    };
+    stagingBuffer.Map();
+    stagingBuffer.WriteToBuffer((void*)indices.data());
+
+    m_ibuffer = std::make_unique<VKBuffer>(
+        m_vkparams,
+        indexSize,
+        m_indexCount,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    );
+
+    VKBuffer::CopyBuffer(m_vkparams, stagingBuffer.GetBuffer(), m_ibuffer->GetBuffer(), bufferSize);
+
+    // Destroy the staging buffer now that we do not need it
+    stagingBuffer.Unmap();
+    stagingBuffer.Destroy();
+    m_ibuffer->Unmap();
 }
 
 // Destroy and free the vertex buffer and its bound memory
 void
 VKModel::Destroy() {
     m_vbuffer->Destroy();
+
+    if (m_hasIndexBuffer)
+        m_ibuffer->Destroy();
 }
 
 
@@ -48,9 +83,14 @@ VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
     m_vbuffer->Unmap();
 }
 
+//
 void
 VKModel::Draw(VkCommandBuffer cmdBuffer) {
-    vkCmdDraw(cmdBuffer, m_vertexCount, 1, 0, 0);
+    if (m_hasIndexBuffer) {
+        vkCmdDrawIndexed(cmdBuffer, m_indexCount, 1, 0, 0, 0);
+    } else {
+        vkCmdDraw(cmdBuffer, m_vertexCount, 1, 0, 0);
+    }
 }
 
 void
@@ -59,6 +99,11 @@ VKModel::Bind(VkCommandBuffer cmdBuffer) {
     VkBuffer buffers [] = {m_vbuffer->GetBuffer()};
     VkDeviceSize offsets[1] = {0};
     vkCmdBindVertexBuffers(cmdBuffer, 0, 1, buffers, offsets);
+
+    // If we are using an index buffer then bind it as well
+    if (m_hasIndexBuffer) {
+        vkCmdBindIndexBuffer(cmdBuffer, m_ibuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+    }
 }
 
 // Vertex Structure IMPL
