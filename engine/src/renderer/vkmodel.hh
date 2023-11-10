@@ -1,6 +1,7 @@
 #pragma once
 #include "vkcommon.hh"
 #include <glm/glm.hpp>
+#include <vulkan/vulkan_core.h>
 
 // Structure for a model
 class VKModel {
@@ -41,6 +42,7 @@ class VKModel {
         void Bind(VkCommandBuffer cmdBuffer);
         void Draw(VkCommandBuffer cmdBuffer);
         void Destroy();
+
 
     private:
         void _create_vertex_buffers(const std::vector <Vertex> &vertices);

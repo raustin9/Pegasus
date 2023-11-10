@@ -38,7 +38,6 @@ Renderer::LoadShader(VKCommonParameters& vkparams, std::string filename) {
     }
 }
 
-
 uint32_t 
 Renderer::GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties) {
     for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {

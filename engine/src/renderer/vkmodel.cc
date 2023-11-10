@@ -1,5 +1,7 @@
 #include "vkmodel.hh"
 #include "renderer.hh"
+#include "renderer/vkcommon.hh"
+#include <vulkan/vulkan_core.h>
 
 void
 VKModel::_create_index_buffers(const std::vector<uint32_t> &indices) {
@@ -14,11 +16,13 @@ VKModel::Destroy() {
     vkFreeMemory(m_vkparams.Device.Device, m_vertexBufferMemory, m_vkparams.Allocator);
 }
 
+
 void
 VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
     // m_vertexCount = static_cast<uint32_t>(vertices.size());
     m_vertexCount = 3;
-    // m_hasVertexBuffer = m_vertexCount > 0; 
+    // The application can copy data to host-visible device memory only using this pointer
+    void *data;
 
     VkDeviceSize bufferSize = sizeof(vertices[0]) * m_vertexCount;
     
@@ -31,8 +35,6 @@ VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
     VkMemoryRequirements memReqs;
 
     // Pointer to map host-visible device memry to the virtual address space of the application
-    // The application can copy data to host-visible device memory only using this pointer
-    void *data;
 
     // Create the vertex buffer object
     VkBufferCreateInfo vertexBufferCreateInfo = {};

@@ -406,9 +406,9 @@ Renderer::SetupPipeline() {
 void
 Renderer::CreateVertexBuffer() {
     std::vector <VKModel::Vertex> vertices {
-        { { 0.0f, 0.25f * m_aspect_ratio, 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
-    	{ { -0.25f, -0.25f * m_aspect_ratio, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
-        { { 0.25f, -0.25f * m_aspect_ratio, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
+        { { 0.0f, 0.25f , 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
+    	{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
+        { { 0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
     };
 
     m_model = std::make_unique<VKModel>(m_vkparams, vertices);
