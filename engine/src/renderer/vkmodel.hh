@@ -30,10 +30,10 @@ class VKModel {
             // void LoadModels(const std::string& filepath);
         };
 
-        VKModel(VKCommonParameters &params, const std::vector <Vertex> &vertices) 
+        VKModel(VKCommonParameters &params, const VKModel::Builder& builder) 
             : m_vkparams(params) {
-            _create_vertex_buffers(vertices);
-            // _create_index_buffers(builder.indices);
+            _create_vertex_buffers(builder.vertices);
+            _create_index_buffers(builder.indices);
         }
         ~VKModel() {
         }
@@ -54,8 +54,6 @@ class VKModel {
         std::unique_ptr<VKBuffer> m_vbuffer;
         std::unique_ptr<VKBuffer> m_ibuffer;
 
-        VkBuffer m_vertexBuffer;
-        VkDeviceMemory m_vertexBufferMemory;
         uint32_t m_vertexCount = 0;
         uint32_t m_indexCount = 0;
         bool m_hasIndexBuffer = false;
