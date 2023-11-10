@@ -24,7 +24,6 @@ class VKPipeline {
     public:
         VKPipeline(
             VKCommonParameters &vkparams,
-            VKGraphicsParameters &graphics, 
             const VKPipelineConfig &config
         );
         ~VKPipeline();
@@ -42,6 +41,5 @@ class VKPipeline {
 
     private:
         VKCommonParameters &m_vkparams;
-        VKGraphicsParameters &m_vkgraphics;
         const VKPipelineConfig& m_config; // configuration for the pipeline
 };

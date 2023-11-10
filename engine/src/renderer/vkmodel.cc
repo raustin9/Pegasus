@@ -1,4 +1,3 @@
-#include "vkmodel.hh"
 #include "renderer.hh"
 #include "renderer/vkcommon.hh"
 #include <vulkan/vulkan_core.h>
@@ -19,12 +18,30 @@ VKModel::Destroy() {
 
 void
 VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
-    // m_vertexCount = static_cast<uint32_t>(vertices.size());
-    m_vertexCount = 3;
+    m_vertexCount = static_cast<uint32_t>(vertices.size());
+    
     // The application can copy data to host-visible device memory only using this pointer
     void *data;
-
     VkDeviceSize bufferSize = sizeof(vertices[0]) * m_vertexCount;
+
+//    VKBuffer stagingBuffer {
+//        m_vkparams,
+//        bufferSize, 
+//        m_vertexCount,
+//        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+//    };
+//
+//    stagingBuffer.Map();
+//    stagingBuffer.WriteToBuffer((void*)vertices.data());
+
+//    m_vbuffer = std::make_unique<VKBuffer>(
+//        m_vkparams,
+//        bufferSize,
+//        m_vertexCount,
+//        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+//        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+//    );
     
     // Create the vertex buffer in host-visible device memory
     // This is not good because it will lower rendering performance

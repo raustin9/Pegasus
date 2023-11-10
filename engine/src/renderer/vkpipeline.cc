@@ -4,10 +4,8 @@
 
 VKPipeline::VKPipeline(
     VKCommonParameters &vkparams,
-    VKGraphicsParameters  &graphics,
     const VKPipelineConfig& config
 ) : m_vkparams(vkparams),
-    m_vkgraphics(graphics), 
     m_config(config)
 {
     (void)m_config;
@@ -23,13 +21,13 @@ VKPipeline::~VKPipeline() {
 
 void
 VKPipeline::Bind(VkCommandBuffer commandBuffer) {
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkgraphics.GraphicsPipeline);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkparams.GraphicsPipeline);
 }
 
 void
 VKPipeline::Destroy() {
-    vkDestroyPipelineLayout(m_vkparams.Device.Device, m_vkgraphics.PipelineLayout, m_vkparams.Allocator);
-    vkDestroyPipeline(m_vkparams.Device.Device, m_vkgraphics.GraphicsPipeline, m_vkparams.Allocator);
+    vkDestroyPipelineLayout(m_vkparams.Device.Device, m_vkparams.PipelineLayout, m_vkparams.Allocator);
+    vkDestroyPipeline(m_vkparams.Device.Device, m_vkparams.GraphicsPipeline, m_vkparams.Allocator);
 }
 
 // Create the graphics pipeline
@@ -187,8 +185,8 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineCreateInfo.layout = m_vkgraphics.PipelineLayout;
-    pipelineCreateInfo.renderPass = m_vkgraphics.RenderPass;
+    pipelineCreateInfo.layout = m_vkparams.PipelineLayout;
+    pipelineCreateInfo.renderPass = m_vkparams.RenderPass;
 
     // Set pipeline shader stage info
     pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
@@ -206,7 +204,7 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
 
     // Create a graphics pipeline using the specified states
     VK_CHECK(
-        vkCreateGraphicsPipelines(m_vkparams.Device.Device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, m_vkparams.Allocator, &m_vkgraphics.GraphicsPipeline));
+        vkCreateGraphicsPipelines(m_vkparams.Device.Device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, m_vkparams.Allocator, &m_vkparams.GraphicsPipeline));
 
     // SPIR-V shader modules are no longer needed once the pipeline has been created
     vkDestroyShaderModule(m_vkparams.Device.Device, shaderStages[0].module, m_vkparams.Allocator); 

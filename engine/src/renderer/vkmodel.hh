@@ -1,5 +1,8 @@
 #pragma once
 #include "vkcommon.hh"
+#include "vkbuffer.hh"
+
+#include <memory>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan_core.h>
 
@@ -47,6 +50,9 @@ class VKModel {
     private:
         void _create_vertex_buffers(const std::vector <Vertex> &vertices);
         void _create_index_buffers(const std::vector <uint32_t> &indices);
+
+        std::unique_ptr<VKBuffer> m_vbuffer;
+        std::unique_ptr<VKBuffer> m_ibuffer;
 
         VkBuffer m_vertexBuffer;
         VkDeviceMemory m_vertexBufferMemory;

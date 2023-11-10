@@ -1,4 +1,5 @@
 #include "vkbuffer.hh"
+#include "renderer.hh"
 #include <vulkan/vulkan_core.h>
 
 // STATIC
@@ -35,6 +36,13 @@ VKBuffer::CreateBuffer(const VKCommonParameters &params, VkDeviceSize size, VkBu
 
     VK_CHECK(vkAllocateMemory(params.Device.Device, &allocInfo, params.Allocator, &bufferMemory));
 }
+
+// Copy one buffer to another
+void 
+CopyBuffer(const VKCommonParameters& params, VkBuffer dst, VkDeviceSize size) {
+    // VkCommandBuffer commandBuffer = Renderer::BeginSingleTimeCommands();
+}
+
 
 // Constructor
 VKBuffer::VKBuffer(

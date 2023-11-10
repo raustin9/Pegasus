@@ -41,6 +41,8 @@ class Renderer {
         
         static uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
         static VkShaderModule LoadShader(VKCommonParameters& vkparams, std::string filename);
+        static VkCommandBuffer BeginSingleTimeCommands(VKCommonParameters& params);
+        static void EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer);
 
     private:
         void InitVulkan();
@@ -102,7 +104,6 @@ class Renderer {
         VkPhysicalDeviceMemoryProperties m_deviceMemoryProperties;
 
         VKCommonParameters m_vkparams;
-        VKGraphicsParameters m_graphics;
 
         char m_lastFPS[32]; // string to hold frames per second
 };

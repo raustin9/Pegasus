@@ -69,26 +69,26 @@ struct VKDeviceParameters {
 
 };
 
-struct VKGraphicsParameters {
-    VkRenderPass                        RenderPass;
-    std::vector<VkFramebuffer>          Framebuffers;
-    VkCommandPool                       GraphicsCommandPool;
-    std::vector<VkCommandBuffer>        GraphicsCommandBuffers;
-    VkPipeline                          GraphicsPipeline;
-    VkPipelineLayout                    PipelineLayout;
-    VkSemaphore                         ImageAvailableSemaphore;
-    VkSemaphore                         RenderingFinishedSemaphore;
-
-    VKGraphicsParameters() :
-        RenderPass(VK_NULL_HANDLE),
-        Framebuffers(),
-        GraphicsCommandPool(VK_NULL_HANDLE),
-        GraphicsCommandBuffers(),
-        GraphicsPipeline(VK_NULL_HANDLE),
-        ImageAvailableSemaphore(VK_NULL_HANDLE),
-        RenderingFinishedSemaphore(VK_NULL_HANDLE) {
-    }
-};
+//struct VKGraphicsParameters {
+//    VkRenderPass                        RenderPass;
+//    std::vector<VkFramebuffer>          Framebuffers;
+//    VkCommandPool                       GraphicsCommandPool;
+//    std::vector<VkCommandBuffer>        GraphicsCommandBuffers;
+//    VkPipeline                          GraphicsPipeline;
+//    VkPipelineLayout                    PipelineLayout;
+//    VkSemaphore                         ImageAvailableSemaphore;
+//    VkSemaphore                         RenderingFinishedSemaphore;
+//
+//    VKGraphicsParameters() :
+//        RenderPass(VK_NULL_HANDLE),
+//        Framebuffers(),
+//        GraphicsCommandPool(VK_NULL_HANDLE),
+//        GraphicsCommandBuffers(),
+//        GraphicsPipeline(VK_NULL_HANDLE),
+//        ImageAvailableSemaphore(VK_NULL_HANDLE),
+//        RenderingFinishedSemaphore(VK_NULL_HANDLE) {
+//    }
+//};
 
 // Holds commonly used fields in vulkan like logical/physical devices,
 // command buffers, etc
@@ -100,6 +100,16 @@ struct VKCommonParameters {
     SwapChainParameters           SwapChain;
     VkAllocationCallbacks*        Allocator;
     VKDeviceParameters            Device;
+   
+    // Formerly graphics params
+    VkRenderPass                        RenderPass;
+    std::vector<VkFramebuffer>          Framebuffers;
+    VkCommandPool                       GraphicsCommandPool;
+    std::vector<VkCommandBuffer>        GraphicsCommandBuffers;
+    VkPipeline                          GraphicsPipeline;
+    VkPipelineLayout                    PipelineLayout;
+    VkSemaphore                         ImageAvailableSemaphore;
+    VkSemaphore                         RenderingFinishedSemaphore;
 
     // Constructor
     VKCommonParameters() :
@@ -108,7 +118,14 @@ struct VKCommonParameters {
         PresentQueue(),
         PresentationSurface(VK_NULL_HANDLE),
         SwapChain() ,
-        Device() {
+        Device() ,
+        RenderPass(VK_NULL_HANDLE),
+        Framebuffers(),
+        GraphicsCommandPool(VK_NULL_HANDLE),
+        GraphicsCommandBuffers(),
+        GraphicsPipeline(VK_NULL_HANDLE),
+        ImageAvailableSemaphore(VK_NULL_HANDLE),
+        RenderingFinishedSemaphore(VK_NULL_HANDLE) {
     }
 };
 

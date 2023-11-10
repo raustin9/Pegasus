@@ -70,10 +70,10 @@ Renderer::WindowResize(uint32_t w, uint32_t h) {
     CreateSwapchain(&m_width, &m_height, false);
 
     // Recreate the framebuffers
-    for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
+    for (size_t i = 0; i < m_vkparams.Framebuffers.size(); i++) {
         vkDestroyFramebuffer(
                 m_vkparams.Device.Device,
-                m_graphics.Framebuffers[i],
+                m_vkparams.Framebuffers[i],
                 m_vkparams.Allocator);
     }
     CreateFrameBuffers();
@@ -82,9 +82,9 @@ Renderer::WindowResize(uint32_t w, uint32_t h) {
     // references to the recreated framebuffer
     vkFreeCommandBuffers(
             m_vkparams.Device.Device,
-            m_graphics.GraphicsCommandPool,
-            static_cast<uint32_t>(m_graphics.GraphicsCommandBuffers.size()),
-            m_graphics.GraphicsCommandBuffers.data());
+            m_vkparams.GraphicsCommandPool,
+            static_cast<uint32_t>(m_vkparams.GraphicsCommandBuffers.size()),
+            m_vkparams.GraphicsCommandBuffers.data());
 
     AllocateCommandBuffers();
 
@@ -101,7 +101,7 @@ Renderer::OnRender() {
             m_vkparams.Device.Device, 
             m_vkparams.SwapChain.Handle, 
             UINT64_MAX,
-            m_graphics.ImageAvailableSemaphore,
+            m_vkparams.ImageAvailableSemaphore,
             nullptr,
             &imageIndex);
     if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
@@ -152,16 +152,16 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     beginRenderpassInfo.clearValueCount = 1;
     beginRenderpassInfo.pClearValues = clearValues;
     // Set the renderpass object used to begin an instance of
-    beginRenderpassInfo.renderPass = m_graphics.RenderPass;
+    beginRenderpassInfo.renderPass = m_vkparams.RenderPass;
     // Set the framebuffer to specify the color attachment (render target) where to draw the current frame
-    beginRenderpassInfo.framebuffer = m_graphics.Framebuffers[imgIndex];
+    beginRenderpassInfo.framebuffer = m_vkparams.Framebuffers[imgIndex];
 
     // Puts the command buffer into a recording state
     // ONE_TIME_SUBMIT means each recording of the command buffer will
     // be submitted once, and the command buffer will be reset and rerecorded
     // between each submission.
     VK_CHECK(vkBeginCommandBuffer(
-                m_graphics.GraphicsCommandBuffers[bufferIndex],
+                m_vkparams.GraphicsCommandBuffers[bufferIndex],
                 &beginInfo));
 
     // Begin the render pass instance
@@ -172,7 +172,7 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     // The application can record the commands one subpass at a time (if the render pass
     // is composed of multiple subpasses) before ending the render pass instance.
     vkCmdBeginRenderPass(
-            m_graphics.GraphicsCommandBuffers[bufferIndex],
+            m_vkparams.GraphicsCommandBuffers[bufferIndex],
             &beginRenderpassInfo,
             VK_SUBPASS_CONTENTS_INLINE);
 
@@ -185,7 +185,7 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     viewport.minDepth = static_cast<float>(0.0f);
     viewport.maxDepth = static_cast<float>(1.0f);
     vkCmdSetViewport(
-            m_graphics.GraphicsCommandBuffers[bufferIndex],
+            m_vkparams.GraphicsCommandBuffers[bufferIndex],
             0,
             1,
             &viewport);
@@ -199,24 +199,24 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     vkCmdSetScissor(
-            m_graphics.GraphicsCommandBuffers[bufferIndex],
+            m_vkparams.GraphicsCommandBuffers[bufferIndex],
             0,
             1,
             &scissor);
 
     // Bind the graphics pipeline
-    m_pipeline->Bind(m_graphics.GraphicsCommandBuffers[bufferIndex]);
-    // vkCmdBindPipeline(m_graphics.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics.GraphicsPipeline);
+    m_pipeline->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+    // vkCmdBindPipeline(m_vkparams.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkparams.GraphicsPipeline);
 
     // Bind the triangle vertex buffer (contains position and color)
-    m_model->Bind(m_graphics.GraphicsCommandBuffers[bufferIndex]);
-    m_model->Draw(m_graphics.GraphicsCommandBuffers[bufferIndex]);
+    m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+    m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
 
     // Ending the render pass will add an implicit barrier, transitioning the frame buffer
     // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
-    vkCmdEndRenderPass(m_graphics.GraphicsCommandBuffers[bufferIndex]);
+    vkCmdEndRenderPass(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
 
-    VK_CHECK(vkEndCommandBuffer(m_graphics.GraphicsCommandBuffers[bufferIndex]));
+    VK_CHECK(vkEndCommandBuffer(m_vkparams.GraphicsCommandBuffers[bufferIndex]));
 }
 
 void
@@ -230,11 +230,11 @@ Renderer::SubmitCommandBuffer(uint64_t index) {
     submitInfo.pWaitDstStageMask = &waitStateMask;                          // pointer to the list of pipeline stages that the semaphore waits will happen at
     submitInfo.waitSemaphoreCount = 1;                                      // one wait semaphore
     submitInfo.signalSemaphoreCount =1;                                     // one signal semaphore
-    submitInfo.pCommandBuffers = &m_graphics.GraphicsCommandBuffers[index]; // command buffers(s) to execute in this batch (submission)
+    submitInfo.pCommandBuffers = &m_vkparams.GraphicsCommandBuffers[index]; // command buffers(s) to execute in this batch (submission)
     submitInfo.commandBufferCount = 1;                                      // one command buffer
 
-    submitInfo.pWaitSemaphores = &m_graphics.ImageAvailableSemaphore;      // semaphore(s) to wait upon before the submitted command buffers begin executing
-    submitInfo.pSignalSemaphores = &m_graphics.RenderingFinishedSemaphore; // semaphore(s) to signal when command buffers have been completed
+    submitInfo.pWaitSemaphores = &m_vkparams.ImageAvailableSemaphore;      // semaphore(s) to wait upon before the submitted command buffers begin executing
+    submitInfo.pSignalSemaphores = &m_vkparams.RenderingFinishedSemaphore; // semaphore(s) to signal when command buffers have been completed
 
     VK_CHECK(vkQueueSubmit(
                 m_vkparams.GraphicsQueue.Handle,
@@ -256,9 +256,9 @@ Renderer::PresentImage(uint32_t index) {
     presentInfo.pImageIndices = &index;
 
     // Check if a wait semaphore has been specified to wait for before presenting the image
-    if (m_graphics.RenderingFinishedSemaphore != VK_NULL_HANDLE) {
+    if (m_vkparams.RenderingFinishedSemaphore != VK_NULL_HANDLE) {
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &m_graphics.RenderingFinishedSemaphore;
+        presentInfo.pWaitSemaphores = &m_vkparams.RenderingFinishedSemaphore;
     }
 
     VkResult present = vkQueuePresentKHR(m_vkparams.GraphicsQueue.Handle, &presentInfo);
@@ -292,10 +292,10 @@ Renderer::OnDestroy() {
 
     std::cout << "Destroying Framebuffers... ";
     // Destroy frame buffers
-    for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
+    for (size_t i = 0; i < m_vkparams.Framebuffers.size(); i++) {
         vkDestroyFramebuffer(
                 m_vkparams.Device.Device,
-                m_graphics.Framebuffers[i],
+                m_vkparams.Framebuffers[i],
                 m_vkparams.Allocator);
     }
     std::cout << "destroyed" << std::endl;
@@ -321,16 +321,16 @@ Renderer::OnDestroy() {
     std::cout << "Freeing Graphics Command Pool... ";
     vkFreeCommandBuffers(
             m_vkparams.Device.Device,
-            m_graphics.GraphicsCommandPool,
-            static_cast<uint32_t>(m_graphics.GraphicsCommandBuffers.size()),
-            m_graphics.GraphicsCommandBuffers.data());
+            m_vkparams.GraphicsCommandPool,
+            static_cast<uint32_t>(m_vkparams.GraphicsCommandBuffers.size()),
+            m_vkparams.GraphicsCommandBuffers.data());
     std::cout << "freed" << std::endl;
 
     // Destroy the renderpass
     std::cout << "Destroying Renderpass... ";
     vkDestroyRenderPass(
             m_vkparams.Device.Device,
-            m_graphics.RenderPass,
+            m_vkparams.RenderPass,
             m_vkparams.Allocator);
     std::cout << "destroyed" << std::endl;
 
@@ -338,11 +338,11 @@ Renderer::OnDestroy() {
     std::cout << "Destroying Semaphores... ";
     vkDestroySemaphore(
             m_vkparams.Device.Device,
-            m_graphics.ImageAvailableSemaphore,
+            m_vkparams.ImageAvailableSemaphore,
             m_vkparams.Allocator);
     vkDestroySemaphore(
             m_vkparams.Device.Device,
-            m_graphics.RenderingFinishedSemaphore,
+            m_vkparams.RenderingFinishedSemaphore,
             m_vkparams.Allocator);
     std::cout << "destroyed" << std::endl;
 
@@ -350,7 +350,7 @@ Renderer::OnDestroy() {
     std::cout << "Destroying Command Pool... ";
     vkDestroyCommandPool(
             m_vkparams.Device.Device,
-            m_graphics.GraphicsCommandPool,
+            m_vkparams.GraphicsCommandPool,
             m_vkparams.Allocator);
     std::cout << "destroyed" << std::endl;
 
@@ -425,7 +425,7 @@ Renderer::CreatePipelineLayout() {
     pPipelineCreateInfo.pSetLayouts = VK_NULL_HANDLE;
 
     VK_CHECK(
-        vkCreatePipelineLayout(m_vkparams.Device.Device, &pPipelineCreateInfo, m_vkparams.Allocator, &m_graphics.PipelineLayout));
+        vkCreatePipelineLayout(m_vkparams.Device.Device, &pPipelineCreateInfo, m_vkparams.Allocator, &m_vkparams.PipelineLayout));
 
 
 }
@@ -433,7 +433,7 @@ Renderer::CreatePipelineLayout() {
 void 
 Renderer::CreatePipelineObjects() {
     VKPipelineConfig pipelineConfig = {};
-    m_pipeline = std::make_unique<VKPipeline>(m_vkparams, m_graphics, pipelineConfig);
+    m_pipeline = std::make_unique<VKPipeline>(m_vkparams, pipelineConfig);
 
     m_pipeline->CreateGraphicsPipeline(
             GetAssetsPath()+"/shaders/vert/triangle.vert.spv", 
@@ -623,7 +623,7 @@ Renderer::CreateRenderPass() {
             m_vkparams.Device.Device,
             &createInfo,
             m_vkparams.Allocator,
-            &m_graphics.RenderPass));
+            &m_vkparams.RenderPass));
 
     std::cout << "Renderpass Created" << std::endl;
 }
@@ -719,7 +719,7 @@ Renderer::CreateFrameBuffers() {
     VkFramebufferCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     createInfo.pNext = nullptr;
-    createInfo.renderPass = m_graphics.RenderPass;
+    createInfo.renderPass = m_vkparams.RenderPass;
     createInfo.attachmentCount = 1;
     createInfo.pAttachments = attachments;
     createInfo.width = m_width;
@@ -727,45 +727,45 @@ Renderer::CreateFrameBuffers() {
     createInfo.layers = 1;
 
     // Create a framebuffer for each swapchain image
-    m_graphics.Framebuffers.resize(m_vkparams.SwapChain.Images.size());
-    for (size_t i = 0; i < m_graphics.Framebuffers.size(); i++) {
+    m_vkparams.Framebuffers.resize(m_vkparams.SwapChain.Images.size());
+    for (size_t i = 0; i < m_vkparams.Framebuffers.size(); i++) {
         attachments[0] = m_vkparams.SwapChain.Images[i].View;
         VK_CHECK(vkCreateFramebuffer(
                     m_vkparams.Device.Device,
                     &createInfo,
                     m_vkparams.Allocator,
-                    &m_graphics.Framebuffers[i]));
+                    &m_vkparams.Framebuffers[i]));
     }
 
-    std::cout << "Framebuffers Created: [" << m_graphics.Framebuffers.size() << "]" << std::endl;
+    std::cout << "Framebuffers Created: [" << m_vkparams.Framebuffers.size() << "]" << std::endl;
 }
 
 void
 Renderer::AllocateCommandBuffers() {
-    if (!m_graphics.GraphicsCommandPool) {
+    if (!m_vkparams.GraphicsCommandPool) {
         VkCommandPoolCreateInfo cmdPoolInfo = {};
         cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cmdPoolInfo.pNext = nullptr;
         cmdPoolInfo.queueFamilyIndex = m_vkparams.GraphicsQueue.FamilyIndex;
         cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        VK_CHECK(vkCreateCommandPool(m_vkparams.Device.Device, &cmdPoolInfo, m_vkparams.Allocator, &m_graphics.GraphicsCommandPool));
+        VK_CHECK(vkCreateCommandPool(m_vkparams.Device.Device, &cmdPoolInfo, m_vkparams.Allocator, &m_vkparams.GraphicsCommandPool));
     }
 
     // Create one command buffer for each image in the swapchain
-    m_graphics.GraphicsCommandBuffers.resize(m_command_buffer_count);
+    m_vkparams.GraphicsCommandBuffers.resize(m_command_buffer_count);
 
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = m_graphics.GraphicsCommandPool;
+    allocInfo.commandPool = m_vkparams.GraphicsCommandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = static_cast<uint32_t>(m_graphics.GraphicsCommandBuffers.size());
+    allocInfo.commandBufferCount = static_cast<uint32_t>(m_vkparams.GraphicsCommandBuffers.size());
 
     VK_CHECK(vkAllocateCommandBuffers(
                 m_vkparams.Device.Device,
                 &allocInfo,
-                m_graphics.GraphicsCommandBuffers.data()));
+                m_vkparams.GraphicsCommandBuffers.data()));
 
-    std::cout << "Command Buffers Allocated: [" << m_graphics.GraphicsCommandBuffers.size() << "]" << std::endl;
+    std::cout << "Command Buffers Allocated: [" << m_vkparams.GraphicsCommandBuffers.size() << "]" << std::endl;
 }
 
 void
@@ -781,14 +781,14 @@ Renderer::CreateSyncObjects() {
                 m_vkparams.Device.Device,
                 &semInfo,
                 m_vkparams.Allocator,
-                &m_graphics.ImageAvailableSemaphore));
+                &m_vkparams.ImageAvailableSemaphore));
 
     // Return an unsignaled semaphore
     VK_CHECK(vkCreateSemaphore(
                 m_vkparams.Device.Device,
                 &semInfo,
                 m_vkparams.Allocator,
-                &m_graphics.RenderingFinishedSemaphore));
+                &m_vkparams.RenderingFinishedSemaphore));
 
     std::cout << "Sync Objects Created" << std::endl;
     

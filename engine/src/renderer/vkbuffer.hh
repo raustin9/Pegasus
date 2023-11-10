@@ -1,6 +1,5 @@
 #pragma once
 #include "renderer/vkcommon.hh"
-#include "renderer.hh"
 #include "stdafx.hh"
 #include <vulkan/vulkan_core.h>
 
@@ -14,7 +13,7 @@ class VKBuffer {
             VkBufferUsageFlags usage,
             VkMemoryPropertyFlags memoryProps,
             VkDeviceSize minOffsetAllignment = 1);
-        ~VKBuffer();
+        ~VKBuffer() {}
 
         VKBuffer(const VKBuffer&) = delete;
         VKBuffer& operator= (const VKBuffer&) = delete;
@@ -37,6 +36,7 @@ class VKBuffer {
         void Destroy();
         
         static void CreateBuffer(const VKCommonParameters& params, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        static void CopyBuffer(const VKCommonParameters& params, VkBuffer dst, VkDeviceSize size);
 
         // Accessors
         VkBuffer GetBuffer() const { return m_buffer; }

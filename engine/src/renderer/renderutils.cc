@@ -1,4 +1,5 @@
 #include "renderer.hh"
+#include "renderer/vkcommon.hh"
 #include <fstream>
 #include <vulkan/vulkan_core.h>
 
@@ -52,4 +53,19 @@ Renderer::GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkP
     std::cerr << "Error: could not find suitable memory type" << std::endl;
     assert(0);
     return (0);
+}
+
+// For one time commands
+VkCommandBuffer 
+Renderer::BeginSingleTimeCommands(VKCommonParameters& params) {
+//    VkCommandBufferAllocateInfo allocinfo = {};
+//    allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+//    allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+//    allocinfo.commandPool = 
+    return VK_NULL_HANDLE;
+}
+
+// For 
+void Renderer::EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer) {
+    return;
 }
