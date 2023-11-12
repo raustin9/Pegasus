@@ -11,16 +11,17 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
+#include <glm/glm.hpp>
 
 // Constructor for the renderer 
 // and startup behavior
 Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint32_t height, Platform& platform)
-    : m_title(name), 
-    m_assetPath(assetPath),
-    m_width(width), 
-    m_height(height),
-    m_platform(platform),
-    m_timer{}
+    :  m_title(name),
+       m_assetPath(assetPath),
+       m_width(width), 
+       m_height(height),
+       m_platform(platform),
+       m_timer{}
 {
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
@@ -32,6 +33,12 @@ void
 Renderer::OnInit() {
     InitVulkan();
     SetupPipeline();
+}
+
+void 
+Renderer::RenderFrame() {
+    OnRender();
+    OnUpdate();
 }
 
 // Update behavior
@@ -46,11 +53,8 @@ Renderer::OnUpdate() {
 
 // Set the window's title text
 const std::string 
-Renderer::GetWindowTitle() {
-    std::string device(m_deviceProperties.deviceName);
-    std::string windowTitle;
-    windowTitle = m_title + " - " + device + " - " + std::string(m_lastFPS);
-    return windowTitle;
+Renderer::GetDeviceName() {
+    return std::string(m_deviceProperties.deviceName);
 }
 
 // Resize behavior
@@ -317,6 +321,14 @@ Renderer::OnDestroy() {
             m_vkparams.Allocator);
     std::cout << "destroyed" << std::endl;
 
+    std::cout << "Destroying Descriptor Set Layout... ";
+    vkDestroyDescriptorSetLayout(
+            m_vkparams.Device.Device, 
+            m_vkparams.DescriptorSetLayout,
+            m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
+
+
     // Free allocated commad buffers
     std::cout << "Freeing Graphics Command Pool... ";
     vkFreeCommandBuffers(
@@ -381,6 +393,7 @@ Renderer::OnDestroy() {
 
 void 
 Renderer::InitVulkan() {
+
     CreateInstance();
     CreateSurface();
     CreateDevice();
@@ -393,6 +406,7 @@ Renderer::InitVulkan() {
     CreateFrameBuffers();
     AllocateCommandBuffers();
     CreateSyncObjects();
+    CreateDescriptorSetLayout();
 }
 
 void
@@ -401,6 +415,40 @@ Renderer::SetupPipeline() {
     CreatePipelineLayout();
     CreatePipelineObjects();
     m_initialized = true;
+}
+
+
+void 
+Renderer::CreateDescriptorSetLayout() {
+//    std::vector <std::unique_ptr<VKBuffer> > uboBuffers(Renderer::MAX_FRAMES_IN_FLIGHT);
+//    for (size_t i = 0; i < uboBuffers.size(); i++) {
+//        uboBuffers[i] = std::make_unique<VKBuffer>(
+//            m_vkparams,
+//            sizeof(UBO),
+//            1,
+//            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+//            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+//        );
+//        uboBuffers[i]->Map();
+//    }
+
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    VK_CHECK(
+        vkCreateDescriptorSetLayout(m_vkparams.Device.Device, &layoutInfo, m_vkparams.Allocator, &m_vkparams.DescriptorSetLayout)
+    );
+
+
 }
 
 void
@@ -412,10 +460,10 @@ Renderer::CreateVertexBuffer() {
 //    };
 
     std::vector<VKModel::Vertex> vertices {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
+        {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
     };
 
     std::vector<uint32_t> indices {
@@ -436,8 +484,8 @@ Renderer::CreatePipelineLayout() {
     VkPipelineLayoutCreateInfo pPipelineCreateInfo = {};
     pPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pPipelineCreateInfo.pNext = nullptr;
-    pPipelineCreateInfo.setLayoutCount = 0;
-    pPipelineCreateInfo.pSetLayouts = VK_NULL_HANDLE;
+    pPipelineCreateInfo.setLayoutCount = 1;
+    pPipelineCreateInfo.pSetLayouts = &m_vkparams.DescriptorSetLayout;
 
     VK_CHECK(
         vkCreatePipelineLayout(m_vkparams.Device.Device, &pPipelineCreateInfo, m_vkparams.Allocator, &m_vkparams.PipelineLayout));

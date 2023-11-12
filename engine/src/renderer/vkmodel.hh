@@ -23,6 +23,7 @@ class VKModel {
             }
         };
 
+        // Used to create data for the model
         struct Builder {
             std::vector <Vertex> vertices{};
             std::vector <uint32_t> indices{};
@@ -30,6 +31,7 @@ class VKModel {
             // void LoadModels(const std::string& filepath);
         };
 
+        // Constructors and Operators
         VKModel(VKCommonParameters &params, const VKModel::Builder& builder) 
             : m_vkparams(params) {
             _create_vertex_buffers(builder.vertices);
@@ -40,8 +42,8 @@ class VKModel {
         VKModel(const VKModel&) = delete;
         VKModel &operator=(const VKModel&) = delete;
 
-        // static std::unique_ptr<VKModel> CreateModelFromFile();
         
+        // static std::unique_ptr<VKModel> CreateModelFromFile();
         void Bind(VkCommandBuffer cmdBuffer);
         void Draw(VkCommandBuffer cmdBuffer);
         void Destroy();

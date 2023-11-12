@@ -121,6 +121,8 @@ Platform::handle_x11_event(XEvent& event) {
         case ConfigureNotify:
             if (static_cast<uint32_t>(event.xconfigure.width) != width
                 || static_cast<uint32_t>(event.xconfigure.height) != height) {
+                width = static_cast<uint32_t>(event.xconfigure.width);
+                height = static_cast<uint32_t>(event.xconfigure.height);
                 m_inputHandler.ProcessResize(
                     static_cast<uint32_t>(event.xconfigure.width), 
                     static_cast<uint32_t>(event.xconfigure.height));

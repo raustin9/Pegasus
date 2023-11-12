@@ -9,36 +9,53 @@
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 
+// Structure for Uniform Buffer Object
+struct UBO {
+    glm::mat4 projectionView{1.f};
+    glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+};
+
+// Structure for a render packet
+// This is sent from the application to the renderer
+// The renderer uses information in this as data to render
+struct RenderPacket {
+    UBO GlobalUBO;
+};
 
 class Renderer {
     public:
-        Renderer(std::string name, std::string assetPath,  uint32_t width, uint32_t height, Platform& platform);
+        Renderer(std::string title, std::string assetPath,  uint32_t width, uint32_t height, Platform& platform);
 
         void OnInit();
         void OnUpdate();
         void OnRender();
         void OnDestroy();
 
-        const std::string GetWindowTitle();
+        const std::string GetDeviceName();
 
         void WindowResize(uint32_t width, uint32_t height);
 
         void OnKeyDown(uint8_t) {}
         void OnKeyUp(uint8_t) {}
 
+        void RenderFrame();
+
         // Accessors
         uint32_t GetWidth() const { return m_width; }
         uint32_t GetHeight() const { return m_height; }
         uint64_t GetFrameCounter() const { return m_framecounter; }
+        std::string GetAssetsPath() const { return m_assetPath; }
+        std::string GetFPS() const { return std::string(m_lastFPS); }
         const char* GetTitle() const { return m_title.c_str(); }
-        const std::string GetStringTitle() const { return m_title; }
-        std::string GetAssetsPath() { return m_assetPath; }
+
         bool IsInitialized() const { return m_initialized; }
 
         // Mutators
         void SetWidth(uint32_t width) { m_width = width; }
         void SetHeight(uint32_t height) { m_height = height; }
-        
+
+        // Static members
+        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
         static uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
         static VkShaderModule LoadShader(VKCommonParameters& vkparams, std::string filename);
         static VkCommandBuffer BeginSingleTimeCommands(VKCommonParameters& params);
@@ -56,6 +73,7 @@ class Renderer {
         void CreateFrameBuffers();
         void AllocateCommandBuffers();
         void CreateSyncObjects();
+        void CreateDescriptorSetLayout();
 
         void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
         void SubmitCommandBuffer(uint64_t index);
@@ -68,6 +86,7 @@ class Renderer {
         void CreatePipelineLayout();
         void CreatePipelineObjects();
 
+        std::string m_title;
         std::unique_ptr<VKModel> m_model;
         std::unique_ptr<VKPipeline> m_pipeline;
 
@@ -85,7 +104,6 @@ class Renderer {
         } m_vertices;
 
 
-        std::string m_title;
         std::string m_assetPath;
         uint32_t m_width;
         uint32_t m_height;

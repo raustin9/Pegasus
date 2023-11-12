@@ -89,6 +89,8 @@ struct VKCommonParameters {
     VkPipelineLayout                    PipelineLayout;
     VkSemaphore                         ImageAvailableSemaphore;
     VkSemaphore                         RenderingFinishedSemaphore;
+    VkDescriptorSet                     DescriptorSet;
+    VkDescriptorSetLayout               DescriptorSetLayout;
 
     // Constructor
     VKCommonParameters() :
@@ -104,7 +106,8 @@ struct VKCommonParameters {
         GraphicsCommandBuffers(),
         GraphicsPipeline(VK_NULL_HANDLE),
         ImageAvailableSemaphore(VK_NULL_HANDLE),
-        RenderingFinishedSemaphore(VK_NULL_HANDLE) {
+        RenderingFinishedSemaphore(VK_NULL_HANDLE),
+        DescriptorSet(VK_NULL_HANDLE) {
     }
 };
 
