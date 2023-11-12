@@ -288,6 +288,13 @@ Renderer::OnDestroy() {
     std::cout << "Destroying vertex buffer and memory...";
     m_model->Destroy();
     std::cout << "destroyed & freed" << std::endl;
+    
+    std::cout << "Destroying Uniform Buffers... ";
+    for (size_t i = 0; i < m_uboBuffers.size(); i++) {
+        m_uboBuffers[i]->Unmap();
+        m_uboBuffers[i]->Destroy();
+    }
+    std::cout << "destroyed" << std::endl;
 
     // Destroy pipeline layout and pipeline layout objects
     std::cout << "Destroying pipeline layout and graphics pipeline...";
@@ -320,6 +327,8 @@ Renderer::OnDestroy() {
             m_vkparams.SwapChain.Handle,
             m_vkparams.Allocator);
     std::cout << "destroyed" << std::endl;
+
+
 
     std::cout << "Destroying Descriptor Set Layout... ";
     vkDestroyDescriptorSetLayout(
@@ -420,17 +429,6 @@ Renderer::SetupPipeline() {
 
 void 
 Renderer::CreateDescriptorSetLayout() {
-//    std::vector <std::unique_ptr<VKBuffer> > uboBuffers(Renderer::MAX_FRAMES_IN_FLIGHT);
-//    for (size_t i = 0; i < uboBuffers.size(); i++) {
-//        uboBuffers[i] = std::make_unique<VKBuffer>(
-//            m_vkparams,
-//            sizeof(UBO),
-//            1,
-//            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-//            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-//        );
-//        uboBuffers[i]->Map();
-//    }
 
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
     uboLayoutBinding.binding = 0;
@@ -447,6 +445,27 @@ Renderer::CreateDescriptorSetLayout() {
     VK_CHECK(
         vkCreateDescriptorSetLayout(m_vkparams.Device.Device, &layoutInfo, m_vkparams.Allocator, &m_vkparams.DescriptorSetLayout)
     );
+
+
+}
+
+
+// Create the uniform buffer
+// This is where uniforms that go to the shaders will go
+void 
+Renderer::CreateUniformBuffer() {
+    m_uboBuffers.resize(Renderer::MAX_FRAMES_IN_FLIGHT);
+    for (size_t i = 0; i < m_uboBuffers.size(); i++) {
+        m_uboBuffers[i] = std::make_unique<VKBuffer>(
+            m_vkparams,
+            sizeof(UBO),
+            1,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        );
+        m_uboBuffers[i]->Map();
+    }
+
 
 
 }

@@ -83,6 +83,7 @@ class Renderer {
         void DestroySurface();
 
         void CreateVertexBuffer();
+        void CreateUniformBuffer();
         void CreatePipelineLayout();
         void CreatePipelineObjects();
 
@@ -116,6 +117,8 @@ class Renderer {
         uint64_t m_framecounter;
         uint32_t m_command_buffer_index = 0;
         uint32_t m_command_buffer_count = 0;
+
+        std::vector <std::unique_ptr<VKBuffer> > m_uboBuffers;
 
         VkPhysicalDeviceProperties m_deviceProperties;
         VkPhysicalDeviceFeatures m_deviceFeatures;
