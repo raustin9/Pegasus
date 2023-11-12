@@ -27,7 +27,10 @@ class Application {
         EventHandler m_eventHandler;
         Platform m_platform;
         Renderer m_renderer;
-        bool m_should_quit;
+        StepTimer m_timer;
 
+        bool m_should_quit;
+        uint64_t m_framecounter;
+        char m_lastFPS[32]; // string to hold frames per second
 };
 

@@ -7,11 +7,16 @@
 #include "renderer/vkswapchain.hh"
 #include "renderer/vkmodel.hh"
 
+// STD
 #include <cstdint>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
+
+// GLM
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 // Constructor for the renderer 
 // and startup behavior
@@ -20,12 +25,12 @@ Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint
        m_assetPath(assetPath),
        m_width(width), 
        m_height(height),
-       m_platform(platform),
-       m_timer{}
+       m_platform(platform)
+//       m_timer{}
 {
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
-    m_framecounter = 0;
+    // m_framecounter = 0;
 }
 
 // Init behavior
@@ -44,11 +49,11 @@ Renderer::RenderFrame() {
 // Update behavior
 void
 Renderer::OnUpdate() {
-    m_timer.Tick(nullptr);
-
-    // Update FPS and framecount
-    snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
-    m_framecounter++;
+//    m_timer.Tick(nullptr);
+//
+//    // Update FPS and framecount
+//    snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
+//    m_framecounter++;
 }
 
 // Set the window's title text
@@ -416,6 +421,7 @@ Renderer::InitVulkan() {
     AllocateCommandBuffers();
     CreateSyncObjects();
     CreateDescriptorSetLayout();
+    CreateUniformBuffer();
 }
 
 void

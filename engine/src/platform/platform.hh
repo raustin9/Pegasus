@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <sys/types.h>
+#include <chrono>
 
 class Platform {
 public:
@@ -16,6 +17,7 @@ public:
     bool pump_messages();
     bool create_vulkan_surface(VKCommonParameters &params);
     void set_title(std::string title);
+    std::chrono::time_point<std::chrono::high_resolution_clock> get_current_time();
 
 
     // WINDOWING INFO

@@ -43,9 +43,7 @@ class Renderer {
         // Accessors
         uint32_t GetWidth() const { return m_width; }
         uint32_t GetHeight() const { return m_height; }
-        uint64_t GetFrameCounter() const { return m_framecounter; }
         std::string GetAssetsPath() const { return m_assetPath; }
-        std::string GetFPS() const { return std::string(m_lastFPS); }
         const char* GetTitle() const { return m_title.c_str(); }
 
         bool IsInitialized() const { return m_initialized; }
@@ -110,11 +108,8 @@ class Renderer {
         uint32_t m_height;
         float m_aspect_ratio;
         Platform &m_platform;
-        StepTimer m_timer;
 
         bool m_initialized;
-
-        uint64_t m_framecounter;
         uint32_t m_command_buffer_index = 0;
         uint32_t m_command_buffer_count = 0;
 
@@ -125,6 +120,4 @@ class Renderer {
         VkPhysicalDeviceMemoryProperties m_deviceMemoryProperties;
 
         VKCommonParameters m_vkparams;
-
-        char m_lastFPS[32]; // string to hold frames per second
 };

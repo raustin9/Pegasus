@@ -5,6 +5,7 @@
  */
 
 #include "platform.hh"
+#include <chrono>
 
 #ifdef Q_PLATFORM_LINUX
 
@@ -31,6 +32,11 @@ Platform::Platform(std::string name, uint32_t width, uint32_t height, EventHandl
     this->display = nullptr;
     this->wm_delete_window = 0;
     this->should_quit = false;
+}
+
+std::chrono::time_point<std::chrono::high_resolution_clock>
+Platform::get_current_time() {
+    return std::chrono::high_resolution_clock::now();
 }
 
 // Set the title of the window

@@ -5,7 +5,12 @@
 Settings Application::settings = {};
 
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
-    : m_name(name), m_assetPath(assetPath), m_eventHandler{}, m_platform{name, width, height, m_eventHandler},  m_renderer{name, m_assetPath, width, height, m_platform}  {
+    : m_name(name), 
+    m_assetPath(assetPath), 
+    m_eventHandler{}, 
+    m_platform{name, width, height, m_eventHandler},  
+    m_renderer{name, m_assetPath, width, height, m_platform},
+    m_timer{} {
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
@@ -54,18 +59,23 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
-
     while (!m_should_quit) {
         if (m_platform.pump_messages() == true)
             m_should_quit = true;
 
+
         if (!m_should_quit && m_renderer.IsInitialized()) {
+            m_timer.Tick(nullptr);
+
+            // Update FPS and framecount
+            snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
+            m_framecounter++;
             m_renderer.RenderFrame();
         }
         
-        if (m_renderer.GetFrameCounter() % 300 == 0) {
+        if (m_framecounter % 300 == 0) {
             m_platform.set_title(
-                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_renderer.GetFPS())
+                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
             );
         }
     }
