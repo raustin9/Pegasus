@@ -10,6 +10,6 @@ layout (binding = 0) uniform UniformBufferObject {
 layout (location = 0) out vec4 outColor;
 
 void main() {
-    outColor = vec4(inColor, 1.0);
+    outColor = ubo.modelViewProjection *  vec4(inColor, 1.0);
     gl_Position = ubo.modelViewProjection * vec4(inPos, 1.0);
 }
