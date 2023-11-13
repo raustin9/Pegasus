@@ -85,7 +85,16 @@ VKModel::_create_vertex_buffers(const std::vector<Vertex> &vertices) {
 
 //
 void
-VKModel::Draw(VkCommandBuffer cmdBuffer) {
+VKModel::Draw(VkCommandBuffer cmdBuffer, uint32_t frameIndex) {
+    vkCmdBindDescriptorSets(
+            cmdBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+            m_vkparams.PipelineLayout, 
+            0, 
+            1, 
+            &m_vkparams.DescriptorSets[frameIndex], 
+            0, 
+            nullptr);
     if (m_hasIndexBuffer) {
         vkCmdDrawIndexed(cmdBuffer, m_indexCount, 1, 0, 0, 0);
     } else {

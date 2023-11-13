@@ -1,5 +1,6 @@
 #include "application.hh"
 #include "core/events.hh"
+#include <chrono>
 #include <glm/glm.hpp>
 
 Settings Application::settings = {};
@@ -59,17 +60,27 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    auto currentTime = std::chrono::high_resolution_clock::now();
     while (!m_should_quit) {
         if (m_platform.pump_messages() == true)
             m_should_quit = true;
 
+        auto newTime = std::chrono::high_resolution_clock::now();
+        float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(
+                newTime - currentTime).count();
+        currentTime = newTime;
+
 
         if (!m_should_quit && m_renderer.IsInitialized()) {
+            // Update timer
             m_timer.Tick(nullptr);
 
             // Update FPS and framecount
             snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
             m_framecounter++;
+
+            // Render a frame
+
             m_renderer.RenderFrame();
         }
         

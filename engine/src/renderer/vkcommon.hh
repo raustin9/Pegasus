@@ -66,7 +66,6 @@ struct VKDeviceParameters {
         PhysicalDevice(VK_NULL_HANDLE),
         Device(VK_NULL_HANDLE) {
     }
-
 };
 
 // Holds commonly used fields in vulkan like logical/physical devices,
@@ -89,8 +88,9 @@ struct VKCommonParameters {
     VkPipelineLayout                    PipelineLayout;
     VkSemaphore                         ImageAvailableSemaphore;
     VkSemaphore                         RenderingFinishedSemaphore;
-    VkDescriptorSet                     DescriptorSet;
     VkDescriptorSetLayout               DescriptorSetLayout;
+    VkDescriptorPool                    DescriptorPool;
+    std::vector<VkDescriptorSet>        DescriptorSets;
 
     // Constructor
     VKCommonParameters() :
@@ -106,8 +106,7 @@ struct VKCommonParameters {
         GraphicsCommandBuffers(),
         GraphicsPipeline(VK_NULL_HANDLE),
         ImageAvailableSemaphore(VK_NULL_HANDLE),
-        RenderingFinishedSemaphore(VK_NULL_HANDLE),
-        DescriptorSet(VK_NULL_HANDLE) {
+        RenderingFinishedSemaphore(VK_NULL_HANDLE) {
     }
 };
 

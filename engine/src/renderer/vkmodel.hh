@@ -45,7 +45,7 @@ class VKModel {
         
         // static std::unique_ptr<VKModel> CreateModelFromFile();
         void Bind(VkCommandBuffer cmdBuffer);
-        void Draw(VkCommandBuffer cmdBuffer);
+        void Draw(VkCommandBuffer cmdBuffer, uint32_t frameIndex);
         void Destroy();
 
 

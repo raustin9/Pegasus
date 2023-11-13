@@ -7,12 +7,15 @@
 #include "renderer/vkpipeline.hh"
 
 #include <cstdint>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include <glm/glm.hpp>
 #include <vulkan/vulkan_core.h>
 
 // Structure for Uniform Buffer Object
 struct UBO {
     glm::mat4 projectionView{1.f};
-    glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+    // glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
 };
 
 // Structure for a render packet
@@ -72,10 +75,13 @@ class Renderer {
         void AllocateCommandBuffers();
         void CreateSyncObjects();
         void CreateDescriptorSetLayout();
+        void CreateDescriptorSets();
+        void CreateDescriptorPool();
 
         void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
         void SubmitCommandBuffer(uint64_t index);
         void PresentImage(uint32_t index);
+        void UpdateUniformBuffer(uint32_t currentImage);
 
         void DestroyInstance();
         void DestroySurface();
@@ -110,6 +116,7 @@ class Renderer {
         Platform &m_platform;
 
         bool m_initialized;
+        uint32_t m_current_frame_index = 0;
         uint32_t m_command_buffer_index = 0;
         uint32_t m_command_buffer_count = 0;
 

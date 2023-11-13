@@ -8,14 +8,16 @@
 #include "renderer/vkmodel.hh"
 
 // STD
+#include <chrono>
 #include <cstdint>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
 
 // GLM
-#define GLM_FORCE_RADIANS
+#define GLM_FORCE_RADIANS 
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 // Constructor for the renderer 
@@ -36,6 +38,7 @@ Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint
 // Init behavior
 void
 Renderer::OnInit() {
+    m_current_frame_index = 0;
     InitVulkan();
     SetupPipeline();
 }
@@ -43,7 +46,9 @@ Renderer::OnInit() {
 void 
 Renderer::RenderFrame() {
     OnRender();
-    OnUpdate();
+    // OnUpdate();
+    UpdateUniformBuffer(m_current_frame_index);
+    m_current_frame_index = (m_current_frame_index + 1) % Renderer::MAX_FRAMES_IN_FLIGHT;
 }
 
 // Update behavior
@@ -60,6 +65,35 @@ Renderer::OnUpdate() {
 const std::string 
 Renderer::GetDeviceName() {
     return std::string(m_deviceProperties.deviceName);
+}
+
+void
+Renderer::UpdateUniformBuffer(uint32_t currentImage) {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UBO ubo{};
+    glm::mat4 model = glm::rotate(
+        glm::mat4(1.0f), 
+        time * glm::radians(90.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(2.0f, 2.0f, 2.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::mat4 proj = glm::perspective(
+        glm::radians(45.0f),
+        m_width / static_cast<float>(m_height), 0.1f, 10.0f);
+
+    ubo.projectionView = proj * view * model;
+    // ubo.projectionView = glm::mat4(1.0f);
+    // ubo.projectionView = ubo.projectionView * 
+
+    proj[1][1] *= -1;
+    m_uboBuffers[currentImage]->WriteToBuffer(&ubo);
 }
 
 // Resize behavior
@@ -217,9 +251,19 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     m_pipeline->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
     // vkCmdBindPipeline(m_vkparams.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkparams.GraphicsPipeline);
 
+
     // Bind the triangle vertex buffer (contains position and color)
+//    vkCmdBindDescriptorSets(
+//            m_vkparams.GraphicsCommandBuffers[bufferIndex],
+//            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+//            m_vkparams.PipelineLayout, 
+//            0, 
+//            1, 
+//            &m_vkparams.DescriptorSets[m_current_frame_index], 
+//            0, 
+//            nullptr);
     m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-    m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+    m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
 
     // Ending the render pass will add an implicit barrier, transitioning the frame buffer
     // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
@@ -334,6 +378,12 @@ Renderer::OnDestroy() {
     std::cout << "destroyed" << std::endl;
 
 
+    std::cout << "Destroying Descriptor Pool... ";
+    vkDestroyDescriptorPool(
+            m_vkparams.Device.Device, 
+            m_vkparams.DescriptorPool,
+            m_vkparams.Allocator);
+    std::cout << "destroyed" << std::endl;
 
     std::cout << "Destroying Descriptor Set Layout... ";
     vkDestroyDescriptorSetLayout(
@@ -422,6 +472,8 @@ Renderer::InitVulkan() {
     CreateSyncObjects();
     CreateDescriptorSetLayout();
     CreateUniformBuffer();
+    CreateDescriptorPool();
+    CreateDescriptorSets();
 }
 
 void
@@ -451,8 +503,62 @@ Renderer::CreateDescriptorSetLayout() {
     VK_CHECK(
         vkCreateDescriptorSetLayout(m_vkparams.Device.Device, &layoutInfo, m_vkparams.Allocator, &m_vkparams.DescriptorSetLayout)
     );
+}
 
+void
+Renderer::CreateDescriptorSets() {
+    std::vector <VkDescriptorSetLayout> layouts(Renderer::MAX_FRAMES_IN_FLIGHT, m_vkparams.DescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vkparams.DescriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(Renderer::MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
 
+    m_vkparams.DescriptorSets.resize(Renderer::MAX_FRAMES_IN_FLIGHT);
+    VK_CHECK(vkAllocateDescriptorSets(
+                m_vkparams.Device.Device,
+                &allocInfo,
+                m_vkparams.DescriptorSets.data()));
+
+    for (size_t i = 0; i < layouts.size(); i++) {
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = m_uboBuffers[i]->GetBuffer();
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UBO);
+
+        VkWriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_vkparams.DescriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        descriptorWrite.pImageInfo = nullptr;
+        descriptorWrite.pTexelBufferView = nullptr;
+
+        vkUpdateDescriptorSets(m_vkparams.Device.Device, 1, &descriptorWrite, 0, nullptr);
+        
+    }
+}
+
+void
+Renderer::CreateDescriptorPool() {
+    VkDescriptorPoolSize poolSize = {};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>(Renderer::MAX_FRAMES_IN_FLIGHT);
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(Renderer::MAX_FRAMES_IN_FLIGHT);
+
+    VK_CHECK(vkCreateDescriptorPool(
+                m_vkparams.Device.Device,
+                &poolInfo,
+                m_vkparams.Allocator,
+                &m_vkparams.DescriptorPool));
 }
 
 
