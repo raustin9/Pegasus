@@ -92,7 +92,7 @@ Renderer::UpdateUniformBuffer(uint32_t currentImage) {
     // ubo.projectionView = glm::mat4(1.0f);
     // ubo.projectionView = ubo.projectionView * 
 
-    proj[1][1] *= -1;
+    // proj[1][1] *= -1;
     m_uboBuffers[currentImage]->WriteToBuffer(&ubo);
 }
 
