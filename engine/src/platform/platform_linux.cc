@@ -5,6 +5,7 @@
  */
 
 #include "platform.hh"
+#include <chrono>
 
 #ifdef Q_PLATFORM_LINUX
 
@@ -31,6 +32,11 @@ Platform::Platform(std::string name, uint32_t width, uint32_t height, EventHandl
     this->display = nullptr;
     this->wm_delete_window = 0;
     this->should_quit = false;
+}
+
+std::chrono::time_point<std::chrono::high_resolution_clock>
+Platform::get_current_time() {
+    return std::chrono::high_resolution_clock::now();
 }
 
 // Set the title of the window
@@ -121,6 +127,8 @@ Platform::handle_x11_event(XEvent& event) {
         case ConfigureNotify:
             if (static_cast<uint32_t>(event.xconfigure.width) != width
                 || static_cast<uint32_t>(event.xconfigure.height) != height) {
+                width = static_cast<uint32_t>(event.xconfigure.width);
+                height = static_cast<uint32_t>(event.xconfigure.height);
                 m_inputHandler.ProcessResize(
                     static_cast<uint32_t>(event.xconfigure.width), 
                     static_cast<uint32_t>(event.xconfigure.height));

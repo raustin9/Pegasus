@@ -1,6 +1,7 @@
 #include "vkpipeline.hh"
 #include "renderer.hh"
 #include "renderer/vkcommon.hh"
+#include <vulkan/vulkan_core.h>
 
 VKPipeline::VKPipeline(
     VKCommonParameters &vkparams,

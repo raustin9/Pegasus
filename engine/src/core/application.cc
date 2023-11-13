@@ -1,10 +1,17 @@
 #include "application.hh"
 #include "core/events.hh"
+#include <chrono>
+#include <glm/glm.hpp>
 
 Settings Application::settings = {};
 
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
-    : m_name(name), m_assetPath(assetPath), m_eventHandler{}, m_platform{name, width, height, m_eventHandler},  m_renderer{name, m_assetPath, width, height, m_platform}  {
+    : m_name(name), 
+    m_assetPath(assetPath), 
+    m_eventHandler{}, 
+    m_platform{name, width, height, m_eventHandler},  
+    m_renderer{name, m_assetPath, width, height, m_platform},
+    m_timer{} {
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
@@ -17,12 +24,12 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
             return true;
     });
 
-    m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
         return true;
     });
 
-    m_eventHandler.Register(EVENT_CODE_RESIZED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    m_eventHandler.Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnResize(code, sender, listener, data);
         return true;
     });
@@ -32,7 +39,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
         return true;
     });
     
-    m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, 0, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
         return true;
     });
@@ -53,18 +60,34 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    auto currentTime = std::chrono::high_resolution_clock::now();
     while (!m_should_quit) {
         if (m_platform.pump_messages() == true)
             m_should_quit = true;
 
+        auto newTime = std::chrono::high_resolution_clock::now();
+        float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(
+                newTime - currentTime).count();
+        currentTime = newTime;
+
+
         if (!m_should_quit && m_renderer.IsInitialized()) {
-            // update and render
-            m_renderer.OnUpdate();
-            m_renderer.OnRender();
+            // Update timer
+            m_timer.Tick(nullptr);
+
+            // Update FPS and framecount
+            snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
+            m_framecounter++;
+
+            // Render a frame
+
+            m_renderer.RenderFrame();
         }
         
-        if (m_renderer.GetFrameCounter() % 300 == 0) {
-            m_platform.set_title(m_renderer.GetWindowTitle());
+        if (m_framecounter % 300 == 0) {
+            m_platform.set_title(
+                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
+            );
         }
     }
 

@@ -1,3 +1,4 @@
+#pragma once
 #include "stdafx.hh"
 #if defined(Q_PLATFORM_LINUX)
 
