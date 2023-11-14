@@ -28,11 +28,9 @@ Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint
        m_width(width), 
        m_height(height),
        m_platform(platform)
-//       m_timer{}
 {
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
-    // m_framecounter = 0;
 }
 
 // Init behavior
@@ -54,11 +52,6 @@ Renderer::RenderFrame() {
 // Update behavior
 void
 Renderer::OnUpdate() {
-//    m_timer.Tick(nullptr);
-//
-//    // Update FPS and framecount
-//    snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
-//    m_framecounter++;
 }
 
 // Set the window's title text
@@ -67,6 +60,8 @@ Renderer::GetDeviceName() {
     return std::string(m_deviceProperties.deviceName);
 }
 
+
+// Update the uniform buffers
 void
 Renderer::UpdateUniformBuffer(uint32_t currentImage) {
     static auto startTime = std::chrono::high_resolution_clock::now();
@@ -89,10 +84,6 @@ Renderer::UpdateUniformBuffer(uint32_t currentImage) {
         m_width / static_cast<float>(m_height), 0.1f, 10.0f);
 
     ubo.projectionView = proj * view * model;
-    // ubo.projectionView = glm::mat4(1.0f);
-    // ubo.projectionView = ubo.projectionView * 
-
-    // proj[1][1] *= -1;
     m_uboBuffers[currentImage]->WriteToBuffer(&ubo);
 }
 
@@ -101,11 +92,12 @@ void
 Renderer::WindowResize(uint32_t w, uint32_t h) {
     if (!m_initialized)
         return;
-
+    
     m_initialized = false;
-
     // Ensure all operations on GPU are done before destroying resources
     vkDeviceWaitIdle(m_vkparams.Device.Device);
+
+
 
     // Recreate swapchain
     m_width = w;
@@ -135,18 +127,22 @@ Renderer::WindowResize(uint32_t w, uint32_t h) {
     m_initialized = true;
 }
 
-// Render the scene
-void
-Renderer::OnRender() {
-    // Get the index of the next available image in the swapchain
-    uint32_t imageIndex;
-    VkResult acquire = vkAcquireNextImageKHR( // acquires the next image in the swapchain
+VkResult
+Renderer::AcquireNextImage(uint32_t* imageIndex) {
+    // TODO: wait for fences
+    return vkAcquireNextImageKHR( // acquires the next image in the swapchain
             m_vkparams.Device.Device, 
             m_vkparams.SwapChain.Handle, 
             UINT64_MAX,
             m_vkparams.ImageAvailableSemaphore,
-            nullptr,
-            &imageIndex);
+            VK_NULL_HANDLE,
+            imageIndex);
+}
+
+void
+Renderer::BeginFrame() {
+    // Get the index of the next available image in the swapchain
+    VkResult acquire = AcquireNextImage(&m_current_frame_index);
     if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
         if (acquire == VK_ERROR_OUT_OF_DATE_KHR)
             WindowResize(m_width, m_height);
@@ -154,9 +150,46 @@ Renderer::OnRender() {
             VK_CHECK(acquire);
     }
 
-    PopulateCommandBuffer(m_command_buffer_index, imageIndex);
+    PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
+}
+
+void
+Renderer::EndFrame() {
+    PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
     SubmitCommandBuffer(m_command_buffer_index);
-    PresentImage(imageIndex);
+    PresentImage(m_current_frame_index);
+
+    // Wait for the GPU to complete the frame before continuing is best practice
+    // vkQueueWaitIdle is used for simplicity
+    // (so that we can reuse the command buffer indexed with m_command_buffer_index)
+    // THIS IS SUBOPTIMAL because we are waiting on GPU to complete 1 image at a time 
+    // before the CPU creates anther. We can use a fence or semaphores later on
+    // to do better synchronization, but for now this works fine
+    VK_CHECK(vkQueueWaitIdle(m_vkparams.GraphicsQueue.Handle)); // "wait for GPU to idle"
+
+    // Update the command buffer
+    m_command_buffer_index = (m_command_buffer_index + 1) % m_command_buffer_count;
+   
+    // Update the uniform buffer
+    UpdateUniformBuffer(m_current_frame_index);
+    m_current_frame_index = (m_current_frame_index + 1) % Renderer::MAX_FRAMES_IN_FLIGHT;
+}
+
+// Render the scene
+void
+Renderer::OnRender() {
+    // Get the index of the next available image in the swapchain
+    VkResult acquire = AcquireNextImage(&m_current_frame_index);
+    if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
+        if (acquire == VK_ERROR_OUT_OF_DATE_KHR)
+            WindowResize(m_width, m_height);
+        else
+            VK_CHECK(acquire);
+    }
+
+    PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
+    SubmitCommandBuffer(m_command_buffer_index);
+    PresentImage(m_current_frame_index);
 
     // Wait for the GPU to complete the frame before continuing is best practice
     // vkQueueWaitIdle is used for simplicity

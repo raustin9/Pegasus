@@ -21,28 +21,23 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     // Register for events
     m_eventHandler.Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
             this->OnEvent(code, sender, listener, data);
-            return true;
-    });
+            return true;});
 
     m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
-        return true;
-    });
-
+        return true;});
+    
     m_eventHandler.Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnResize(code, sender, listener, data);
-        return true;
-    });
+        return true;});
 
     m_eventHandler.Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnMouseMove(code, sender, listener, data);
-        return true;
-    });
-    
+        return true;});
+
     m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
-        return true;
-    });
+        return true;});
 
 
     std::cout << "Platform created" << std::endl;
@@ -60,16 +55,9 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
-    auto currentTime = std::chrono::high_resolution_clock::now();
     while (!m_should_quit) {
         if (m_platform.pump_messages() == true)
             m_should_quit = true;
-
-        auto newTime = std::chrono::high_resolution_clock::now();
-        float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(
-                newTime - currentTime).count();
-        currentTime = newTime;
-
 
         if (!m_should_quit && m_renderer.IsInitialized()) {
             // Update timer
@@ -80,8 +68,8 @@ Application::run() {
             m_framecounter++;
 
             // Render a frame
-
-            m_renderer.RenderFrame();
+            m_renderer.BeginFrame();
+            m_renderer.EndFrame();
         }
         
         if (m_framecounter % 300 == 0) {
