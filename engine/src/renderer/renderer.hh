@@ -55,6 +55,10 @@ class Renderer {
         void SetWidth(uint32_t width) { m_width = width; }
         void SetHeight(uint32_t height) { m_height = height; }
 
+        // Public Interface
+        void BeginFrame();
+        void EndFrame();
+
         // Static members
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
         static uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
@@ -90,6 +94,8 @@ class Renderer {
         void CreateUniformBuffer();
         void CreatePipelineLayout();
         void CreatePipelineObjects();
+
+        VkResult AcquireNextImage(uint32_t* imageIndex);
 
         std::string m_title;
         std::unique_ptr<VKModel> m_model;
