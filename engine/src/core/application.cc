@@ -1,7 +1,7 @@
 #include "application.hh"
 #include "core/events.hh"
 #include <chrono>
-#include <glm/glm.hpp>
+// #include <glm/glm.hpp>
 
 Settings Application::settings = {};
 
@@ -74,7 +74,8 @@ Application::run() {
         
         if (m_framecounter % 300 == 0) {
             m_platform.set_title(
-                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
+                ""
+                // m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
             );
         }
     }

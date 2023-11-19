@@ -8,6 +8,7 @@
  */
 
 #include "stdafx.hh"
+#include <functional>
 
 #define MAX_MESSAGE_CODES 16384
 

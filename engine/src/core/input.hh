@@ -13,7 +13,7 @@ enum Buttons {
 #define DEFINE_KEY(name, code) KEY_##name = code
 
 // Keyboard input keys
-enum Keys {
+enum Keys : int {
     DEFINE_KEY(BACKSPACE, 0x08),
     DEFINE_KEY(ENTER, 0x0D),
     DEFINE_KEY(TAB, 0x09),
@@ -41,7 +41,7 @@ enum Keys {
     DEFINE_KEY(DOWN, 0x28),
     DEFINE_KEY(SELECT, 0x29),
     DEFINE_KEY(PRINT, 0x2A),
-    DEFINE_KEY(EXECUTE, 0x2B),
+    DEFINE_KEY(EXECUTEKEY, 0x2B), // KEY_EXECUTE is special on windows
     DEFINE_KEY(SNAPSHOT, 0x2C),
     DEFINE_KEY(INSERT, 0x2D),
     DEFINE_KEY(DELETE, 0x2E),

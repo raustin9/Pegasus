@@ -1,0 +1,42 @@
+{
+    "configurations": [
+        {
+            "name": "windows-gcc-x64",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/engine/src/**",
+                "${workspaceFolder}/engine/src/*",
+                "${VULKAN_SDK}/include"
+            ],
+            "defines": [
+                "_PDEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "PEXPORT"
+            ],
+            "compilerPath": "C:/msys64/mingw64/bin/gcc.exe",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/engine/src/**",
+                "${workspaceFolder}/engine/src/*",
+                "${env.VULKAN_SDK}/include"
+            ],
+            "defines": [
+                "_PDEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "PEXPORT"
+            ],
+            "windowsSdkVersion": "10.0.18362.0",
+            "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}

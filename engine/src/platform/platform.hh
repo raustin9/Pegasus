@@ -2,7 +2,8 @@
 #include "renderer/vkcommon.hh"
 #include "core/input.hh"
 #include "core/events.hh"
-#include "linux_timer.hh"
+#include "platform/platform_timer.hh"
+// #include "linux_timer.hh"
 #include "stdafx.hh"
 #include <cstdint>
 #include <memory>
@@ -19,20 +20,23 @@ public:
     void set_title(std::string title);
     std::chrono::time_point<std::chrono::high_resolution_clock> get_current_time();
 
-
     // WINDOWING INFO
 #ifdef Q_PLATFORM_LINUX
     // LINUX WINDOWING
     Display* display;
     Window handle;
     Atom wm_delete_window;
-    bool should_quit;
     void handle_x11_event(XEvent& event);
 
 #elif defined(Q_PLATFORM_WINDOWS)
     // WINDOWS WINDOWING SHIT
+    HWND hWindow;
+    HINSTANCE hInstance;
+    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 #endif // END PLATFORM SPECIFIC WINDOWING INFO
 
+    bool should_quit;
     std::string name;
     uint32_t width;
     uint32_t height;

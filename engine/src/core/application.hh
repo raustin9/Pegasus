@@ -3,13 +3,14 @@
 #include "platform/platform.hh"
 #include "stdafx.hh"
 #include "events.hh"
+#include "platform/platform_timer.hh"
 
 struct Settings {
     bool enableValidation = false;
     bool enableVsync = false;
 };
 
-class Application {
+class  QAPI Application {
     public:
         Application(std::string name,  uint32_t width, uint32_t height, std::string assetPath = "./assets");
         ~Application();

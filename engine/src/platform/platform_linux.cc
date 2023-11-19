@@ -23,7 +23,6 @@
 #include <X11/X.h>
 #include <cstdio>
 
-#endif // Q_PLATFORM_LINUX
     
 // WINDOWING
 Platform::Platform(std::string name, uint32_t width, uint32_t height, EventHandler &eh) 
@@ -448,3 +447,5 @@ Platform::_translateKey(uint32_t code) {
             return KEYS_MAX_KEY;
     }
 }
+
+#endif // Q_PLATFORM_LINUX
