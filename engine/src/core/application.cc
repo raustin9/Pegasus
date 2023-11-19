@@ -8,8 +8,7 @@ Settings Application::settings = {};
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
     : m_name(name), 
     m_assetPath(assetPath), 
-    m_eventHandler{}, 
-    m_platform{name, width, height, m_eventHandler},  
+    m_platform{name, width, height},  
     m_renderer{name, m_assetPath, width, height, m_platform},
     m_timer{} {
 
@@ -19,23 +18,23 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     m_should_quit = false;
 
     // Register for events
-    m_eventHandler.Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
             this->OnEvent(code, sender, listener, data);
             return true;});
 
-    m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
         return true;});
     
-    m_eventHandler.Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnResize(code, sender, listener, data);
         return true;});
 
-    m_eventHandler.Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnMouseMove(code, sender, listener, data);
         return true;});
 
-    m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
         return true;});
 
@@ -149,7 +148,7 @@ Application::OnKey(uint16_t code, void* sender, void* listener, EventContext con
         uint16_t keycode = context.u16[0];
         if (keycode == KEY_ESCAPE) {
             EventContext data = {};
-            m_eventHandler.Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+            EventHandler::Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
 
             return true;
         } else {

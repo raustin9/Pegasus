@@ -1,9 +1,8 @@
 #include "input.hh"
 #include "core/events.hh"
 
-InputHandler::InputHandler(EventHandler &eh) 
-    : m_eventHandler(eh),
-      m_keyboardCurrent{},
+InputHandler::InputHandler() 
+    : m_keyboardCurrent{},
       m_keyboardPrev{},
       m_mouseCurrent{},
       m_mousePrev{}
@@ -33,7 +32,7 @@ InputHandler::ProcessResize(uint32_t w, uint32_t h) {
     data.u32[0] = static_cast<uint32_t>(w);
     data.u32[1] = static_cast<uint32_t>(h);
 
-    m_eventHandler.Fire(EVENT_CODE_RESIZED, nullptr, data);
+    EventHandler::Fire(EVENT_CODE_RESIZED, nullptr, data);
 }
 
 void
@@ -45,7 +44,7 @@ InputHandler::ProcessKey(Keys key, bool pressed) {
         // TODO: Fire an event for immediate processing
         EventContext data = {};
         data.u16[0] = static_cast<uint16_t>(key);
-        m_eventHandler.Fire(
+        EventHandler::Fire(
                 pressed ? EVENT_CODE_KEY_PRESSED : EVENT_CODE_KEY_RELEASED,
                 0,
                 data);
@@ -63,7 +62,7 @@ InputHandler::ProcessMouseMove(int32_t x, int32_t y) {
         EventContext data = {};
         data.u16[0] = x;
         data.u16[1] = y;
-        m_eventHandler.Fire(EVENT_CODE_MOUSE_MOVED, nullptr, data);
+        EventHandler::Fire(EVENT_CODE_MOUSE_MOVED, nullptr, data);
 
     }
 }

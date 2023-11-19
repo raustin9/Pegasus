@@ -12,7 +12,7 @@
 
 class Platform {
 public:
-    Platform(std::string name, uint32_t width, uint32_t height, EventHandler &eh);
+    Platform(std::string name, uint32_t width, uint32_t height);
     void create_window();
     void destroy_window();
     bool pump_messages();

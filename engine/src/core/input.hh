@@ -156,7 +156,7 @@ struct MouseState {
 
 class InputHandler {
     public:
-        InputHandler(EventHandler &eh);
+        InputHandler();
         ~InputHandler();
         
         void Update(double deltaTime);
@@ -171,7 +171,7 @@ class InputHandler {
 
 
     private:
-        EventHandler &m_eventHandler;
+        // EventHandler &m_eventHandler;
 
         bool m_initialized = false;
         uint32_t m_mousex;

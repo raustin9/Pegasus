@@ -25,8 +25,8 @@
 
     
 // WINDOWING
-Platform::Platform(std::string name, uint32_t width, uint32_t height, EventHandler &eh) 
-    : name{name}, width{width}, height{height}, m_inputHandler{eh}
+Platform::Platform(std::string name, uint32_t width, uint32_t height) 
+    : name{name}, width{width}, height{height}, m_inputHandler{}
 {
     this->display = nullptr;
     this->wm_delete_window = 0;

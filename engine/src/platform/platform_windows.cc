@@ -2,8 +2,8 @@
 
 #ifdef Q_PLATFORM_WINDOWS
 
-Platform::Platform(std::string name, uint32_t width, uint32_t height, EventHandler &eh) 
-	: name{name} , width{width} , height{height} , m_inputHandler{eh} {
+Platform::Platform(std::string name, uint32_t width, uint32_t height) 
+	: name{name} , width{width} , height{height} , m_inputHandler{} {
 
 	hInstance = GetModuleHandle(0);
 
@@ -141,25 +141,35 @@ Platform::WindowProc(
 	LPARAM l_param
 ) {
 	switch (code) {
-		case WM_ERASEBKGND:
+		case WM_ERASEBKGND: // notify the OS that erasing the screen will be handled by Application
 			return 1;
 
-		case WM_CLOSE:
+		case WM_CLOSE: {
 			// Fire an event for the application to quit
-			return 0;
+			EventContext data = {};
+			EventHandler::Fire(EVENT_CODE_APPLICATION_QUIT, nullptr, data);
+			return true;
+		}
+			
 
-		case WM_CREATE: 
-		{
+		case WM_CREATE: {
 			
 		}
 		return 0;
 
 		case WM_PAINT:
 			break;
+
 		case WM_KEYDOWN:
-			break;
 		case WM_KEYUP:
-			break;
+		case WM_SYSKEYDOWN:
+		case WM_SYSKEYUP: {
+			bool pressed = (code == WM_KEYDOWN || code == WM_SYSKEYDOWN);
+			Keys key = static_cast<Keys>(w_param);
+
+			// Pass the input subsystem
+			
+		}
 
 		case WM_DESTROY:
 			PostQuitMessage(0);
@@ -181,8 +191,18 @@ Platform::WindowProc(
 
 		} break;
 
-		case WM_SIZE:
-			break;
+		case WM_SIZE: {
+			RECT r;
+			GetClientRect(hWnd, &r);
+			uint32_t width = r.right - r.left;
+			uint32_t height = r.bottom - r.top;
+
+			// Fire resize event
+			EventContext context = {};
+			context.u16[0] = static_cast<uint16_t>(width);
+			context.u16[1] = static_cast<uint16_t>(height);
+			EventHandler::Fire(EVENT_CODE_RESIZED, nullptr, context);
+		} break;
 			
 		case WM_GETMINMAXINFO:
 			break;
@@ -190,8 +210,8 @@ Platform::WindowProc(
 		case WM_ENTERSIZEMOVE:
         	return 0;
 
-        case WM_EXITSIZEMOVE:
-        	return 0;
+    case WM_EXITSIZEMOVE:
+      return 0;
 			
 	}
 	
