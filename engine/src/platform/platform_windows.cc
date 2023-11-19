@@ -3,7 +3,7 @@
 #ifdef Q_PLATFORM_WINDOWS
 
 Platform::Platform(std::string name, uint32_t width, uint32_t height) 
-	: name{name} , width{width} , height{height} , m_inputHandler{} {
+	: name{name} , width{width} , height{height} {
 
 	hInstance = GetModuleHandle(0);
 
@@ -168,7 +168,7 @@ Platform::WindowProc(
 			Keys key = static_cast<Keys>(w_param);
 
 			// Pass the input subsystem
-			
+			InputHandler::ProcessKey(key, pressed);
 		}
 
 		case WM_DESTROY:

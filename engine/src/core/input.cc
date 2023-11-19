@@ -1,29 +1,46 @@
 #include "input.hh"
 #include "core/events.hh"
 
-InputHandler::InputHandler() 
-    : m_keyboardCurrent{},
-      m_keyboardPrev{},
-      m_mouseCurrent{},
-      m_mousePrev{}
-{
-    m_initialized = true;
-    std::cout << "Input subsystem initialized..." << std::endl;
+// State for the input handler
+struct InputState {
+    bool initialized = false;
+    uint32_t mousex;
+    uint32_t mousey;
+
+    KeyboardState keyboardCurrent;
+    KeyboardState keyboardPrev;
+    MouseState mouseCurrent;
+    MouseState mousePrev;
+};
+
+static InputState input_state = {};
+
+InputHandler::InputHandler() {
+}
+InputHandler::~InputHandler() {
 }
 
-InputHandler::~InputHandler() {
-    m_initialized = false;
+void
+InputHandler::Startup() {
+    input_state.initialized = true;
+    std::cout << "Input state initialized..." << std::endl;
 }
+
+void
+InputHandler::Shutdown() {
+    input_state.initialized = false;
+}
+
 
 void
 InputHandler::Update(double deltaTime) {
     (void)deltaTime;
-    if (!m_initialized)
+    if (!input_state.initialized)
         return;
 
     // Copy current state to the previous states
-    m_keyboardPrev = m_keyboardCurrent;
-    m_mousePrev = m_mouseCurrent;
+    input_state.keyboardPrev = input_state.keyboardCurrent;
+    input_state.mousePrev = input_state.mouseCurrent;
 }
 
 void
@@ -38,8 +55,8 @@ InputHandler::ProcessResize(uint32_t w, uint32_t h) {
 void
 InputHandler::ProcessKey(Keys key, bool pressed) {
     // Only do anything if the state has changed
-    if (m_keyboardCurrent.keys[key] != pressed) {
-        m_keyboardCurrent.keys[key] = pressed;
+    if (input_state.keyboardCurrent.keys[key] != pressed) {
+        input_state.keyboardCurrent.keys[key] = pressed;
 
         // TODO: Fire an event for immediate processing
         EventContext data = {};
@@ -54,9 +71,9 @@ InputHandler::ProcessKey(Keys key, bool pressed) {
 void
 InputHandler::ProcessMouseMove(int32_t x, int32_t y) {
     // Only do anything if the state actually changed
-    if (m_mouseCurrent.x != x || m_mouseCurrent.y != y) {
-        m_mouseCurrent.x = x;
-        m_mouseCurrent.y = y;
+    if (input_state.mouseCurrent.x != x || input_state.mouseCurrent.y != y) {
+        input_state.mouseCurrent.x = x;
+        input_state.mouseCurrent.y = y;
 
         // TODO: fire an event
         EventContext data = {};
@@ -75,8 +92,8 @@ InputHandler::ProcessMouseWheel(int16_t zDelta) {
 // Set the parameters to the current position of the mouse's x and y positions
 void
 InputHandler::GetMousePosition(int32_t &x, int32_t &y) {
-    x = m_mouseCurrent.x;
-    y = m_mouseCurrent.y;
+    x = input_state.mouseCurrent.x;
+    y = input_state.mouseCurrent.y;
 }
 
 //
@@ -85,63 +102,63 @@ InputHandler::GetMousePosition(int32_t &x, int32_t &y) {
 
 bool
 InputHandler::_isKeyDown(Keys key) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_keyboardCurrent.keys[key] == true;;
+    return input_state.keyboardCurrent.keys[key] == true;;
 }
 
 bool
 InputHandler::_isKeyUp(Keys key) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_keyboardCurrent.keys[key] == false;
+    return input_state.keyboardCurrent.keys[key] == false;
 }
 bool
 InputHandler::_wasKeyDown(Keys key) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_keyboardPrev.keys[key] == true;
+    return input_state.keyboardPrev.keys[key] == true;
 }
 bool
 InputHandler::_wasKeyUp(Keys key) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_keyboardPrev.keys[key] == false;
+    return input_state.keyboardPrev.keys[key] == false;
 }
 
 bool
 InputHandler::_isButtonDown(Buttons button) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_mouseCurrent.buttons[button] == true;
+    return input_state.mouseCurrent.buttons[button] == true;
 }
 
 bool
 InputHandler::_isButtonUp(Buttons button) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_mouseCurrent.buttons[button] == false;
+    return input_state.mouseCurrent.buttons[button] == false;
 }
 bool
 InputHandler::_wasButtonDown(Buttons button) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_mousePrev.buttons[button] == true;
+    return input_state.mousePrev.buttons[button] == true;
 
 }
 bool
 InputHandler::_wasButtonUp(Buttons button) {
-    if (!m_initialized)
+    if (!input_state.initialized)
         return false;
 
-    return m_mousePrev.buttons[button] == false;
+    return input_state.mousePrev.buttons[button] == false;
 }
 
 
