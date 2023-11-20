@@ -22,12 +22,12 @@
 
 // Constructor for the renderer 
 // and startup behavior
-Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint32_t height, Platform& platform)
+Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint32_t height)
     :  m_title(name),
        m_assetPath(assetPath),
        m_width(width), 
-       m_height(height),
-       m_platform(platform)
+       m_height(height) //,
+    //    m_platform(platform)
 {
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
@@ -480,7 +480,8 @@ Renderer::OnDestroy() {
         std::cout << "destroyed" << std::endl;
     }
 
-    m_platform.destroy_window();
+    // m_platform.destroy_window();
+    Platform::destroy_window();
 
     // Destroy vulkan instance
     std::cout << "Destroying Instance... ";
@@ -515,6 +516,7 @@ Renderer::SetupPipeline() {
     CreatePipelineLayout();
     CreatePipelineObjects();
     m_initialized = true;
+    std::cout << "PIPELINE SETUP\n";
 }
 
 
@@ -773,7 +775,8 @@ Renderer::CreateInstance() {
 void
 Renderer::CreateSurface() {
     // Use platform-specific surface creation function
-    m_platform.create_vulkan_surface(m_vkparams);
+    // m_platform.create_vulkan_surface(m_vkparams);
+    Platform::create_vulkan_surface(m_vkparams);
     std::cout << "Surface created" << std::endl;
 }
 

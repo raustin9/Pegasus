@@ -26,7 +26,7 @@ class  QAPI Application {
         std::string m_assetPath;
 
         // EventHandler m_eventHandler;
-        Platform m_platform;
+        // Platform m_platform;
         Renderer m_renderer;
         StepTimer m_timer;
 

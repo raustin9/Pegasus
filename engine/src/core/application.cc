@@ -1,16 +1,26 @@
 #include "application.hh"
 #include "core/events.hh"
 #include <chrono>
-// #include <glm/glm.hpp>
+
 
 Settings Application::settings = {};
+
+struct ApplicationState {
+    uint32_t width = 0;
+    uint32_t height = 0;
+};
+
+static ApplicationState app_state = {};
 
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
     : m_name(name), 
     m_assetPath(assetPath), 
-    m_platform{name, width, height},  
-    m_renderer{name, m_assetPath, width, height, m_platform},
+    // m_platform{name, width, height},  
+    m_renderer{name, m_assetPath, width, height},
     m_timer{} {
+
+    app_state.width = width;
+    app_state.height = height;
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
@@ -38,11 +48,12 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
         this->OnKey(code, sender, listener, data);
         return true;});
 
-
+    // Init the platform
+    if (!Platform::Startup(name, width, height)) {
+        std::cout << "Error: failed to initialize Platform Layer" << std::endl;
+        exit(1);
+    }
     std::cout << "Platform created" << std::endl;
-
-    m_platform.create_window();
-    std::cout << "Window created" << std::endl;
 
     m_renderer.OnInit();
 }
@@ -55,7 +66,8 @@ Application::~Application() {
 bool
 Application::run() {
     while (!m_should_quit) {
-        if (m_platform.pump_messages() == true)
+        // if (m_platform.pump_messages() == true)
+        if (Platform::pump_messages() == true)
             m_should_quit = true;
 
         if (!m_should_quit && m_renderer.IsInitialized()) {
@@ -72,7 +84,8 @@ Application::run() {
         }
         
         if (m_framecounter % 300 == 0) {
-            m_platform.set_title(
+            // m_platform.set_title(
+            Platform::set_title(
                 ""
                 // m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
             );
@@ -126,16 +139,35 @@ Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventConte
 // Resize callback for resizing the window
 bool 
 Application::OnResize(uint16_t code, void* sender, void* listener, EventContext context) {
-    std::cout << "RESIZINZG..." << std::endl;
     (void)code;
     (void)context;
     (void)listener;
     (void)sender;
+   
+    if (code == EVENT_CODE_RESIZED) {
+        uint32_t w = context.u32[0];
+        uint32_t h = context.u32[1];
 
-    uint32_t w = context.u32[0];
-    uint32_t h = context.u32[1];
+        // Check if either the width or height are different
+        if (app_state.width != w || app_state.height != h) {
+            printf("[%i, %i] != [%i, %i]\n", app_state.width, app_state.height, w, h);
+            app_state.width = w;
+            app_state.height = h;
 
-    m_renderer.WindowResize(w, h);
+            // Handle minimization
+            if (w == 0 || h == 0) {
+                std::cout << "Application minimized" << std::endl;
+                // TODO: add suspended states to the application 
+                //       and suspend it here
+                return true;
+            } else {
+                // TODO: check if app is suspended and only act if not
+                std::cout << "RESIZING..." << std::endl;
+                m_renderer.WindowResize(w, h);
+            }
+        }
+    }
+
     return false;
 }
 

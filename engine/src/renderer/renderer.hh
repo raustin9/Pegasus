@@ -27,7 +27,7 @@ struct RenderPacket {
 
 class Renderer {
     public:
-        Renderer(std::string title, std::string assetPath,  uint32_t width, uint32_t height, Platform& platform);
+        Renderer(std::string title, std::string assetPath,  uint32_t width, uint32_t height);
 
         void OnInit();
         void OnUpdate();
@@ -119,7 +119,7 @@ class Renderer {
         uint32_t m_width;
         uint32_t m_height;
         float m_aspect_ratio;
-        Platform &m_platform;
+        // Platform &m_platform;
 
         bool m_initialized;
         uint32_t m_current_frame_index = 0;

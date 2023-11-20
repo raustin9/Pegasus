@@ -13,12 +13,15 @@
 class Platform {
 public:
     Platform(std::string name, uint32_t width, uint32_t height);
-    void create_window();
-    void destroy_window();
-    bool pump_messages();
-    bool create_vulkan_surface(VKCommonParameters &params);
-    void set_title(std::string title);
-    std::chrono::time_point<std::chrono::high_resolution_clock> get_current_time();
+    static bool Startup(std::string name, uint32_t width, uint32_t height);
+    static void Shutdown();
+
+    static void create_window();
+    static void destroy_window();
+    static bool pump_messages();
+    static bool create_vulkan_surface(VKCommonParameters &params);
+    static void set_title(std::string title);
+    static std::chrono::time_point<std::chrono::high_resolution_clock> get_current_time();
 
     // WINDOWING INFO
 #ifdef Q_PLATFORM_LINUX
@@ -26,7 +29,7 @@ public:
     Display* display;
     Window handle;
     Atom wm_delete_window;
-    void handle_x11_event(XEvent& event);
+    static void handle_x11_event(XEvent& event);
 
 #elif defined(Q_PLATFORM_WINDOWS)
     // WINDOWS WINDOWING SHIT
