@@ -86,8 +86,7 @@ Application::run() {
         if (m_framecounter % 300 == 0) {
             // m_platform.set_title(
             Platform::set_title(
-                ""
-                // m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
+                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
             );
         }
     }

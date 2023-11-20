@@ -89,7 +89,7 @@ Platform::get_current_time() {
 // Set the title of the window
 void
 Platform::set_title(std::string title) {
-
+	SetWindowTextA(windows_state.hWindow, static_cast<LPCSTR>(title.c_str()));
 }
 
 // Create the window for the application
