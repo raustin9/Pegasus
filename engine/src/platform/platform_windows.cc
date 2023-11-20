@@ -29,7 +29,6 @@ Platform::Platform(std::string name, uint32_t width, uint32_t height)
 		);
 		return;
 	}
-
 }
 
 std::chrono::time_point<std::chrono::high_resolution_clock>
@@ -45,15 +44,15 @@ Platform::set_title(std::string title) {
 void
 Platform::create_window() {
 	// Create the window
-	uint32_t client_x = 0;
-	uint32_t client_y = 0;
+	uint32_t client_x = 300;
+	uint32_t client_y = 100;
 	uint32_t client_width = width;
 	uint32_t client_height = height;
 
 	uint32_t window_x = client_x;
 	uint32_t window_y = client_y;
-  	uint32_t window_width = client_width;
-  	uint32_t window_height = client_height;
+  uint32_t window_width = client_width;
+  uint32_t window_height = client_height;
 
 	uint32_t window_style = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION;
 	uint32_t window_ex_style = WS_EX_APPWINDOW;
@@ -150,15 +149,22 @@ Platform::WindowProc(
 			EventHandler::Fire(EVENT_CODE_APPLICATION_QUIT, nullptr, data);
 			return true;
 		}
-			
 
-		case WM_CREATE: {
-			
-		}
-		return 0;
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			return 0;
+		
+		case WM_SIZE: {
+			RECT r;
+			GetClientRect(hWnd, &r);
+			uint32_t width = r.left - r.right;
+			uint32_t height = r.bottom - r.top;
 
-		case WM_PAINT:
-			break;
+			InputHandler::ProcessResize(
+					width, 
+					height
+			);
+		} break;
 
 		case WM_KEYDOWN:
 		case WM_KEYUP:
@@ -170,10 +176,6 @@ Platform::WindowProc(
 			// Pass the input subsystem
 			InputHandler::ProcessKey(key, pressed);
 		}
-
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			return 0;
 
 		case WM_MOUSEMOVE:
 			// Fire an event for mouse movement
@@ -188,31 +190,9 @@ Platform::WindowProc(
 		case WM_RBUTTONDOWN:
 		case WM_MBUTTONUP:
 		case WM_MBUTTONDOWN: {
-
+				// TODO: fire events for mouse buttons
 		} break;
 
-		case WM_SIZE: {
-			RECT r;
-			GetClientRect(hWnd, &r);
-			uint32_t width = r.right - r.left;
-			uint32_t height = r.bottom - r.top;
-
-			// Fire resize event
-			EventContext context = {};
-			context.u16[0] = static_cast<uint16_t>(width);
-			context.u16[1] = static_cast<uint16_t>(height);
-			EventHandler::Fire(EVENT_CODE_RESIZED, nullptr, context);
-		} break;
-			
-		case WM_GETMINMAXINFO:
-			break;
-		
-		case WM_ENTERSIZEMOVE:
-        	return 0;
-
-    case WM_EXITSIZEMOVE:
-      return 0;
-			
 	}
 	
 	return DefWindowProc(hWnd, code, w_param, l_param);

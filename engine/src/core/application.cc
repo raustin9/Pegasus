@@ -126,6 +126,7 @@ Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventConte
 // Resize callback for resizing the window
 bool 
 Application::OnResize(uint16_t code, void* sender, void* listener, EventContext context) {
+    std::cout << "RESIZINZG..." << std::endl;
     (void)code;
     (void)context;
     (void)listener;
