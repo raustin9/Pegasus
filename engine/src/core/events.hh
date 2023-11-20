@@ -89,29 +89,15 @@ static EventState event_state = {};
 
 class EventHandler {
     public:
-    EventHandler() {}
-    ~EventHandler() {}
-//        EventHandler() :m_state{} {
-//            // Likely uneccessary but ensures empty lists
-//            for (size_t i = 0; i < MAX_MESSAGE_CODES; i++)
-//                m_state.registered[i].events.clear();
-//            m_initialized = true;
-//
-//        }
-//        ~EventHandler() {
-//            // Free all events in the array
-//            for (size_t i = 0; i < MAX_MESSAGE_CODES; i++) {
-//                m_state.registered[i].events.clear();
-//            }
-//
-//            m_initialized = false;
-//        }
+        static bool Startup() {
+            if (event_state.initialized)
+                return false;
 
-        static void Startup() {
             for (size_t i = 0; i < MAX_MESSAGE_CODES; i++)
                 event_state.registered[i].events.clear();
             
             event_state.initialized = true;
+            return true;
         }
 
         static void Shutdown() {

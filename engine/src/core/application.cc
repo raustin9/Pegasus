@@ -8,6 +8,9 @@ Settings Application::settings = {};
 struct ApplicationState {
     uint32_t width = 0;
     uint32_t height = 0;
+    bool is_running = false;
+    bool is_suspended = true;
+    bool initialized = false;
 };
 
 static ApplicationState app_state = {};
@@ -26,6 +29,18 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     Application::settings.enableValidation = true;
     Application::settings.enableVsync = false; // disable vsync for higher fps
     m_should_quit = false;
+
+    // Startup subsystems
+    /* TODO: Logging startup */
+    InputHandler::Startup();
+
+    app_state.is_running = true;
+    app_state.is_suspended = false;
+
+    if (!EventHandler::Startup()) {
+        std::cout << "Error: failed to initialize event handler" << std::endl;
+        return;
+    }
 
     // Register for events
     EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
@@ -56,6 +71,8 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     std::cout << "Platform created" << std::endl;
 
     m_renderer.OnInit();
+
+    app_state.initialized = true;
 }
 
 Application::~Application() {
@@ -65,8 +82,8 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    // Application Event loop
     while (!m_should_quit) {
-        // if (m_platform.pump_messages() == true)
         if (Platform::pump_messages() == true)
             m_should_quit = true;
 
@@ -92,9 +109,12 @@ Application::run() {
     }
 
     std::cout << "Shutting down application" << std::endl;
+    EventHandler::Shutdown();
+    InputHandler::Shutdown();
     m_renderer.OnDestroy();
     Platform::Shutdown();
-    return false; 
+    std::cout << "Application shutdown successfully" << std::endl;
+    return true; 
 }
 
 // Behavior for events

@@ -156,9 +156,6 @@ struct MouseState {
 
 class InputHandler {
     public:
-        InputHandler();
-        ~InputHandler();
-
         static void Startup();
         static void Shutdown();
         

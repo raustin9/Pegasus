@@ -15,11 +15,6 @@ struct InputState {
 
 static InputState input_state = {};
 
-InputHandler::InputHandler() {
-}
-InputHandler::~InputHandler() {
-}
-
 void
 InputHandler::Startup() {
     input_state.initialized = true;
