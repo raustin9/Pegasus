@@ -93,6 +93,7 @@ Application::run() {
 
     std::cout << "Shutting down application" << std::endl;
     m_renderer.OnDestroy();
+    Platform::Shutdown();
     return false; 
 }
 

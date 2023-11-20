@@ -80,6 +80,15 @@ Platform::Startup(std::string name, uint32_t width, uint32_t height) {
 	return true;
 }
 
+// Shutdown for platform layer
+void
+Platform::Shutdown() {
+	if (windows_state.hWindow) {
+		DestroyWindow(windows_state.hWindow);
+		windows_state.hWindow = nullptr;
+	}
+}
+
 // Windows implementation for getting the current time
 std::chrono::time_point<std::chrono::high_resolution_clock>
 Platform::get_current_time() {
