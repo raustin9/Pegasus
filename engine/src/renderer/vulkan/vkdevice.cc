@@ -48,6 +48,7 @@ CheckPhysicalDeviceProperties(const VkPhysicalDevice &physicalDevice, VKCommonPa
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties.data());
 
     for (uint32_t i = 0; i < queueFamilyCount; ++i) {
+        std::cout << "GOT HERE\n";
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i , params.PresentationSurface, &queuePresentSupport[i]);
         if ( (queueFamilyProperties[i].queueCount > 0) && (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
             // If the queue fam supports both graphics and operations and presentation on our surface

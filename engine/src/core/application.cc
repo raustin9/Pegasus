@@ -20,8 +20,6 @@ static ApplicationState app_state = {};
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
     : m_name(name), 
     m_assetPath(assetPath), 
-    // m_platform{name, width, height},  
-    // m_renderer{name, m_assetPath, width, height},
     m_timer{} {
 
     app_state.width = width;
@@ -42,6 +40,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
         std::cout << "Error: failed to initialize event handler" << std::endl;
         return;
     }
+    std::cout << "Event System created..." << std::endl;
 
     // Register for events
     EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
@@ -124,7 +123,7 @@ Application::run() {
     EventHandler::Shutdown();
     InputHandler::Shutdown();
     Renderer::Shutdown();
-    // m_renderer.OnDestroy();
+    printf("GOT HERE\n");
     Platform::Shutdown();
     std::cout << "Application shutdown successfully" << std::endl;
     return true; 

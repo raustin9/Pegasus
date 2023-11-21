@@ -3,15 +3,13 @@ OBJ_DIR := obj
 
 ASSEMBLY := engine
 EXTENSION := .so
-COMPILER_FLAGS := -g -fdeclspec -fPIC
+COMPILER_FLAGS := -g -fdeclspec -fPIC -std=c++17
 INCLUDE_FLAGS := -Iengine/src -I$(VULKAN_SDK)/include
-LINKER_FLAGS := -g -shared -lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -L$(VULKAN_SDK)/lib -L/usr/X11R6/lib
-DEFINES := -D_DEBUG -DKEXPORT
+LINKER_FLAGS := -g -shared -lvulkan  -lX11  -L$(VULKAN_SDK)/lib 
+DEFINES := -D_QDEBUG -DQEXPORT
 
-# Make does not offer a recursive wildcard function, so here's one:
-#rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
-SRC_FILES := $(shell find $(ASSEMBLY) -name *.cc)		# .c files
+SRC_FILES := $(shell find $(ASSEMBLY) -name *.cc)		# .cc files
 DIRECTORIES := $(shell find $(ASSEMBLY) -type d)		# directories with .h files
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)		# compiled .o objects
 
@@ -26,7 +24,7 @@ scaffold: # create build directory
 .PHONY: link
 link: scaffold $(OBJ_FILES) # link
 	@echo Linking $(ASSEMBLY)...
-	@clang $(OBJ_FILES) -o $(BUILD_DIR)/lib$(ASSEMBLY)$(EXTENSION) $(LINKER_FLAGS)
+	@clang++ $(OBJ_FILES) -o $(BUILD_DIR)/lib$(ASSEMBLY)$(EXTENSION) $(LINKER_FLAGS)
 
 .PHONY: compile
 compile: #compile .c files
@@ -34,9 +32,9 @@ compile: #compile .c files
 
 .PHONY: clean
 clean: # clean build directory
-	rm -rf $(BUILD_DIR)\$(ASSEMBLY)
-	rm -rf $(OBJ_DIR)\$(ASSEMBLY)
+	rm -rf $(BUILD_DIR)/$(ASSEMBLY)
+	rm -rf $(OBJ_DIR)/$(ASSEMBLY)
 
 $(OBJ_DIR)/%.cc.o: %.cc # compile .c to .o object
 	@echo   $<...
-	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	@clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)

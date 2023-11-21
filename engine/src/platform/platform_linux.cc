@@ -4,13 +4,14 @@
  * This holds the linux implementation of the platform layer
  */
 
+#include "core/events.hh"
 #include "platform.hh"
 #include <chrono>
 
 #ifdef Q_PLATFORM_LINUX
 
 #include "core/input.hh"
-#include "renderer/vkcommon.hh"
+// #include "renderer/vkcommon.hh"
 #include <vulkan/vulkan_core.h>
 #include "stdafx.hh"
 
@@ -23,14 +24,52 @@
 #include <X11/X.h>
 #include <cstdio>
 
+struct PlatformState {
+    std::string name;
+    bool should_quit;
+    uint32_t width;
+    uint32_t height;
+
+    Display* display;
+    Atom wm_delete_window;
+    Window window;
+};
+
+static PlatformState linux_state = {};
+
     
 // WINDOWING
 Platform::Platform(std::string name, uint32_t width, uint32_t height) 
-    : name{name}, width{width}, height{height},
+    : name{name}, width{width}, height{height}
 {
-    this->display = nullptr;
-    this->wm_delete_window = 0;
-    this->should_quit = false;
+//    this->display = nullptr;
+//    this->wm_delete_window = 0;
+//    this->should_quit = false;
+}
+
+bool
+Platform::Startup(std::string name, uint32_t width, uint32_t height) {
+    linux_state.name = name;
+    linux_state.width = width;
+    linux_state.height = height;
+    linux_state.display = nullptr;
+    linux_state.wm_delete_window = 0;
+    linux_state.should_quit = false;
+
+    Platform::create_window();
+    std::cout << "Window Created..." << std::endl;
+
+    return true;
+}
+
+// Shutdown behavior for Linux platform
+void
+Platform::Shutdown() {
+    if (linux_state.display) {
+        XDestroyWindow(linux_state.display, linux_state.window);
+        XCloseDisplay(linux_state.display);
+        // linux_state.display = nullptr;
+    }
 }
 
 std::chrono::time_point<std::chrono::high_resolution_clock>
@@ -42,8 +81,8 @@ Platform::get_current_time() {
 void
 Platform::set_title(std::string title) {
     XSetStandardProperties(
-            display,
-            handle,
+            linux_state.display,
+            linux_state.window,
             title.c_str(),
             title.c_str(),
             None,
@@ -56,36 +95,36 @@ Platform::set_title(std::string title) {
 void
 Platform::create_window() {
     // Open connection to the X server
-    this->display = XOpenDisplay(nullptr);
+    linux_state.display = XOpenDisplay(nullptr);
 
     // Create the window
-    unsigned long white = WhitePixel(display, DefaultScreen(display));
-    handle = XCreateSimpleWindow(
-            display, 
-            DefaultRootWindow(display), 
+    unsigned long white = WhitePixel(linux_state.display, DefaultScreen(linux_state.display));
+    linux_state.window = XCreateSimpleWindow(
+            linux_state.display, 
+            DefaultRootWindow(linux_state.display), 
             0, 
             0, 
-            width, 
-            height, 
+            linux_state.width, 
+            linux_state.height, 
             0, 
             white, 
             white);
 
     // Set the event types the window wants to be notified by the X server
-    XSelectInput(display, handle, KeyPressMask | KeyReleaseMask | StructureNotifyMask | ExposureMask);
+    XSelectInput(linux_state.display, linux_state.window, KeyPressMask | KeyReleaseMask | StructureNotifyMask | ExposureMask);
 
     // Also request to be notified when the window is deleted
-    Atom wm_protocols = XInternAtom(display, "WM_PROTOCOLS", true);
+    Atom wm_protocols = XInternAtom(linux_state.display, "WM_PROTOCOLS", true);
     (void)wm_protocols;;
-    wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", true);
+    linux_state.wm_delete_window = XInternAtom(linux_state.display, "WM_DELETE_WINDOW", true);
 
-    XSetWMProtocols(display, handle, &wm_delete_window, 1);
+    XSetWMProtocols(linux_state.display, linux_state.window, &linux_state.wm_delete_window, 1);
 
     // Set window and icon names
     XSetStandardProperties(
-        display,
-        handle,
-        name.c_str(),
+        linux_state.display,
+        linux_state.window,
+        linux_state.name.c_str(),
         "Icon name",
         None,
         nullptr,
@@ -99,17 +138,17 @@ Platform::create_window() {
     sizehints.min_height = 360;
 
     // Tell window manager our hints about the minimum window size
-    XSetWMSizeHints(display, handle, &sizehints, XA_WM_NORMAL_HINTS);
+    XSetWMSizeHints(linux_state.display, linux_state.window, &sizehints, XA_WM_NORMAL_HINTS);
 
     // Request to display the window on the screen, and flush teh request buffer
-    XMapWindow(display, handle);
-    XFlush(display);
+    XMapWindow(linux_state.display, linux_state.window);
+    XFlush(linux_state.display);
 }
 
 void
 Platform::destroy_window() {
-    XDestroyWindow(display, handle);
-    XCloseDisplay(display);
+    XDestroyWindow(linux_state.display, linux_state.window);
+    XCloseDisplay(linux_state.display);
 }
 
 void
@@ -119,16 +158,20 @@ Platform::handle_x11_event(XEvent& event) {
     KeySym keysym;
     switch (event.type) {
         case ClientMessage:
-            if ((Atom)event.xclient.data.l[0] == wm_delete_window) {
-                should_quit = true;
-            }
-            break;
+//            if ((Atom)event.xclient.data.l[0] == linux_state.wm_delete_window) {
+//                linux_state.should_quit = true;
+//            } 
+            {
+                // Fire an event for the application to quit
+                EventContext data = {};
+                EventHandler::Fire(EVENT_CODE_APPLICATION_QUIT, nullptr, data);
+            } break;
         case ConfigureNotify:
-            if (static_cast<uint32_t>(event.xconfigure.width) != width
-                || static_cast<uint32_t>(event.xconfigure.height) != height) {
-                width = static_cast<uint32_t>(event.xconfigure.width);
-                height = static_cast<uint32_t>(event.xconfigure.height);
-                m_inputHandler.ProcessResize(
+            if (static_cast<uint32_t>(event.xconfigure.width) != linux_state.width
+                || static_cast<uint32_t>(event.xconfigure.height) != linux_state.height) {
+                linux_state.width = static_cast<uint32_t>(event.xconfigure.width);
+                linux_state.height = static_cast<uint32_t>(event.xconfigure.height);
+                InputHandler::ProcessResize(
                     static_cast<uint32_t>(event.xconfigure.width), 
                     static_cast<uint32_t>(event.xconfigure.height));
             }
@@ -137,16 +180,16 @@ Platform::handle_x11_event(XEvent& event) {
         
         case KeyPress:
             code = event.xkey.keycode;
-            keysym = XkbKeycodeToKeysym(display, code, 0, code & ShiftMask ? 1: 0);
+            keysym = XkbKeycodeToKeysym(linux_state.display, code, 0, code & ShiftMask ? 1: 0);
             key = _translateKey(keysym);
-            m_inputHandler.ProcessKey(key, false);
+            InputHandler::ProcessKey(key, false);
             break;
 
         case KeyRelease:
             code = event.xkey.keycode;
-            keysym = XkbKeycodeToKeysym(display, code, 0, code & ShiftMask ? 1: 0);
+            keysym = XkbKeycodeToKeysym(linux_state.display, code, 0, code & ShiftMask ? 1: 0);
             key = _translateKey(keysym);
-            m_inputHandler.ProcessKey(key, true);
+            InputHandler::ProcessKey(key, true);
             break;
 
         default:
@@ -157,13 +200,13 @@ Platform::handle_x11_event(XEvent& event) {
 bool
 Platform::pump_messages() {
     XEvent event;
-    while ((XPending(display) > 0)) {
-        XNextEvent(display, &event);
+    while ((XPending(linux_state.display) > 0)) {
+        XNextEvent(linux_state.display, &event);
         handle_x11_event(event);
     }
-    XFlush(display);
+    XFlush(linux_state.display);
 
-    return should_quit;
+    return true;
 }
 
 // Linux specific vulkan surface creation
@@ -173,8 +216,8 @@ Platform::create_vulkan_surface(VKCommonParameters &params) {
 
     VkXlibSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    createInfo.dpy = display;
-    createInfo.window = handle;
+    createInfo.dpy = linux_state.display;
+    createInfo.window = linux_state.window;
     err = vkCreateXlibSurfaceKHR(params.Instance, &createInfo, params.Allocator, &params.PresentationSurface);
 
     return (err == VK_SUCCESS) ? true : false;
@@ -232,7 +275,7 @@ Platform::_translateKey(uint32_t code) {
         case XK_Print:
             return KEY_PRINT;
         case XK_Execute:
-            return KEY_EXECUTE;
+            return KEY_EXECUTEKEY;
         // case XK_snapshot: return KEY_SNAPSHOT; // not supported
         case XK_Insert:
             return KEY_INSERT;

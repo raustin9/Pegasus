@@ -3,6 +3,7 @@
 #include "stdafx.hh"
 #include "events.hh"
 #include "platform/platform_timer.hh"
+#include <cstdint>
 
 struct Settings {
     bool enableValidation = false;

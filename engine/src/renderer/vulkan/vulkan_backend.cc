@@ -945,6 +945,7 @@ VKBackend::CreateDevice() {
     }
 
 
+
     // Create the logical device
     if (CreateLogicalDevice(queueCreateInfos, deviceExtensions, supportedDeviceExtensions, m_vkparams) != VK_SUCCESS) {
         throw std::runtime_error("CreateLogicalDevice() could not create vulkan logical device");

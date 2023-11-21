@@ -45,6 +45,6 @@ public:
     uint32_t height;
 
 private:
-    Keys _translateKey(uint32_t); // used to standardize keyboard input
+    static Keys _translateKey(uint32_t); // used to standardize keyboard input
                                   // across the different platforms
 };

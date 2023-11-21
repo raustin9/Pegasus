@@ -3,10 +3,10 @@ OBJ_DIR := obj
 
 ASSEMBLY := testbed
 EXTENSION := 
-COMPILER_FLAGS := -g -fdeclspec -fPIC
-INCLUDE_FLAGS := -Iengine/src -I$(VULKAN_SDK)\include
-LINKER_FLAGS := -L./$(BUILD_DIR)/ -lengine -Wl,-rpath,.
-DEFINES := -D_DEBUG -DKIMPORT
+COMPILER_FLAGS := -g -fdeclspec -fPIC -std=c++17
+INCLUDE_FLAGS := -Iengine/src -I$(VULKAN_SDK)\include -Iengine
+LINKER_FLAGS := -L./$(BUILD_DIR)/ -lengine -Wl,-rpath,./bin/
+DEFINES := -D_DEBUG -DQIMPORT
 
 # Make does not offer a recursive wildcard function, so here's one:
 #rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
@@ -26,7 +26,7 @@ scaffold: # create build directory
 .PHONY: link
 link: scaffold $(OBJ_FILES) # link
 	@echo Linking $(ASSEMBLY)...
-	clang $(OBJ_FILES) -o $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION) $(LINKER_FLAGS)
+	clang++ $(OBJ_FILES) -o $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION) $(LINKER_FLAGS)
 
 .PHONY: compile
 compile: #compile .c files
@@ -34,9 +34,9 @@ compile: #compile .c files
 
 .PHONY: clean
 clean: # clean build directory
-	rm -rf $(BUILD_DIR)\$(ASSEMBLY)
-	rm -rf $(OBJ_DIR)\$(ASSEMBLY)
+	rm -rf $(BUILD_DIR)/$(ASSEMBLY)
+	rm -rf $(OBJ_DIR)/$(ASSEMBLY)
 
 $(OBJ_DIR)/%.cc.o: %.cc # compile .c to .o object
 	@echo   $<...
-	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	@clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
