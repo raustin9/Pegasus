@@ -3,7 +3,6 @@
 #include "stdafx.hh"
 #include "vkcommon.hh"
 #include "platform/platform.hh"
-#include "renderer/render_types.inl"
 #include "vkmodel.hh"
 #include "vkpipeline.hh"
 
@@ -26,9 +25,9 @@ struct RenderPacket {
     UBO GlobalUBO;
 };
 
-class Renderer {
+class VKBackend {
     public:
-        Renderer();
+        VKBackend();
 
         void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height);
         void OnInit();

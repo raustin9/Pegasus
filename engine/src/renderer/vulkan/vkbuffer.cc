@@ -1,5 +1,5 @@
 #include "vkbuffer.hh"
-#include "renderer.hh"
+#include "vulkan_backend.hh"
 #include <vulkan/vulkan_core.h>
 
 // STATIC
@@ -32,7 +32,7 @@ VKBuffer::CreateBuffer(VKCommonParameters &params, VkDeviceSize size, VkBufferUs
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = static_cast<uint32_t>(memReqs.size);
-    allocInfo.memoryTypeIndex = Renderer::GetMemoryTypeIndex(memReqs.memoryTypeBits, props, params.Device.DeviceMemoryProperties);
+    allocInfo.memoryTypeIndex = VKBackend::GetMemoryTypeIndex(memReqs.memoryTypeBits, props, params.Device.DeviceMemoryProperties);
 
     VK_CHECK(vkAllocateMemory(params.Device.Device, &allocInfo, params.Allocator, &bufferMemory));
 
@@ -42,7 +42,7 @@ VKBuffer::CreateBuffer(VKCommonParameters &params, VkDeviceSize size, VkBufferUs
 // Copy one buffer to another
 void 
 VKBuffer::CopyBuffer(VKCommonParameters& params, VkBuffer src,  VkBuffer dst, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = Renderer::BeginSingleTimeCommands(params);
+    VkCommandBuffer commandBuffer = VKBackend::BeginSingleTimeCommands(params);
 
     VkBufferCopy copyRegion = {};
     copyRegion.srcOffset = 0;
@@ -50,7 +50,7 @@ VKBuffer::CopyBuffer(VKCommonParameters& params, VkBuffer src,  VkBuffer dst, Vk
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
 
-    Renderer::EndSingleTimeCommands(params, commandBuffer);
+    VKBackend::EndSingleTimeCommands(params, commandBuffer);
 }
 
 

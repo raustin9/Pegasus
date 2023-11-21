@@ -1,5 +1,4 @@
 #pragma once
-#include "renderer/vulkan/renderer.hh"
 #include "platform/platform.hh"
 #include "stdafx.hh"
 #include "events.hh"
@@ -25,9 +24,6 @@ class  QAPI Application {
         std::string m_name;
         std::string m_assetPath;
 
-        // EventHandler m_eventHandler;
-        // Platform m_platform;
-        // Renderer m_renderer;
         StepTimer m_timer;
 
         uint64_t m_framecounter;

@@ -71,7 +71,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     }
     std::cout << "Platform created" << std::endl;
 
-    if (!RendererFrontend::Initialize(name, assetPath, width, height)) {
+    if (!Renderer::Initialize(name, assetPath, width, height)) {
         std::cout << "Error: failed to initialize Renderer Subsystem" << std::endl;
         exit(1);
     }
@@ -103,7 +103,8 @@ Application::run() {
             m_framecounter++;
 
             // Render a frame
-            RendererFrontend::DrawFrame();
+            render_packet packet = {};
+            Renderer::DrawFrame(packet);
             // m_renderer.BeginFrame();
             // m_renderer.EndFrame();
         }
@@ -126,7 +127,7 @@ Application::run() {
 
     EventHandler::Shutdown();
     InputHandler::Shutdown();
-    RendererFrontend::Shutdown();
+    Renderer::Shutdown();
     // m_renderer.OnDestroy();
     Platform::Shutdown();
     std::cout << "Application shutdown successfully" << std::endl;
@@ -203,7 +204,7 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
             } else {
                 // TODO: check if app is suspended and only act if not
                 std::cout << "RESIZING..." << std::endl;
-                RendererFrontend::OnResize(w, h);
+                Renderer::OnResize(w, h);
                 // m_renderer.WindowResize(w, h);
             }
         }
