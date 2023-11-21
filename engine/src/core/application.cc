@@ -94,7 +94,7 @@ Application::run() {
         if (!Platform::pump_messages())
             app_state.is_running = false;
 
-        if (app_state.is_running) {
+        if (!app_state.is_suspended) {
             // Update timer
             m_timer.Tick(nullptr);
 
@@ -105,15 +105,11 @@ Application::run() {
             // Render a frame
             render_packet packet = {};
             Renderer::DrawFrame(packet);
-            // m_renderer.BeginFrame();
-            // m_renderer.EndFrame();
         }
         
         if (m_framecounter % 300 == 0) {
-            // m_platform.set_title(
             Platform::set_title(
-                "Pegasus Engine"
-                // m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
+                m_name + " - " + std::string(m_lastFPS)
             );
         }
     }
@@ -199,13 +195,15 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
             if (w == 0 || h == 0) {
                 std::cout << "Application minimized" << std::endl;
                 // TODO: add suspended states to the application 
-                //       and suspend it here
+                app_state.is_suspended = true;
                 return true;
             } else {
                 // TODO: check if app is suspended and only act if not
-                std::cout << "RESIZING..." << std::endl;
+                if (app_state.is_suspended) {
+                    std::cout << "Window restored. Resuming application" << std::endl;
+                    app_state.is_suspended = false;
+                }
                 Renderer::OnResize(w, h);
-                // m_renderer.WindowResize(w, h);
             }
         }
     }
