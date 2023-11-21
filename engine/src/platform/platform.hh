@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/vkcommon.hh"
+#include "renderer/vulkan/vkcommon.hh"
 #include "core/input.hh"
 #include "core/events.hh"
 #include "platform/platform_timer.hh"

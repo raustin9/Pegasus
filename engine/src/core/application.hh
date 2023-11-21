@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/renderer.hh"
+#include "renderer/vulkan/renderer.hh"
 #include "platform/platform.hh"
 #include "stdafx.hh"
 #include "events.hh"
@@ -27,10 +27,9 @@ class  QAPI Application {
 
         // EventHandler m_eventHandler;
         // Platform m_platform;
-        Renderer m_renderer;
+        // Renderer m_renderer;
         StepTimer m_timer;
 
-        bool m_should_quit;
         uint64_t m_framecounter;
         char m_lastFPS[32]; // string to hold frames per second
 };

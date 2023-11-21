@@ -1,5 +1,7 @@
 #include "application.hh"
 #include "core/events.hh"
+// #include "renderer/vulkan/renderer.hh"
+#include "renderer/renderer_frontend.hh"
 #include <chrono>
 
 
@@ -19,7 +21,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     : m_name(name), 
     m_assetPath(assetPath), 
     // m_platform{name, width, height},  
-    m_renderer{name, m_assetPath, width, height},
+    // m_renderer{name, m_assetPath, width, height},
     m_timer{} {
 
     app_state.width = width;
@@ -28,7 +30,6 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
     Application::settings.enableVsync = false; // disable vsync for higher fps
-    m_should_quit = false;
 
     // Startup subsystems
     /* TODO: Logging startup */
@@ -70,7 +71,13 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     }
     std::cout << "Platform created" << std::endl;
 
-    m_renderer.OnInit();
+    if (!RendererFrontend::Initialize(name, assetPath, width, height)) {
+        std::cout << "Error: failed to initialize Renderer Subsystem" << std::endl;
+        exit(1);
+    }
+    std::cout << "Renderer created" << std::endl;
+
+    // m_renderer.OnInit();
 
     app_state.initialized = true;
 }
@@ -83,11 +90,11 @@ Application::~Application() {
 bool
 Application::run() {
     // Application Event loop
-    while (!m_should_quit) {
-        if (Platform::pump_messages() == true)
-            m_should_quit = true;
+    while (app_state.is_running) {
+        if (!Platform::pump_messages())
+            app_state.is_running = false;
 
-        if (!m_should_quit && m_renderer.IsInitialized()) {
+        if (app_state.is_running) {
             // Update timer
             m_timer.Tick(nullptr);
 
@@ -96,26 +103,39 @@ Application::run() {
             m_framecounter++;
 
             // Render a frame
-            m_renderer.BeginFrame();
-            m_renderer.EndFrame();
+            RendererFrontend::DrawFrame();
+            // m_renderer.BeginFrame();
+            // m_renderer.EndFrame();
         }
         
         if (m_framecounter % 300 == 0) {
             // m_platform.set_title(
             Platform::set_title(
-                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
+                "Pegasus Engine"
+                // m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
             );
         }
     }
 
     std::cout << "Shutting down application" << std::endl;
+
+    EventHandler::Unregister(EVENT_CODE_APPLICATION_QUIT, nullptr);
+    EventHandler::Unregister(EVENT_CODE_KEY_PRESSED, nullptr);
+    EventHandler::Unregister(EVENT_CODE_KEY_RELEASED, nullptr);
+    EventHandler::Unregister(EVENT_CODE_RESIZED, nullptr);
+
     EventHandler::Shutdown();
     InputHandler::Shutdown();
-    m_renderer.OnDestroy();
+    RendererFrontend::Shutdown();
+    // m_renderer.OnDestroy();
     Platform::Shutdown();
     std::cout << "Application shutdown successfully" << std::endl;
     return true; 
 }
+
+/////////////////////////////////////
+// ---------- CALLBACKS ---------- //
+/////////////////////////////////////
 
 // Behavior for events
 // FOR NOW: handle application shutdown signal
@@ -127,7 +147,7 @@ Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext c
     switch(code) {
         case EVENT_CODE_APPLICATION_QUIT: {
             std::cout << "EVENT_CODE_APPLICATION_QUIT received. Shutting down..." << std::endl;
-            m_should_quit = true;
+            app_state.is_running = false;
             return true;
         }; break;
         default:
@@ -183,7 +203,8 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
             } else {
                 // TODO: check if app is suspended and only act if not
                 std::cout << "RESIZING..." << std::endl;
-                m_renderer.WindowResize(w, h);
+                RendererFrontend::OnResize(w, h);
+                // m_renderer.WindowResize(w, h);
             }
         }
     }

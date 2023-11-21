@@ -178,7 +178,7 @@ Platform::pump_messages() {
 		DispatchMessageA(&message);
 	}
 
-	return false;
+	return true;
 }
 
 // Windows implementation for getting a vulkan surface

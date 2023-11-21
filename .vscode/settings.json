@@ -98,7 +98,10 @@
   "C_Cpp_Runner.warningsAsError": false,
   "C_Cpp_Runner.compilerArgs": [],
   "C_Cpp_Runner.linkerArgs": [],
-  "C_Cpp_Runner.includePaths": [],
+  "C_Cpp_Runner.includePaths": ["${workspaceFolder}/**",
+                "${workspaceFolder}/engine/src/**",
+                "${workspaceFolder}/engine/src/*",
+                "${env.VULKAN_SDK}/include"],
   "C_Cpp_Runner.includeSearch": [
     "*",
     "**/*"

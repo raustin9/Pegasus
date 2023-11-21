@@ -3,8 +3,9 @@
 #include "stdafx.hh"
 #include "vkcommon.hh"
 #include "platform/platform.hh"
-#include "renderer/vkmodel.hh"
-#include "renderer/vkpipeline.hh"
+#include "renderer/render_types.inl"
+#include "vkmodel.hh"
+#include "vkpipeline.hh"
 
 #include <cstdint>
 #define GLM_FORCE_RADIANS
@@ -27,8 +28,9 @@ struct RenderPacket {
 
 class Renderer {
     public:
-        Renderer(std::string title, std::string assetPath,  uint32_t width, uint32_t height);
+        Renderer();
 
+        void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height);
         void OnInit();
         void OnUpdate();
         void OnRender();
@@ -51,7 +53,7 @@ class Renderer {
 
         bool IsInitialized() const { return m_initialized; }
 
-        // Mutators
+        // // Mutators
         void SetWidth(uint32_t width) { m_width = width; }
         void SetHeight(uint32_t height) { m_height = height; }
 

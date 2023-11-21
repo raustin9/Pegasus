@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/vkcommon.hh"
+#include "vkcommon.hh"
 #include "stdafx.hh"
 
 void PickPhysicalDevice(VKCommonParameters &params);

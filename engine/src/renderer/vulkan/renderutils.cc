@@ -1,5 +1,5 @@
 #include "renderer.hh"
-#include "renderer/vkcommon.hh"
+#include "vkcommon.hh"
 #include <fstream>
 #include <vulkan/vulkan_core.h>
 

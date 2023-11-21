@@ -23,7 +23,6 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/engine/src/**",
-                "${workspaceFolder}/engine/src/*",
                 "${env.VULKAN_SDK}/include"
             ],
             "defines": [

@@ -1,11 +1,11 @@
 #include "renderer.hh"
 #include "core/application.hh"
-#include "renderer/vkcommon.hh"
-#include "renderer/debug.hh"
-#include "renderer/vkdevice.hh"
-#include "renderer/vkpipeline.hh"
-#include "renderer/vkswapchain.hh"
-#include "renderer/vkmodel.hh"
+#include "vkcommon.hh"
+#include "debug.hh"
+#include "vkdevice.hh"
+#include "vkpipeline.hh"
+#include "vkswapchain.hh"
+#include "vkmodel.hh"
 
 // STD
 #include <chrono>
@@ -22,15 +22,28 @@
 
 // Constructor for the renderer 
 // and startup behavior
-Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint32_t height)
-    :  m_title(name),
-       m_assetPath(assetPath),
-       m_width(width), 
-       m_height(height) //,
+Renderer::Renderer()
     //    m_platform(platform)
 {
+    // Initialize(name, assetPath, width, height);
+    // m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+    // m_vkparams.Allocator = nullptr;
+}
+
+void
+Renderer::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height) {
+    // m_title(name),
+    // m_assetPath(assetPath),
+    // m_width(width), 
+    // m_height(height) //,
+    m_title = name;
+    m_assetPath = assetPath;
+    m_width = width;
+    m_height = height;
+    
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
+
 }
 
 // Init behavior
