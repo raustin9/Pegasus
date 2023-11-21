@@ -13,7 +13,7 @@ enum Buttons {
 #define DEFINE_KEY(name, code) KEY_##name = code
 
 // Keyboard input keys
-enum Keys {
+enum Keys : int {
     DEFINE_KEY(BACKSPACE, 0x08),
     DEFINE_KEY(ENTER, 0x0D),
     DEFINE_KEY(TAB, 0x09),
@@ -41,7 +41,7 @@ enum Keys {
     DEFINE_KEY(DOWN, 0x28),
     DEFINE_KEY(SELECT, 0x29),
     DEFINE_KEY(PRINT, 0x2A),
-    DEFINE_KEY(EXECUTE, 0x2B),
+    DEFINE_KEY(EXECUTEKEY, 0x2B), // KEY_EXECUTE is special on windows
     DEFINE_KEY(SNAPSHOT, 0x2C),
     DEFINE_KEY(INSERT, 0x2D),
     DEFINE_KEY(DELETE, 0x2E),
@@ -156,42 +156,42 @@ struct MouseState {
 
 class InputHandler {
     public:
-        InputHandler(EventHandler &eh);
-        ~InputHandler();
+        static void Startup();
+        static void Shutdown();
         
-        void Update(double deltaTime);
+        static void Update(double deltaTime);
 
 
-        void ProcessKey(Keys key, bool pressed);
-        void ProcessButtons(Buttons button, bool pressed);
-        void ProcessMouseMove(int32_t x, int32_t y);
-        void ProcessMouseWheel(int16_t z_delta);
-        void GetMousePosition(int32_t& x, int32_t& y);
-        void ProcessResize(uint32_t w, uint32_t h);
+        static void ProcessKey(Keys key, bool pressed);
+        static void ProcessButtons(Buttons button, bool pressed);
+        static void ProcessMouseMove(int32_t x, int32_t y);
+        static void ProcessMouseWheel(int16_t z_delta);
+        static void GetMousePosition(int32_t& x, int32_t& y);
+        static void ProcessResize(uint32_t w, uint32_t h);
 
 
     private:
-        EventHandler &m_eventHandler;
+        // EventHandler &m_eventHandler;
 
-        bool m_initialized = false;
-        uint32_t m_mousex;
-        uint32_t m_mousey;
-
-
-        KeyboardState m_keyboardCurrent;
-        KeyboardState m_keyboardPrev;
-        MouseState m_mouseCurrent;
-        MouseState m_mousePrev;
+//        bool m_initialized = false;
+//        uint32_t m_mousex;
+//        uint32_t m_mousey;
+//
+//
+//        KeyboardState m_keyboardCurrent;
+//        KeyboardState m_keyboardPrev;
+//        MouseState m_mouseCurrent;
+//        MouseState m_mousePrev;
         
         // Mouse Input
-        bool _isButtonDown(Buttons button);
-        bool _isButtonUp(Buttons button);
-        bool _wasButtonDown(Buttons button);
-        bool _wasButtonUp(Buttons button);
+        static bool _isButtonDown(Buttons button);
+        static bool _isButtonUp(Buttons button);
+        static bool _wasButtonDown(Buttons button);
+        static bool _wasButtonUp(Buttons button);
         
         // Keyboard input
-        bool _isKeyDown(Keys key);
-        bool _isKeyUp(Keys key);
-        bool _wasKeyDown(Keys key);
-        bool _wasKeyUp(Keys key);
+        static bool _isKeyDown(Keys key);
+        static bool _isKeyUp(Keys key);
+        static bool _wasKeyDown(Keys key);
+        static bool _wasKeyUp(Keys key);
 };

@@ -1,10 +1,10 @@
-#include "renderer.hh"
-#include "renderer/vkcommon.hh"
+#include "vulkan_backend.hh"
+#include "vkcommon.hh"
 #include <fstream>
 #include <vulkan/vulkan_core.h>
 
 VkShaderModule
-Renderer::LoadShader(VKCommonParameters& vkparams, std::string filename) {
+VKBackend::LoadShader(VKCommonParameters& vkparams, std::string filename) {
     size_t shaderSize;
     char* shaderCode = NULL;
 
@@ -40,7 +40,7 @@ Renderer::LoadShader(VKCommonParameters& vkparams, std::string filename) {
 }
 
 uint32_t 
-Renderer::GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties) {
+VKBackend::GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties) {
     for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {
         if ((typeBits & 1) == 1) {
             if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & props) == props) {
@@ -57,7 +57,7 @@ Renderer::GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkP
 
 // For one time commands
 VkCommandBuffer 
-Renderer::BeginSingleTimeCommands(VKCommonParameters& params) {
+VKBackend::BeginSingleTimeCommands(VKCommonParameters& params) {
     VkCommandBufferAllocateInfo allocinfo = {};
     allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -76,7 +76,8 @@ Renderer::BeginSingleTimeCommands(VKCommonParameters& params) {
 }
 
 // End one time command buffer
-void Renderer::EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer) {
+void 
+VKBackend::EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitinfo = {};

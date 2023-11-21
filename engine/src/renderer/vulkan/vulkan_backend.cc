@@ -1,11 +1,11 @@
-#include "renderer.hh"
+#include "vulkan_backend.hh"
 #include "core/application.hh"
-#include "renderer/vkcommon.hh"
-#include "renderer/debug.hh"
-#include "renderer/vkdevice.hh"
-#include "renderer/vkpipeline.hh"
-#include "renderer/vkswapchain.hh"
-#include "renderer/vkmodel.hh"
+#include "vkcommon.hh"
+#include "debug.hh"
+#include "vkdevice.hh"
+#include "vkpipeline.hh"
+#include "vkswapchain.hh"
+#include "vkmodel.hh"
 
 // STD
 #include <chrono>
@@ -22,48 +22,61 @@
 
 // Constructor for the renderer 
 // and startup behavior
-Renderer::Renderer(std::string name, std::string assetPath, uint32_t width, uint32_t height, Platform& platform)
-    :  m_title(name),
-       m_assetPath(assetPath),
-       m_width(width), 
-       m_height(height),
-       m_platform(platform)
+VKBackend::VKBackend()
+    //    m_platform(platform)
 {
+    // Initialize(name, assetPath, width, height);
+    // m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+    // m_vkparams.Allocator = nullptr;
+}
+
+void
+VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height) {
+    // m_title(name),
+    // m_assetPath(assetPath),
+    // m_width(width), 
+    // m_height(height) //,
+    m_title = name;
+    m_assetPath = assetPath;
+    m_width = width;
+    m_height = height;
+    
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
+
 }
 
 // Init behavior
 void
-Renderer::OnInit() {
+VKBackend::OnInit() {
     m_current_frame_index = 0;
     InitVulkan();
     SetupPipeline();
 }
 
 void 
-Renderer::RenderFrame() {
+VKBackend::RenderFrame() {
     OnRender();
     // OnUpdate();
     UpdateUniformBuffer(m_current_frame_index);
-    m_current_frame_index = (m_current_frame_index + 1) % Renderer::MAX_FRAMES_IN_FLIGHT;
+    m_current_frame_index = (m_current_frame_index + 1) % VKBackend::MAX_FRAMES_IN_FLIGHT;
 }
 
 // Update behavior
 void
-Renderer::OnUpdate() {
+VKBackend::OnUpdate() {
 }
 
 // Set the window's title text
 const std::string 
-Renderer::GetDeviceName() {
+VKBackend::GetDeviceName() {
     return std::string(m_deviceProperties.deviceName);
 }
 
 
 // Update the uniform buffers
 void
-Renderer::UpdateUniformBuffer(uint32_t currentImage) {
+VKBackend::UpdateUniformBuffer(uint32_t currentImage) {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -89,7 +102,7 @@ Renderer::UpdateUniformBuffer(uint32_t currentImage) {
 
 // Resize behavior
 void
-Renderer::WindowResize(uint32_t w, uint32_t h) {
+VKBackend::WindowResize(uint32_t w, uint32_t h) {
     if (!m_initialized)
         return;
     
@@ -128,7 +141,7 @@ Renderer::WindowResize(uint32_t w, uint32_t h) {
 }
 
 VkResult
-Renderer::AcquireNextImage(uint32_t* imageIndex) {
+VKBackend::AcquireNextImage(uint32_t* imageIndex) {
     // TODO: wait for fences
     return vkAcquireNextImageKHR( // acquires the next image in the swapchain
             m_vkparams.Device.Device, 
@@ -140,7 +153,7 @@ Renderer::AcquireNextImage(uint32_t* imageIndex) {
 }
 
 void
-Renderer::BeginFrame() {
+VKBackend::BeginFrame() {
     // Get the index of the next available image in the swapchain
     VkResult acquire = AcquireNextImage(&m_current_frame_index);
     if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
@@ -154,7 +167,7 @@ Renderer::BeginFrame() {
 }
 
 void
-Renderer::EndFrame() {
+VKBackend::EndFrame() {
     PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
     SubmitCommandBuffer(m_command_buffer_index);
     PresentImage(m_current_frame_index);
@@ -172,12 +185,12 @@ Renderer::EndFrame() {
    
     // Update the uniform buffer
     UpdateUniformBuffer(m_current_frame_index);
-    m_current_frame_index = (m_current_frame_index + 1) % Renderer::MAX_FRAMES_IN_FLIGHT;
+    m_current_frame_index = (m_current_frame_index + 1) % VKBackend::MAX_FRAMES_IN_FLIGHT;
 }
 
 // Render the scene
 void
-Renderer::OnRender() {
+VKBackend::OnRender() {
     // Get the index of the next available image in the swapchain
     VkResult acquire = AcquireNextImage(&m_current_frame_index);
     if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
@@ -204,7 +217,7 @@ Renderer::OnRender() {
 }
 
 void
-Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
+VKBackend::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.pNext = nullptr;
@@ -306,7 +319,7 @@ Renderer::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
 }
 
 void
-Renderer::SubmitCommandBuffer(uint64_t index) {
+VKBackend::SubmitCommandBuffer(uint64_t index) {
     // Pipeline stage at which the queue submission will wait (via a semaphore)
     VkPipelineStageFlags waitStateMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -330,7 +343,7 @@ Renderer::SubmitCommandBuffer(uint64_t index) {
 }
 
 void
-Renderer::PresentImage(uint32_t index) {
+VKBackend::PresentImage(uint32_t index) {
     // Present current image to the presentation engine
     // Pass the semaphore from the submit info as the wait semaphore for swap chain presentation
     // This ensures that the image is not presented to the windowing system until all commands have been executed
@@ -359,7 +372,7 @@ Renderer::PresentImage(uint32_t index) {
 
 // Destroy in reverse order of creation
 void
-Renderer::OnDestroy() {
+VKBackend::OnDestroy() {
     std::cout << "Destroying renderer" << std::endl;
     m_initialized = false;
 
@@ -480,7 +493,8 @@ Renderer::OnDestroy() {
         std::cout << "destroyed" << std::endl;
     }
 
-    m_platform.destroy_window();
+    // m_platform.destroy_window();
+    Platform::destroy_window();
 
     // Destroy vulkan instance
     std::cout << "Destroying Instance... ";
@@ -489,7 +503,7 @@ Renderer::OnDestroy() {
 }
 
 void 
-Renderer::InitVulkan() {
+VKBackend::InitVulkan() {
 
     CreateInstance();
     CreateSurface();
@@ -510,16 +524,17 @@ Renderer::InitVulkan() {
 }
 
 void
-Renderer::SetupPipeline() {
+VKBackend::SetupPipeline() {
     CreateVertexBuffer();
     CreatePipelineLayout();
     CreatePipelineObjects();
     m_initialized = true;
+    std::cout << "PIPELINE SETUP\n";
 }
 
 
 void 
-Renderer::CreateDescriptorSetLayout() {
+VKBackend::CreateDescriptorSetLayout() {
 
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
     uboLayoutBinding.binding = 0;
@@ -539,15 +554,15 @@ Renderer::CreateDescriptorSetLayout() {
 }
 
 void
-Renderer::CreateDescriptorSets() {
-    std::vector <VkDescriptorSetLayout> layouts(Renderer::MAX_FRAMES_IN_FLIGHT, m_vkparams.DescriptorSetLayout);
+VKBackend::CreateDescriptorSets() {
+    std::vector <VkDescriptorSetLayout> layouts(VKBackend::MAX_FRAMES_IN_FLIGHT, m_vkparams.DescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = m_vkparams.DescriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(Renderer::MAX_FRAMES_IN_FLIGHT);
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(VKBackend::MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts.data();
 
-    m_vkparams.DescriptorSets.resize(Renderer::MAX_FRAMES_IN_FLIGHT);
+    m_vkparams.DescriptorSets.resize(VKBackend::MAX_FRAMES_IN_FLIGHT);
     VK_CHECK(vkAllocateDescriptorSets(
                 m_vkparams.Device.Device,
                 &allocInfo,
@@ -576,16 +591,16 @@ Renderer::CreateDescriptorSets() {
 }
 
 void
-Renderer::CreateDescriptorPool() {
+VKBackend::CreateDescriptorPool() {
     VkDescriptorPoolSize poolSize = {};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(Renderer::MAX_FRAMES_IN_FLIGHT);
+    poolSize.descriptorCount = static_cast<uint32_t>(VKBackend::MAX_FRAMES_IN_FLIGHT);
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(Renderer::MAX_FRAMES_IN_FLIGHT);
+    poolInfo.maxSets = static_cast<uint32_t>(VKBackend::MAX_FRAMES_IN_FLIGHT);
 
     VK_CHECK(vkCreateDescriptorPool(
                 m_vkparams.Device.Device,
@@ -598,8 +613,8 @@ Renderer::CreateDescriptorPool() {
 // Create the uniform buffer
 // This is where uniforms that go to the shaders will go
 void 
-Renderer::CreateUniformBuffer() {
-    m_uboBuffers.resize(Renderer::MAX_FRAMES_IN_FLIGHT);
+VKBackend::CreateUniformBuffer() {
+    m_uboBuffers.resize(VKBackend::MAX_FRAMES_IN_FLIGHT);
     for (size_t i = 0; i < m_uboBuffers.size(); i++) {
         m_uboBuffers[i] = std::make_unique<VKBuffer>(
             m_vkparams,
@@ -616,7 +631,7 @@ Renderer::CreateUniformBuffer() {
 }
 
 void
-Renderer::CreateVertexBuffer() {
+VKBackend::CreateVertexBuffer() {
 //    std::vector <VKModel::Vertex> vertices {
 //        { { 0.0f, 0.25f , 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
 //    	{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
@@ -643,7 +658,7 @@ Renderer::CreateVertexBuffer() {
 
 // Create the layout for the pipeline
 void
-Renderer::CreatePipelineLayout() {
+VKBackend::CreatePipelineLayout() {
     // Create pipeline layout that will be used to create one or more pipeline objects
     VkPipelineLayoutCreateInfo pPipelineCreateInfo = {};
     pPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -658,7 +673,7 @@ Renderer::CreatePipelineLayout() {
 }
 
 void 
-Renderer::CreatePipelineObjects() {
+VKBackend::CreatePipelineObjects() {
     VKPipelineConfig pipelineConfig = {};
     m_pipeline = std::make_unique<VKPipeline>(m_vkparams, pipelineConfig);
 
@@ -669,7 +684,7 @@ Renderer::CreatePipelineObjects() {
 
 
 void 
-Renderer::CreateInstance() {
+VKBackend::CreateInstance() {
     VkApplicationInfo appinfo = {};
     appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appinfo.pApplicationName = GetTitle();
@@ -771,9 +786,10 @@ Renderer::CreateInstance() {
 
 // Create the window surface
 void
-Renderer::CreateSurface() {
+VKBackend::CreateSurface() {
     // Use platform-specific surface creation function
-    m_platform.create_vulkan_surface(m_vkparams);
+    // m_platform.create_vulkan_surface(m_vkparams);
+    Platform::create_vulkan_surface(m_vkparams);
     std::cout << "Surface created" << std::endl;
 }
 
@@ -783,14 +799,14 @@ Renderer::CreateSurface() {
 //       for events that require it like 
 //       window resizing
 void
-Renderer::CreateSwapchain(uint32_t *width, uint32_t *height, bool vsync) {
+VKBackend::CreateSwapchain(uint32_t *width, uint32_t *height, bool vsync) {
     RecreateSwapchain(m_vkparams, width, height, vsync, m_command_buffer_count);
     std::cout << "Swapchain Created" << std::endl;
 }
 
 // Creata a renderpass object
 void
-Renderer::CreateRenderPass() {
+VKBackend::CreateRenderPass() {
     // This will use a single renderpass with one subpass
 
     // Descriptors for the attachments used by this renderpass
@@ -856,7 +872,7 @@ Renderer::CreateRenderPass() {
 }
 
 void
-Renderer::CreateDevice() {
+VKBackend::CreateDevice() {
     // Get the physical device
     uint32_t gpuCount = 0;
 
@@ -940,7 +956,7 @@ Renderer::CreateDevice() {
 // Create a framebuffer to attach color to
 // We need to create one for each image in the swapchain
 void
-Renderer::CreateFrameBuffers() {
+VKBackend::CreateFrameBuffers() {
     VkImageView attachments[1] = {};
     
     VkFramebufferCreateInfo createInfo = {};
@@ -968,7 +984,7 @@ Renderer::CreateFrameBuffers() {
 }
 
 void
-Renderer::AllocateCommandBuffers() {
+VKBackend::AllocateCommandBuffers() {
     if (!m_vkparams.GraphicsCommandPool) {
         VkCommandPoolCreateInfo cmdPoolInfo = {};
         cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -996,7 +1012,7 @@ Renderer::AllocateCommandBuffers() {
 }
 
 void
-Renderer::CreateSyncObjects() {
+VKBackend::CreateSyncObjects() {
     // Create semaphores to synchronize acquiring presentable images before
     // rendering and waiting for drawing to be completed before presenting
     VkSemaphoreCreateInfo semInfo = {};
@@ -1028,12 +1044,12 @@ Renderer::CreateSyncObjects() {
 
 
 void
-Renderer::DestroyInstance() {
+VKBackend::DestroyInstance() {
     // TODO: destroy vulkan instance
 }
 
 
 void
-Renderer::DestroySurface() {
+VKBackend::DestroySurface() {
     // TODO: destroy vulkan surface 
 }

@@ -3,8 +3,8 @@
 #include "stdafx.hh"
 #include "vkcommon.hh"
 #include "platform/platform.hh"
-#include "renderer/vkmodel.hh"
-#include "renderer/vkpipeline.hh"
+#include "vkmodel.hh"
+#include "vkpipeline.hh"
 
 #include <cstdint>
 #define GLM_FORCE_RADIANS
@@ -25,10 +25,11 @@ struct RenderPacket {
     UBO GlobalUBO;
 };
 
-class Renderer {
+class VKBackend {
     public:
-        Renderer(std::string title, std::string assetPath,  uint32_t width, uint32_t height, Platform& platform);
+        VKBackend();
 
+        void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height);
         void OnInit();
         void OnUpdate();
         void OnRender();
@@ -51,7 +52,7 @@ class Renderer {
 
         bool IsInitialized() const { return m_initialized; }
 
-        // Mutators
+        // // Mutators
         void SetWidth(uint32_t width) { m_width = width; }
         void SetHeight(uint32_t height) { m_height = height; }
 
@@ -119,7 +120,7 @@ class Renderer {
         uint32_t m_width;
         uint32_t m_height;
         float m_aspect_ratio;
-        Platform &m_platform;
+        // Platform &m_platform;
 
         bool m_initialized;
         uint32_t m_current_frame_index = 0;

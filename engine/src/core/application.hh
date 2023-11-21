@@ -1,15 +1,15 @@
 #pragma once
-#include "renderer/renderer.hh"
 #include "platform/platform.hh"
 #include "stdafx.hh"
 #include "events.hh"
+#include "platform/platform_timer.hh"
 
 struct Settings {
     bool enableValidation = false;
     bool enableVsync = false;
 };
 
-class Application {
+class  QAPI Application {
     public:
         Application(std::string name,  uint32_t width, uint32_t height, std::string assetPath = "./assets");
         ~Application();
@@ -24,12 +24,8 @@ class Application {
         std::string m_name;
         std::string m_assetPath;
 
-        EventHandler m_eventHandler;
-        Platform m_platform;
-        Renderer m_renderer;
         StepTimer m_timer;
 
-        bool m_should_quit;
         uint64_t m_framecounter;
         char m_lastFPS[32]; // string to hold frames per second
 };

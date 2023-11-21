@@ -1,6 +1,6 @@
 #include "vkpipeline.hh"
-#include "renderer.hh"
-#include "renderer/vkcommon.hh"
+#include "vulkan_backend.hh"
+#include "vkcommon.hh"
 #include <vulkan/vulkan_core.h>
 
 VKPipeline::VKPipeline(
@@ -165,7 +165,7 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     // Set pipeline stage for this shader
     shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
     // Load binary SPIR-V shader module
-    shaderStages[0].module = Renderer::LoadShader(m_vkparams, vertPath);
+    shaderStages[0].module = VKBackend::LoadShader(m_vkparams, vertPath);
     // Main entry point for the shader
     shaderStages[0].pName = "main";
     assert(shaderStages[0].module != VK_NULL_HANDLE);
@@ -175,7 +175,7 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     // Set pipeline stage for this shader
     shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     // Load binary SPIR-V shader module
-    shaderStages[1].module = Renderer::LoadShader(m_vkparams, fragPath);
+    shaderStages[1].module = VKBackend::LoadShader(m_vkparams, fragPath);
     // Main entry point for the shader
     shaderStages[1].pName = "main";
     assert(shaderStages[1].module != VK_NULL_HANDLE);

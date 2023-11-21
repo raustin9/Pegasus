@@ -1,51 +1,85 @@
 #include "application.hh"
 #include "core/events.hh"
+// #include "renderer/vulkan/renderer.hh"
+#include "renderer/renderer_frontend.hh"
 #include <chrono>
-#include <glm/glm.hpp>
+
 
 Settings Application::settings = {};
+
+struct ApplicationState {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    bool is_running = false;
+    bool is_suspended = true;
+    bool initialized = false;
+};
+
+static ApplicationState app_state = {};
 
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
     : m_name(name), 
     m_assetPath(assetPath), 
-    m_eventHandler{}, 
-    m_platform{name, width, height, m_eventHandler},  
-    m_renderer{name, m_assetPath, width, height, m_platform},
+    // m_platform{name, width, height},  
+    // m_renderer{name, m_assetPath, width, height},
     m_timer{} {
+
+    app_state.width = width;
+    app_state.height = height;
 
     // TODO: set this to be configurable
     Application::settings.enableValidation = true;
     Application::settings.enableVsync = false; // disable vsync for higher fps
-    m_should_quit = false;
+
+    // Startup subsystems
+    /* TODO: Logging startup */
+    InputHandler::Startup();
+
+    app_state.is_running = true;
+    app_state.is_suspended = false;
+
+    if (!EventHandler::Startup()) {
+        std::cout << "Error: failed to initialize event handler" << std::endl;
+        return;
+    }
 
     // Register for events
-    m_eventHandler.Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
             this->OnEvent(code, sender, listener, data);
             return true;});
 
-    m_eventHandler.Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
         return true;});
     
-    m_eventHandler.Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnResize(code, sender, listener, data);
         return true;});
 
-    m_eventHandler.Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnMouseMove(code, sender, listener, data);
         return true;});
 
-    m_eventHandler.Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+    EventHandler::Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
         this->OnKey(code, sender, listener, data);
         return true;});
 
-
+    // Init the platform
+    if (!Platform::Startup(name, width, height)) {
+        std::cout << "Error: failed to initialize Platform Layer" << std::endl;
+        exit(1);
+    }
     std::cout << "Platform created" << std::endl;
 
-    m_platform.create_window();
-    std::cout << "Window created" << std::endl;
+    if (!Renderer::Initialize(name, assetPath, width, height)) {
+        std::cout << "Error: failed to initialize Renderer Subsystem" << std::endl;
+        exit(1);
+    }
+    std::cout << "Renderer created" << std::endl;
 
-    m_renderer.OnInit();
+    // m_renderer.OnInit();
+
+    app_state.initialized = true;
 }
 
 Application::~Application() {
@@ -55,11 +89,12 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
-    while (!m_should_quit) {
-        if (m_platform.pump_messages() == true)
-            m_should_quit = true;
+    // Application Event loop
+    while (app_state.is_running) {
+        if (!Platform::pump_messages())
+            app_state.is_running = false;
 
-        if (!m_should_quit && m_renderer.IsInitialized()) {
+        if (!app_state.is_suspended) {
             // Update timer
             m_timer.Tick(nullptr);
 
@@ -68,21 +103,36 @@ Application::run() {
             m_framecounter++;
 
             // Render a frame
-            m_renderer.BeginFrame();
-            m_renderer.EndFrame();
+            render_packet packet = {};
+            Renderer::DrawFrame(packet);
         }
         
         if (m_framecounter % 300 == 0) {
-            m_platform.set_title(
-                m_name + " - " + m_renderer.GetDeviceName() + " - " + std::string(m_lastFPS)
+            Platform::set_title(
+                m_name + " - " + std::string(m_lastFPS)
             );
         }
     }
 
     std::cout << "Shutting down application" << std::endl;
-    m_renderer.OnDestroy();
-    return false; 
+
+    EventHandler::Unregister(EVENT_CODE_APPLICATION_QUIT, nullptr);
+    EventHandler::Unregister(EVENT_CODE_KEY_PRESSED, nullptr);
+    EventHandler::Unregister(EVENT_CODE_KEY_RELEASED, nullptr);
+    EventHandler::Unregister(EVENT_CODE_RESIZED, nullptr);
+
+    EventHandler::Shutdown();
+    InputHandler::Shutdown();
+    Renderer::Shutdown();
+    // m_renderer.OnDestroy();
+    Platform::Shutdown();
+    std::cout << "Application shutdown successfully" << std::endl;
+    return true; 
 }
+
+/////////////////////////////////////
+// ---------- CALLBACKS ---------- //
+/////////////////////////////////////
 
 // Behavior for events
 // FOR NOW: handle application shutdown signal
@@ -94,7 +144,7 @@ Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext c
     switch(code) {
         case EVENT_CODE_APPLICATION_QUIT: {
             std::cout << "EVENT_CODE_APPLICATION_QUIT received. Shutting down..." << std::endl;
-            m_should_quit = true;
+            app_state.is_running = false;
             return true;
         }; break;
         default:
@@ -130,11 +180,34 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
     (void)context;
     (void)listener;
     (void)sender;
+   
+    if (code == EVENT_CODE_RESIZED) {
+        uint32_t w = context.u32[0];
+        uint32_t h = context.u32[1];
 
-    uint32_t w = context.u32[0];
-    uint32_t h = context.u32[1];
+        // Check if either the width or height are different
+        if (app_state.width != w || app_state.height != h) {
+            printf("[%i, %i] != [%i, %i]\n", app_state.width, app_state.height, w, h);
+            app_state.width = w;
+            app_state.height = h;
 
-    m_renderer.WindowResize(w, h);
+            // Handle minimization
+            if (w == 0 || h == 0) {
+                std::cout << "Application minimized" << std::endl;
+                // TODO: add suspended states to the application 
+                app_state.is_suspended = true;
+                return true;
+            } else {
+                // TODO: check if app is suspended and only act if not
+                if (app_state.is_suspended) {
+                    std::cout << "Window restored. Resuming application" << std::endl;
+                    app_state.is_suspended = false;
+                }
+                Renderer::OnResize(w, h);
+            }
+        }
+    }
+
     return false;
 }
 
@@ -148,7 +221,7 @@ Application::OnKey(uint16_t code, void* sender, void* listener, EventContext con
         uint16_t keycode = context.u16[0];
         if (keycode == KEY_ESCAPE) {
             EventContext data = {};
-            m_eventHandler.Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+            EventHandler::Fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
 
             return true;
         } else {

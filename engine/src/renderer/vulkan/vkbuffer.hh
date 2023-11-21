@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/vkcommon.hh"
+#include "vkcommon.hh"
 #include "stdafx.hh"
 #include <vulkan/vulkan_core.h>
 
