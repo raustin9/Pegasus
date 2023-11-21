@@ -67,8 +67,7 @@ void
 Platform::Shutdown() {
     if (linux_state.display) {
         XDestroyWindow(linux_state.display, linux_state.window);
-        XCloseDisplay(linux_state.display);
-        // linux_state.display = nullptr;
+        // XCloseDisplay(linux_state.display); --> causes segfault. Seems to be bug with xlib
     }
 }
 

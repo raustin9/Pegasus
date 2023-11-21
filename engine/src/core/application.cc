@@ -123,7 +123,6 @@ Application::run() {
     EventHandler::Shutdown();
     InputHandler::Shutdown();
     Renderer::Shutdown();
-    printf("GOT HERE\n");
     Platform::Shutdown();
     std::cout << "Application shutdown successfully" << std::endl;
     return true; 
