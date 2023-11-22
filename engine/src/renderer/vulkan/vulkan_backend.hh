@@ -7,6 +7,8 @@
 #include "vkpipeline.hh"
 
 #include <cstdint>
+
+// Math lib
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
@@ -88,6 +90,7 @@ class VKBackend {
         void CreateDescriptorSetLayout();
         void CreateDescriptorSets();
         void CreateDescriptorPool();
+        void CreateTextureImage();
 
         void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
         void SubmitCommandBuffer(uint64_t index);

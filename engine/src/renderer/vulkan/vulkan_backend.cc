@@ -14,6 +14,9 @@
 #include <vulkan/vulkan_core.h>
 #include <stdlib.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <vendor/stb_image.h>
+
 // GLM
 #define GLM_FORCE_RADIANS 
 #include <glm/glm.hpp>
@@ -669,8 +672,6 @@ VKBackend::CreatePipelineLayout() {
 
     VK_CHECK(
         vkCreatePipelineLayout(m_vkparams.Device.Device, &pPipelineCreateInfo, m_vkparams.Allocator, &m_vkparams.PipelineLayout));
-
-
 }
 
 void 
