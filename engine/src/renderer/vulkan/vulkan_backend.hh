@@ -12,6 +12,12 @@
 #include <glm/glm.hpp>
 #include <vulkan/vulkan_core.h>
 
+// Settings to be passed to the renderer backed
+struct RendererSettings {
+  bool enable_validation = false;
+  bool enable_vsync = false;
+};
+
 // Structure for Uniform Buffer Object
 struct UBO {
     alignas (16) glm::mat4 projectionView{1.f};
@@ -29,7 +35,7 @@ class VKBackend {
     public:
         VKBackend();
 
-        void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height);
+        void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height, RendererSettings settings);
         void OnInit();
         void OnUpdate();
         void OnRender();
@@ -121,6 +127,7 @@ class VKBackend {
         uint32_t m_height;
         float m_aspect_ratio;
         // Platform &m_platform;
+        RendererSettings m_settings;
 
         bool m_initialized;
         uint32_t m_current_frame_index = 0;

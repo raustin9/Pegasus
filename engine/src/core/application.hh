@@ -16,7 +16,7 @@ class  QAPI Application {
         ~Application();
         bool run(); // event loop
 
-        static Settings settings;
+        // static Settings settings;
         bool OnEvent(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnKey(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context);

@@ -5,7 +5,7 @@
 #include <chrono>
 
 
-Settings Application::settings = {};
+static Settings settings = {};
 
 struct ApplicationState {
     uint32_t width = 0;
@@ -21,13 +21,14 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     : m_name(name), 
     m_assetPath(assetPath), 
     m_timer{} {
+    settings = {};
 
     app_state.width = width;
     app_state.height = height;
 
     // TODO: set this to be configurable
-    Application::settings.enableValidation = true;
-    Application::settings.enableVsync = false; // disable vsync for higher fps
+    settings.enableValidation = true;
+    settings.enableVsync = false; // disable vsync for higher fps
 
     // Startup subsystems
     /* TODO: Logging startup */
@@ -70,7 +71,7 @@ Application::Application(std::string name, uint32_t width, uint32_t height, std:
     }
     std::cout << "Platform created" << std::endl;
 
-    if (!Renderer::Initialize(name, assetPath, width, height)) {
+    if (!Renderer::Initialize(name, assetPath, width, height, {true, false})) {
         std::cout << "Error: failed to initialize Renderer Subsystem" << std::endl;
         exit(1);
     }

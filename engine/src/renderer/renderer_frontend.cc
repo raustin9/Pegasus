@@ -3,8 +3,8 @@
 static VKBackend vkrenderer = {};
 
 bool 
-Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, uint32_t height) {
-  vkrenderer.Initialize(name, asset_path, width, height);
+Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, uint32_t height, RendererSettings settings) {
+  vkrenderer.Initialize(name, asset_path, width, height, settings);
   vkrenderer.OnInit();
 
   return true;

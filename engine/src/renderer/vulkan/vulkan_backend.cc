@@ -31,11 +31,12 @@ VKBackend::VKBackend()
 }
 
 void
-VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height) {
+VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height, RendererSettings settings) {
     // m_title(name),
     // m_assetPath(assetPath),
     // m_width(width), 
     // m_height(height) //,
+    m_settings = settings;
     m_title = name;
     m_assetPath = assetPath;
     m_width = width;
@@ -487,7 +488,7 @@ VKBackend::OnDestroy() {
     std::cout << "destroyed" << std::endl;
 
     // Destroy debug messenger
-    if (Application::settings.enableValidation) {
+    if (m_settings.enable_validation) {
         std::cout << "Destroying Debug Messenger... ";
         pfnDestroyDebugUtilsMessengerEXT(m_vkparams.Instance, debugUtilsMessenger, m_vkparams.Allocator);
         std::cout << "destroyed" << std::endl;
@@ -512,7 +513,7 @@ VKBackend::InitVulkan() {
             m_vkparams.Device.Device, 
             m_vkparams.GraphicsQueue.FamilyIndex, 
             m_vkparams.GraphicsQueue.Handle);
-    CreateSwapchain(&m_width, &m_height, Application::settings.enableVsync);
+    CreateSwapchain(&m_width, &m_height, m_settings.enable_vsync);
     CreateRenderPass();
     CreateFrameBuffers();
     AllocateCommandBuffers();
@@ -703,7 +704,7 @@ VKBackend::CreateInstance() {
 #endif
 
     // Validation layer ext
-    if (Application::settings.enableValidation) {
+    if (m_settings.enable_validation) {
         instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -753,7 +754,7 @@ VKBackend::CreateInstance() {
 
     // Validation layer setup
     const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
-    if (Application::settings.enableValidation) {
+    if (m_settings.enable_validation) {
         // Check if this layer is available at instance level
         uint32_t instanceLayerCount;
         vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
@@ -779,7 +780,7 @@ VKBackend::CreateInstance() {
         VK_CHECK(vkCreateInstance(&createInfo, m_vkparams.Allocator, &m_vkparams.Instance));
 
         // Set callback to handle validation
-        if (Application::settings.enableValidation)
+        if (m_settings.enable_validation)
             setupDebugUtil(m_vkparams.Instance);
     }
 }
