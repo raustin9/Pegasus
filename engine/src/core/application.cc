@@ -3,7 +3,10 @@
 // #include "renderer/vulkan/renderer.hh"
 #include "renderer/renderer_frontend.hh"
 #include <chrono>
-
+#define GLM_FORCE_RADIANS 
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 static Settings settings = {};
 
@@ -20,6 +23,8 @@ static ApplicationState app_state = {};
 Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
     : m_name(name), 
     m_assetPath(assetPath), 
+    m_width(width),
+    m_height(height),
     m_timer{} {
     settings = {};
 
@@ -97,13 +102,34 @@ Application::run() {
         if (!app_state.is_suspended) {
             // Update timer
             m_timer.Tick(nullptr);
+            static auto startTime = std::chrono::high_resolution_clock::now();
+            auto currentTime = std::chrono::high_resolution_clock::now();
+            float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+            UBO ubo{};
+            glm::mat4 model = glm::rotate(
+                glm::mat4(1.0f), 
+                time * glm::radians(90.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f));
+
+            glm::mat4 view = glm::lookAt(
+                glm::vec3(2.0f, 2.0f, 2.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f));
+
+            glm::mat4 proj = glm::perspective(
+                glm::radians(45.0f),
+                m_width / static_cast<float>(m_height), 0.1f, 10.0f);
+
+            ubo.projectionView = proj * view * model;
 
             // Update FPS and framecount
             snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
             m_framecounter++;
 
             // Render a frame
-            render_packet packet = {};
+            RenderPacket packet = {};
+            packet.ubo = ubo;
             Renderer::DrawFrame(packet);
         }
         

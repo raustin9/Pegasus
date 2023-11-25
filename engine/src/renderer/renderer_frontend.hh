@@ -1,11 +1,9 @@
 #pragma once
 
 #include "stdafx.hh"
+#include "render_types.hh"
 #include "vulkan/vulkan_backend.hh"
 
-struct render_packet {
-
-};
 
 
 class Renderer {
@@ -14,5 +12,5 @@ public:
   static void Shutdown();
 
   static void OnResize(uint16_t width, uint16_t height);
-  static bool DrawFrame(render_packet packet);
+  static bool DrawFrame(RenderPacket packet);
 };

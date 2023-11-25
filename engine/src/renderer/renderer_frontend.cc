@@ -21,10 +21,10 @@ Renderer::OnResize(uint16_t width, uint16_t height) {
 }
 
 bool 
-Renderer::DrawFrame(render_packet packet) {
+Renderer::DrawFrame(RenderPacket packet) {
   if (vkrenderer.IsInitialized()) {
     vkrenderer.BeginFrame();
-    vkrenderer.EndFrame();
+    vkrenderer.EndFrame(packet);
   }
   return true;
 }

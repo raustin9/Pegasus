@@ -5,6 +5,7 @@
 #include "platform/platform.hh"
 #include "vkmodel.hh"
 #include "vkpipeline.hh"
+#include "../render_types.hh"
 
 #include <cstdint>
 
@@ -21,17 +22,18 @@ struct RendererSettings {
 };
 
 // Structure for Uniform Buffer Object
-struct UBO {
-    alignas (16) glm::mat4 projectionView{1.f};
-    // glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
-};
+// struct UBO {
+//     alignas (16) glm::mat4 projectionView{1.f};
+//     // glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+// };
 
-// Structure for a render packet
-// This is sent from the application to the renderer
-// The renderer uses information in this as data to render
-struct RenderPacket {
-    UBO GlobalUBO;
-};
+// // Structure for a render packet
+// // This is sent from the application to the renderer
+// // The renderer uses information in this as data to render
+// struct RenderPacket {
+//     UBO ubo;
+//     float time;
+// };
 
 class VKBackend {
     public:
@@ -39,8 +41,6 @@ class VKBackend {
 
         void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height, RendererSettings settings);
         void OnInit();
-        void OnUpdate();
-        void OnRender();
         void OnDestroy();
 
         const std::string GetDeviceName();
@@ -50,7 +50,7 @@ class VKBackend {
         void OnKeyDown(uint8_t) {}
         void OnKeyUp(uint8_t) {}
 
-        void RenderFrame();
+        // void RenderFrame(RenderPacket packet);
 
         // Accessors
         uint32_t GetWidth() const { return m_width; }
@@ -66,7 +66,7 @@ class VKBackend {
 
         // Public Interface
         void BeginFrame();
-        void EndFrame();
+        void EndFrame(RenderPacket packet);
 
         // Static members
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -95,7 +95,6 @@ class VKBackend {
         void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
         void SubmitCommandBuffer(uint64_t index);
         void PresentImage(uint32_t index);
-        void UpdateUniformBuffer(uint32_t currentImage);
 
         void DestroyInstance();
         void DestroySurface();

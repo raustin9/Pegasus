@@ -25,6 +25,9 @@ class  QAPI Application {
         std::string m_name;
         std::string m_assetPath;
 
+        uint32_t m_width;
+        uint32_t m_height;
+
         StepTimer m_timer;
 
         uint64_t m_framecounter;
