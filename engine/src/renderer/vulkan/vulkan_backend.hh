@@ -107,15 +107,16 @@ class VKBackend {
         VkResult AcquireNextImage(uint32_t* imageIndex);
 
         std::string m_title;
+        std::vector<std::unique_ptr<VKModel> > m_models;
         std::unique_ptr<VKModel> m_model;
         std::unique_ptr<VKPipeline> m_pipeline;
 
 
         // Vertex layout
-        struct Vertex {
-            float position[3];
-            float color[4];
-        };
+        // struct Vertex {
+        //     float position[3];
+        //     float color[4];
+        // };
 
         // Vertex buffer
         struct {

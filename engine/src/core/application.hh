@@ -3,6 +3,7 @@
 #include "stdafx.hh"
 #include "events.hh"
 #include "platform/platform_timer.hh"
+#include "game_types.hh"
 #include <cstdint>
 
 struct Settings {
@@ -12,7 +13,7 @@ struct Settings {
 
 class  QAPI Application {
     public:
-        Application(std::string name,  uint32_t width, uint32_t height, std::string assetPath = "./assets");
+        Application(Pegasus::Game& game, std::string name,  uint32_t width, uint32_t height, std::string assetPath = "./assets");
         ~Application();
         bool run(); // event loop
 
@@ -22,6 +23,7 @@ class  QAPI Application {
         bool OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnResize(uint16_t code, void* sender, void* listener, EventContext context);
     private:
+        Pegasus::Game& m_game;
         std::string m_name;
         std::string m_assetPath;
 

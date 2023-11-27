@@ -1,5 +1,16 @@
 #pragma once
 
+/**
+ * renderer_frontend.hh
+ * 
+ * This file is the interface that the application and other layers will use to interact 
+ * with the renderer subsystem.
+ * This is a backend-agnostic interface that can be used by any of the renderer backend types.
+ * Eventually, this will support OpenGL and DirectX as well, so this is necessary so that we 
+ * are able to have multiple backend types without other parts of the engine having to worry
+ * about that.
+*/
+
 #include "stdafx.hh"
 #include "render_types.hh"
 #include "vulkan/vulkan_backend.hh"

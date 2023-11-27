@@ -2,6 +2,7 @@
 #include "core/events.hh"
 // #include "renderer/vulkan/renderer.hh"
 #include "renderer/renderer_frontend.hh"
+#include "game_types.hh"
 #include <chrono>
 #define GLM_FORCE_RADIANS 
 #include <glm/glm.hpp>
@@ -20,8 +21,9 @@ struct ApplicationState {
 
 static ApplicationState app_state = {};
 
-Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
-    : m_name(name), 
+Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath)
+    : m_game(game),
+    m_name(name), 
     m_assetPath(assetPath), 
     m_width(width),
     m_height(height),

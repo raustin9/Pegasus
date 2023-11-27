@@ -41,7 +41,7 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     // will bound. This uses a single vertex buffer at binding point 0
     VkVertexInputBindingDescription vertexInputBinding = {};
     vertexInputBinding.binding = 0;
-    vertexInputBinding.stride = sizeof(VKModel::Vertex);
+    vertexInputBinding.stride = sizeof(Vertex);
     vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     // Vertex attribute descriptions describe the vertex shader attribute locations and memory layouts
@@ -51,8 +51,8 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     // layout (location = 0) in vec3 inPos;
     // layout (location = 0) in vec4 inColor;
     // Attribute location 0: position from vertex buffer at binding point 0
-    std::vector<VkVertexInputBindingDescription> bindingDescriptions = VKModel::Vertex::GetBindingDesc();
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions = VKModel::Vertex::GetAttribDesc();
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions = Vertex::GetBindingDesc();
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions = Vertex::GetAttribDesc();
 
 
     // Vertex input state used for pipeline creation

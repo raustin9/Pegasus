@@ -24,11 +24,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 // Constructor for the renderer 
-// and startup behavior
 VKBackend::VKBackend()
 {
 }
 
+// Initialization behavior for the Vulkan Backend of the renderer
 void
 VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height, RendererSettings settings) {
     m_settings = settings;
@@ -39,7 +39,9 @@ VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, u
     
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
-
+    m_current_frame_index = 0;
+    InitVulkan();
+    SetupPipeline();
 }
 
 // Init behavior
@@ -224,21 +226,15 @@ VKBackend::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
 
     // Bind the graphics pipeline
     m_pipeline->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-    // vkCmdBindPipeline(m_vkparams.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkparams.GraphicsPipeline);
 
 
     // Bind the triangle vertex buffer (contains position and color)
-//    vkCmdBindDescriptorSets(
-//            m_vkparams.GraphicsCommandBuffers[bufferIndex],
-//            VK_PIPELINE_BIND_POINT_GRAPHICS, 
-//            m_vkparams.PipelineLayout, 
-//            0, 
-//            1, 
-//            &m_vkparams.DescriptorSets[m_current_frame_index], 
-//            0, 
-//            nullptr);
-    m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-    m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
+    for (size_t i = 0; i < m_models.size(); i++) {
+        m_models[i]->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+        m_models[i]->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
+    }
+    // m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+    // m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
 
     // Ending the render pass will add an implicit barrier, transitioning the frame buffer
     // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
@@ -310,7 +306,9 @@ VKBackend::OnDestroy() {
 
     // Destroy vertex buffer object and deallocate backing memory
     std::cout << "Destroying vertex buffer and memory...";
-    m_model->Destroy();
+    for (size_t i = 0; i < m_models.size(); i++) {
+        m_models[i]->Destroy();
+    }
     std::cout << "destroyed & freed" << std::endl;
     
     std::cout << "Destroying Uniform Buffers... ";
@@ -561,13 +559,7 @@ VKBackend::CreateUniformBuffer() {
 
 void
 VKBackend::CreateVertexBuffer() {
-//    std::vector <VKModel::Vertex> vertices {
-//        { { 0.0f, 0.25f , 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
-//    	{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
-//        { { 0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
-//    };
-
-    std::vector<VKModel::Vertex> vertices {
+    std::vector<Vertex> vertices {
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
         {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
         {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
@@ -578,11 +570,15 @@ VKBackend::CreateVertexBuffer() {
         0, 1, 2, 2, 3, 0 
     };
 
-    VKModel::Builder triangleBuilder = VKModel::Builder();
+    Builder triangleBuilder = Builder();
     triangleBuilder.vertices = vertices;
     triangleBuilder.indices = indices;
 
-    m_model = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
+    std::unique_ptr<VKModel> newmodel = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
+
+    // m_model = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
+    m_models.push_back(std::move(newmodel));
+
 }
 
 // Create the layout for the pipeline
