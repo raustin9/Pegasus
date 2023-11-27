@@ -20,6 +20,12 @@ Renderer::OnResize(uint16_t width, uint16_t height) {
   vkrenderer.WindowResize(width, height);
 }
 
+bool
+Renderer::CreateModel(Pegasus::GameObject& obj) {
+
+  return true;
+}
+
 bool 
 Renderer::DrawFrame(RenderPacket packet) {
   if (vkrenderer.IsInitialized()) {

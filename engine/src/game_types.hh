@@ -12,7 +12,7 @@
 */
 
 namespace Pegasus {
-  class GameObject {
+  class QAPI GameObject  {
   public:
     using id_t = uint64_t;
 
@@ -28,7 +28,7 @@ namespace Pegasus {
     
   };
 
-  class Game {
+  class QAPI  Game {
     public:
       Game() {}
       ~Game() {}

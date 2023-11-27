@@ -96,6 +96,9 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
+    Renderer::CreateModel(obj);
+
     // Application Event loop
     while (app_state.is_running) {
         if (!Platform::pump_messages())
