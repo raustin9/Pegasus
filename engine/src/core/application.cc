@@ -97,6 +97,18 @@ Application::~Application() {
 bool
 Application::run() {
     Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
+    std::vector<Vertex> vertices {
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
+        {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
+    };
+
+    std::vector<uint32_t> indices {
+        0, 1, 2, 2, 3, 0 
+    };
+    obj.vertices = vertices;
+    obj.indices = indices;
     Renderer::CreateModel(obj);
 
     // Application Event loop

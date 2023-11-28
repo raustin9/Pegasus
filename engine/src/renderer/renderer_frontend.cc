@@ -22,7 +22,12 @@ Renderer::OnResize(uint16_t width, uint16_t height) {
 
 bool
 Renderer::CreateModel(Pegasus::GameObject& obj) {
-
+  // vkrenderer.CreateVertexBuffer();
+  Builder model_builder = {
+    obj.vertices,
+    obj.indices
+  };
+  vkrenderer.AddModel(model_builder);
   return true;
 }
 

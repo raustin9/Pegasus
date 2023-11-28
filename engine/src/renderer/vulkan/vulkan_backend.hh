@@ -75,6 +75,9 @@ class VKBackend {
         static VkCommandBuffer BeginSingleTimeCommands(VKCommonParameters& params);
         static void EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer);
 
+        void CreateVertexBuffer();
+        void CreateUniformBuffer();
+        void AddModel(Builder builder);
     private:
         void InitVulkan();
         void SetupPipeline();
@@ -99,8 +102,6 @@ class VKBackend {
         void DestroyInstance();
         void DestroySurface();
 
-        void CreateVertexBuffer();
-        void CreateUniformBuffer();
         void CreatePipelineLayout();
         void CreatePipelineObjects();
 

@@ -452,13 +452,19 @@ VKBackend::InitVulkan() {
 
 void
 VKBackend::SetupPipeline() {
-    CreateVertexBuffer();
+    // CreateVertexBuffer();
     CreatePipelineLayout();
     CreatePipelineObjects();
     m_initialized = true;
     std::cout << "PIPELINE SETUP\n";
 }
 
+void
+VKBackend::AddModel(Builder builder) {
+    m_models.push_back(std::make_unique<VKModel>(m_vkparams, builder));
+
+    return;
+}
 
 void 
 VKBackend::CreateDescriptorSetLayout() {
