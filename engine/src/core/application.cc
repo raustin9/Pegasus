@@ -96,6 +96,8 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    // create temporary objects using the renderer API
+    // TODO: remove these and do this through UI
     Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
     Pegasus::GameObject obj2 = Pegasus::Game::NewGameObject();
     std::vector<Vertex> vertices {
