@@ -150,6 +150,7 @@ Application::run() {
                 glm::vec3(0.0f, 0.0f, 1.0f));
 
             glm::mat4 proj = glm::perspective(
+                0.5f + glm::abs(glm::sin(time)) *
                 glm::radians(45.0f),
                 m_width / static_cast<float>(m_height), 0.1f, 10.0f);
 
