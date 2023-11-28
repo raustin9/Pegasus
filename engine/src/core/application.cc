@@ -2,8 +2,12 @@
 #include "core/events.hh"
 // #include "renderer/vulkan/renderer.hh"
 #include "renderer/renderer_frontend.hh"
+#include "game_types.hh"
 #include <chrono>
-
+#define GLM_FORCE_RADIANS 
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 static Settings settings = {};
 
@@ -17,9 +21,12 @@ struct ApplicationState {
 
 static ApplicationState app_state = {};
 
-Application::Application(std::string name, uint32_t width, uint32_t height, std::string assetPath)
-    : m_name(name), 
+Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath)
+    : m_game(game),
+    m_name(name), 
     m_assetPath(assetPath), 
+    m_width(width),
+    m_height(height),
     m_timer{} {
     settings = {};
 
@@ -89,6 +96,34 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
+    Pegasus::GameObject obj2 = Pegasus::Game::NewGameObject();
+    std::vector<Vertex> vertices {
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
+        {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
+    };
+    std::vector<uint32_t> indices {
+        0, 1, 2, 2, 3, 0 
+    };
+    obj.vertices = vertices;
+    obj.indices = indices;
+
+    std::vector<Vertex> vertices2 {
+        {{-0.5f, -0.5f, 0.5f}, {0.3f, 0.87f, 0.0f}},
+        {{0.5f, -0.5f, 0.5f}, {0.81f, 1.0f, 0.9f}},
+        {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.43f}},
+    };
+    std::vector<uint32_t> indices2 {
+        0, 1, 2 
+    };
+    obj2.vertices = vertices2;
+    obj2.indices = indices2;
+
+    Renderer::CreateModel(obj);
+    Renderer::CreateModel(obj2);
+
     // Application Event loop
     while (app_state.is_running) {
         if (!Platform::pump_messages())
@@ -97,13 +132,34 @@ Application::run() {
         if (!app_state.is_suspended) {
             // Update timer
             m_timer.Tick(nullptr);
+            static auto startTime = std::chrono::high_resolution_clock::now();
+            auto currentTime = std::chrono::high_resolution_clock::now();
+            float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+            UBO ubo{};
+            glm::mat4 model = glm::rotate(
+                glm::mat4(1.0f), 
+                time * glm::radians(90.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f));
+
+            glm::mat4 view = glm::lookAt(
+                glm::vec3(2.0f, 2.0f, 2.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f));
+
+            glm::mat4 proj = glm::perspective(
+                glm::radians(45.0f),
+                m_width / static_cast<float>(m_height), 0.1f, 10.0f);
+
+            ubo.projectionView = proj * view * model;
 
             // Update FPS and framecount
             snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
             m_framecounter++;
 
             // Render a frame
-            render_packet packet = {};
+            RenderPacket packet = {};
+            packet.ubo = ubo;
             Renderer::DrawFrame(packet);
         }
         

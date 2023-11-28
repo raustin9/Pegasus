@@ -1,6 +1,7 @@
 #pragma once
 #include "vkcommon.hh"
 #include "vkbuffer.hh"
+#include "renderer/render_types.hh"
 
 #include <memory>
 #include <glm/glm.hpp>
@@ -9,30 +10,30 @@
 // Structure for a model
 class VKModel {
     public:
-        // Structure for a vertex in the model
-        struct Vertex {
-            glm::vec3 position{};
-            glm::vec3 color{};
-            // TODO: add normals and uv's
+        // // Structure for a vertex in the model
+        // struct Vertex {
+        //     glm::vec3 position{};
+        //     glm::vec3 color{};
+        //     // TODO: add normals and uv's
 
-            static std::vector<VkVertexInputBindingDescription> GetBindingDesc();
-            static std::vector<VkVertexInputAttributeDescription> GetAttribDesc();
-            bool operator==(const Vertex& other) const {
-                return position == other.position
-                       && color == other.color;
-            }
-        };
+        //     static std::vector<VkVertexInputBindingDescription> GetBindingDesc();
+        //     static std::vector<VkVertexInputAttributeDescription> GetAttribDesc();
+        //     bool operator==(const Vertex& other) const {
+        //         return position == other.position
+        //                && color == other.color;
+        //     }
+        // };
 
-        // Used to create data for the model
-        struct Builder {
-            std::vector <Vertex> vertices{};
-            std::vector <uint32_t> indices{};
+        // // Used to create data for the model
+        // struct Builder {
+        //     std::vector <Vertex> vertices{};
+        //     std::vector <uint32_t> indices{};
 
-            // void LoadModels(const std::string& filepath);
-        };
+        //     // void LoadModels(const std::string& filepath);
+        // };
 
         // Constructors and Operators
-        VKModel(VKCommonParameters &params, const VKModel::Builder& builder) 
+        VKModel(VKCommonParameters &params, const Builder& builder) 
             : m_vkparams(params) {
             _create_vertex_buffers(builder.vertices);
             _create_index_buffers(builder.indices);

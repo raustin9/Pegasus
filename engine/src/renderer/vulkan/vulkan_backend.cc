@@ -24,21 +24,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 // Constructor for the renderer 
-// and startup behavior
 VKBackend::VKBackend()
-    //    m_platform(platform)
 {
-    // Initialize(name, assetPath, width, height);
-    // m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-    // m_vkparams.Allocator = nullptr;
 }
 
+// Initialization behavior for the Vulkan Backend of the renderer
 void
 VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height, RendererSettings settings) {
-    // m_title(name),
-    // m_assetPath(assetPath),
-    // m_width(width), 
-    // m_height(height) //,
     m_settings = settings;
     m_title = name;
     m_assetPath = assetPath;
@@ -47,7 +39,9 @@ VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, u
     
     m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     m_vkparams.Allocator = nullptr;
-
+    m_current_frame_index = 0;
+    InitVulkan();
+    SetupPipeline();
 }
 
 // Init behavior
@@ -58,51 +52,12 @@ VKBackend::OnInit() {
     SetupPipeline();
 }
 
-void 
-VKBackend::RenderFrame() {
-    OnRender();
-    // OnUpdate();
-    UpdateUniformBuffer(m_current_frame_index);
-    m_current_frame_index = (m_current_frame_index + 1) % VKBackend::MAX_FRAMES_IN_FLIGHT;
-}
-
-// Update behavior
-void
-VKBackend::OnUpdate() {
-}
-
 // Set the window's title text
 const std::string 
 VKBackend::GetDeviceName() {
     return std::string(m_deviceProperties.deviceName);
 }
 
-
-// Update the uniform buffers
-void
-VKBackend::UpdateUniformBuffer(uint32_t currentImage) {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-    UBO ubo{};
-    glm::mat4 model = glm::rotate(
-        glm::mat4(1.0f), 
-        time * glm::radians(90.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f));
-
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(2.0f, 2.0f, 2.0f),
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f));
-
-    glm::mat4 proj = glm::perspective(
-        glm::radians(45.0f),
-        m_width / static_cast<float>(m_height), 0.1f, 10.0f);
-
-    ubo.projectionView = proj * view * model;
-    m_uboBuffers[currentImage]->WriteToBuffer(&ubo);
-}
 
 // Resize behavior
 void
@@ -171,7 +126,7 @@ VKBackend::BeginFrame() {
 }
 
 void
-VKBackend::EndFrame() {
+VKBackend::EndFrame(RenderPacket packet) {
     PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
     SubmitCommandBuffer(m_command_buffer_index);
     PresentImage(m_current_frame_index);
@@ -188,36 +143,8 @@ VKBackend::EndFrame() {
     m_command_buffer_index = (m_command_buffer_index + 1) % m_command_buffer_count;
    
     // Update the uniform buffer
-    UpdateUniformBuffer(m_current_frame_index);
+    m_uboBuffers[m_current_frame_index]->WriteToBuffer(&packet.ubo);
     m_current_frame_index = (m_current_frame_index + 1) % VKBackend::MAX_FRAMES_IN_FLIGHT;
-}
-
-// Render the scene
-void
-VKBackend::OnRender() {
-    // Get the index of the next available image in the swapchain
-    VkResult acquire = AcquireNextImage(&m_current_frame_index);
-    if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
-        if (acquire == VK_ERROR_OUT_OF_DATE_KHR)
-            WindowResize(m_width, m_height);
-        else
-            VK_CHECK(acquire);
-    }
-
-    PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
-    SubmitCommandBuffer(m_command_buffer_index);
-    PresentImage(m_current_frame_index);
-
-    // Wait for the GPU to complete the frame before continuing is best practice
-    // vkQueueWaitIdle is used for simplicity
-    // (so that we can reuse the command buffer indexed with m_command_buffer_index)
-    // THIS IS SUBOPTIMAL because we are waiting on GPU to complete 1 image at a time 
-    // before the CPU creates anther. We can use a fence or semaphores later on
-    // to do better synchronization, but for now this works fine
-    VK_CHECK(vkQueueWaitIdle(m_vkparams.GraphicsQueue.Handle)); // "wait for GPU to idle"
-
-    // Update the command buffer
-    m_command_buffer_index = (m_command_buffer_index + 1) % m_command_buffer_count;
 }
 
 void
@@ -299,21 +226,15 @@ VKBackend::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
 
     // Bind the graphics pipeline
     m_pipeline->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-    // vkCmdBindPipeline(m_vkparams.GraphicsCommandBuffers[bufferIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkparams.GraphicsPipeline);
 
 
     // Bind the triangle vertex buffer (contains position and color)
-//    vkCmdBindDescriptorSets(
-//            m_vkparams.GraphicsCommandBuffers[bufferIndex],
-//            VK_PIPELINE_BIND_POINT_GRAPHICS, 
-//            m_vkparams.PipelineLayout, 
-//            0, 
-//            1, 
-//            &m_vkparams.DescriptorSets[m_current_frame_index], 
-//            0, 
-//            nullptr);
-    m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-    m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
+    for (size_t i = 0; i < m_models.size(); i++) {
+        m_models[i]->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+        m_models[i]->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
+    }
+    // m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
+    // m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
 
     // Ending the render pass will add an implicit barrier, transitioning the frame buffer
     // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
@@ -385,7 +306,9 @@ VKBackend::OnDestroy() {
 
     // Destroy vertex buffer object and deallocate backing memory
     std::cout << "Destroying vertex buffer and memory...";
-    m_model->Destroy();
+    for (size_t i = 0; i < m_models.size(); i++) {
+        m_models[i]->Destroy();
+    }
     std::cout << "destroyed & freed" << std::endl;
     
     std::cout << "Destroying Uniform Buffers... ";
@@ -529,13 +452,19 @@ VKBackend::InitVulkan() {
 
 void
 VKBackend::SetupPipeline() {
-    CreateVertexBuffer();
+    // CreateVertexBuffer();
     CreatePipelineLayout();
     CreatePipelineObjects();
     m_initialized = true;
     std::cout << "PIPELINE SETUP\n";
 }
 
+void
+VKBackend::AddModel(Builder builder) {
+    m_models.push_back(std::make_unique<VKModel>(m_vkparams, builder));
+
+    return;
+}
 
 void 
 VKBackend::CreateDescriptorSetLayout() {
@@ -636,13 +565,7 @@ VKBackend::CreateUniformBuffer() {
 
 void
 VKBackend::CreateVertexBuffer() {
-//    std::vector <VKModel::Vertex> vertices {
-//        { { 0.0f, 0.25f , 0.0f }, { 1.0f, 0.0f, 0.0f } },     // v0 (red)
-//    	{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f } },  // v1 (green)
-//        { { 0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f } }    // v2 (blue)
-//    };
-
-    std::vector<VKModel::Vertex> vertices {
+    std::vector<Vertex> vertices {
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
         {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
         {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
@@ -653,11 +576,15 @@ VKBackend::CreateVertexBuffer() {
         0, 1, 2, 2, 3, 0 
     };
 
-    VKModel::Builder triangleBuilder = VKModel::Builder();
+    Builder triangleBuilder = Builder();
     triangleBuilder.vertices = vertices;
     triangleBuilder.indices = indices;
 
-    m_model = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
+    std::unique_ptr<VKModel> newmodel = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
+
+    // m_model = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
+    m_models.push_back(std::move(newmodel));
+
 }
 
 // Create the layout for the pipeline

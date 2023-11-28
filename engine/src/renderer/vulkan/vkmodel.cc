@@ -117,7 +117,7 @@ VKModel::Bind(VkCommandBuffer cmdBuffer) {
 
 // Vertex Structure IMPL
 std::vector <VkVertexInputBindingDescription>
-VKModel::Vertex::GetBindingDesc() {
+Vertex::GetBindingDesc() {
     std::vector <VkVertexInputBindingDescription> bindingDescriptions(1);
     bindingDescriptions[0].binding = 0;
     bindingDescriptions[0].stride = sizeof(Vertex);
@@ -126,7 +126,7 @@ VKModel::Vertex::GetBindingDesc() {
 }
 
 std::vector <VkVertexInputAttributeDescription>
-VKModel::Vertex::GetAttribDesc() {
+Vertex::GetAttribDesc() {
     std::vector <VkVertexInputAttributeDescription> attribDescriptions(2);
     attribDescriptions[0].binding = 0;
     attribDescriptions[0].location = 0; 
