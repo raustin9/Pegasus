@@ -4,6 +4,7 @@
 #include "renderer/renderer_frontend.hh"
 #include "game_types.hh"
 #include <chrono>
+
 #define GLM_FORCE_RADIANS 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
@@ -150,7 +151,7 @@ Application::run() {
                 glm::vec3(0.0f, 0.0f, 1.0f));
 
             glm::mat4 proj = glm::perspective(
-                0.5f + glm::abs(glm::sin(time)) *
+                1.f + glm::cos(0.7f * time) *
                 glm::radians(45.0f),
                 m_width / static_cast<float>(m_height), 0.1f, 10.0f);
 
