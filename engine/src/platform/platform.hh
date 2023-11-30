@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/vulkan/vkcommon.hh"
+// #include "renderer/vulkan/vkcommon.hh"
 #include "core/input.hh"
 #include "core/events.hh"
 #include "platform/platform_timer.hh"
@@ -19,7 +19,7 @@ public:
     static void create_window();
     static void destroy_window();
     static bool pump_messages();
-    static bool create_vulkan_surface(VKCommonParameters &params);
+    // static bool create_vulkan_surface(VKCommonParameters &params);
     static void set_title(std::string title);
     static std::chrono::time_point<std::chrono::high_resolution_clock> get_current_time();
 

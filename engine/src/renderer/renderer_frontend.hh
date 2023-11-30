@@ -13,7 +13,7 @@
 
 #include "stdafx.hh"
 #include "render_types.hh"
-#include "vulkan/vulkan_backend.hh"
+// #include "vulkan/vulkan_backend.hh"
 #include "game_types.hh"
 
 
