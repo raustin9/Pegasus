@@ -62,7 +62,7 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputState.vertexBindingDescriptionCount = 1;
-    vertexInputState.pVertexBindingDescriptions = bindingDescriptions.data();;
+    vertexInputState.pVertexBindingDescriptions = bindingDescriptions.data();
     vertexInputState.vertexAttributeDescriptionCount = 2;
     vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -77,13 +77,14 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     //
     VkPipelineRasterizationStateCreateInfo rasterizationState = {};
     rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizationState.depthClampEnable = VK_FALSE;
+    rasterizationState.rasterizerDiscardEnable = VK_FALSE;
     rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizationState.lineWidth = 1.0f;
     rasterizationState.cullMode = VK_CULL_MODE_NONE;
+    rasterizationState.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterizationState.depthBiasEnable = VK_FALSE;
     rasterizationState.depthBiasConstantFactor = 0.0f;
-    rasterizationState.depthBiasClamp = 0.0f;
     rasterizationState.depthBiasClamp = 0.0f;
     rasterizationState.depthBiasSlopeFactor = 0.0f;
 
@@ -95,12 +96,34 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     // because the pipeline needs to know the components/channels of the pixels in the color
     // attachments that can be written to
     VkPipelineColorBlendAttachmentState blendAttachmentState[1] = {};
-    blendAttachmentState[0].colorWriteMask = 0xf;
+    // blendAttachmentState[0].colorWriteMask = 0xf;
+    blendAttachmentState[0].colorWriteMask = 
+        VK_COLOR_COMPONENT_R_BIT 
+        | VK_COLOR_COMPONENT_G_BIT
+        | VK_COLOR_COMPONENT_B_BIT
+        | VK_COLOR_COMPONENT_A_BIT;
+
     blendAttachmentState[0].blendEnable = VK_FALSE;
+    blendAttachmentState[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    blendAttachmentState[0].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    blendAttachmentState[0].colorBlendOp = VK_BLEND_OP_ADD;
+    blendAttachmentState[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    blendAttachmentState[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    blendAttachmentState[0].alphaBlendOp = VK_BLEND_OP_ADD;
+    
     VkPipelineColorBlendStateCreateInfo colorBlendState = {};
+    // colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    // colorBlendState.attachmentCount = 1;
+    // colorBlendState.pAttachments = blendAttachmentState;
     colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlendState.logicOpEnable = VK_FALSE;
+    colorBlendState.logicOp = VK_LOGIC_OP_COPY;
     colorBlendState.attachmentCount = 1;
     colorBlendState.pAttachments = blendAttachmentState;
+    colorBlendState.blendConstants[0] = 0.0F;
+    colorBlendState.blendConstants[1] = 0.0F;
+    colorBlendState.blendConstants[2] = 0.0F;
+    colorBlendState.blendConstants[3] = 0.0F;
 
     // Depth and stencil state containing depth and stencil information (compare and write operations)
     // We are not making use of this yet, and we could just pass a nullptr, but we can also explicitly
@@ -113,10 +136,10 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     depthStencilState.depthBoundsTestEnable = VK_FALSE;
     depthStencilState.minDepthBounds = 0.0f;
     depthStencilState.maxDepthBounds = 1.0f;
-    depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
-    depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
-    depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
-    depthStencilState.stencilTestEnable = VK_FALSE;
+    // depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
+    // depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
+    // depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
+    // depthStencilState.stencilTestEnable = VK_FALSE;
     depthStencilState.front = {};
     depthStencilState.back = {};
 
@@ -151,8 +174,12 @@ VKPipeline::CreateGraphicsPipeline(const std::string& vertPath, const std::strin
     // and enable it later
     VkPipelineMultisampleStateCreateInfo multisampleState = {};
     multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampleState.sampleShadingEnable = VK_FALSE;
     multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampleState.minSampleShading = 1.0f;
     multisampleState.pSampleMask = nullptr;
+    multisampleState.alphaToCoverageEnable = VK_FALSE;
+    multisampleState.alphaToOneEnable = VK_FALSE;
 
     // 
     // Shaders

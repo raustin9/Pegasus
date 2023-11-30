@@ -5,7 +5,8 @@
 #include "game_types.hh"
 #include <chrono>
 
-#define GLM_FORCE_RADIANS 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -23,12 +24,13 @@ struct ApplicationState {
 static ApplicationState app_state = {};
 
 Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath)
-    : m_game(game),
-    m_name(name), 
-    m_assetPath(assetPath), 
-    m_width(width),
-    m_height(height),
-    m_timer{} {
+            : m_game(game),
+            m_name(name), 
+            m_assetPath(assetPath), 
+            m_width(width),
+            m_height(height),
+            m_timer{} {
+    // Application Init steps
     settings = {};
 
     app_state.width = width;
@@ -101,28 +103,54 @@ Application::run() {
     // TODO: remove these and do this through UI
     Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
     Pegasus::GameObject obj2 = Pegasus::Game::NewGameObject();
-    std::vector<Vertex> vertices {
+    
+    obj.vertices = {
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
         {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
         {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
         {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
     };
-    std::vector<uint32_t> indices {
-        0, 1, 2, 2, 3, 0 
+    obj.indices = {
+        0, 1, 2, 2, 3, 0
     };
-    obj.vertices = vertices;
-    obj.indices = indices;
-
-    std::vector<Vertex> vertices2 {
+    // obj.vertices = {
+    //     { {-0.5f, -0.5f,  0.5f}, {0.0f, 1.0f, 1.0f} },
+    //     { {0.5f,  -0.5f,  0.5f}, {1.0f, 0.0f, 1.0f} },
+    //     { {-0.5f, 0.5f,  0.5f}, {1.0f, 1.0f, 0.0f} },
+    //     { {0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} },
+    //     { {-0.5f, 0.5f,  -0.5f}, {1.0f, 0.0f, 0.0f} },
+    //     { {0.5f,  0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f} },
+    //     { {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, 1.0f} },
+    //     { {0.5f,  -0.5f, -0.5f}, {0.0f, 0.0f, 0.0f} },
+    // };
+    // obj.vertices = {
+    //     { {-0.5f, -0.5f, -0.49f}, {0.5f, 0.f, 0.f} },
+    //     { {0.5f, -0.5f, -0.5f}, {0.f, 0.f, 0.f} },
+    //     { {0.5f,  0.5f, -0.49f}, {0.5f, 0.5f, 0.f} },
+    //     { {-0.5f,  0.5f,  -0.5f}, {0.5f, 0.f, 0.5f} },
+    //     { {-0.5f, -0.5f, 0.5f}, {0.f, 0.5f, 0.f} },
+    //     { {0.5f, -0.5f, 0.5f}, {0.f, 0.f, 0.5f} },
+    //     { {0.5f,  0.5f,  0.5f}, {0.5f, 0.5f, 0.5f} },
+    //     { {-0.5f,  0.5f,  0.5f}, {0.f, 0.5f, 0.5f} },
+    // };
+    // obj.indices = {
+    //     0, 1, 2, 2, 3, 0,
+    //     4, 5, 6, 6, 7, 4,
+    //     0, 4, 7, 7, 3, 0,
+    //     1, 5, 6, 6, 2, 1,
+    //     3, 7, 6, 6, 2, 3,
+    //     0, 1, 5, 5, 4, 0,
+    // };
+    
+    obj2.vertices = {
         {{-0.5f, -0.5f, 0.5f}, {0.3f, 0.87f, 0.0f}},
         {{0.5f, -0.5f, 0.5f}, {0.81f, 1.0f, 0.9f}},
         {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.43f}},
+        {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.5f, 0.0f}}
     };
-    std::vector<uint32_t> indices2 {
-        0, 1, 2 
+    obj2.indices = {
+        0, 1, 2, 3, 0, 2
     };
-    obj2.vertices = vertices2;
-    obj2.indices = indices2;
 
     Renderer::CreateModel(obj);
     Renderer::CreateModel(obj2);
@@ -151,9 +179,9 @@ Application::run() {
                 glm::vec3(0.0f, 0.0f, 1.0f));
 
             glm::mat4 proj = glm::perspective(
-                1.f + glm::cos(0.7f * time) *
+                // 1.f + glm::cos(0.7f * time) *
                 glm::radians(45.0f),
-                m_width / static_cast<float>(m_height), 0.1f, 10.0f);
+                static_cast<float>(app_state.width) / static_cast<float>(app_state.height), 0.1f, 10.0f);
 
             ubo.projectionView = proj * view * model;
 

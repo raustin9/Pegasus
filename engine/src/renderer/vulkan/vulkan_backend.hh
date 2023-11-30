@@ -94,6 +94,7 @@ class VKBackend {
         void CreateDescriptorSets();
         void CreateDescriptorPool();
         void CreateTextureImage();
+        void CreateDepthResources();
 
         void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
         void SubmitCommandBuffer(uint64_t index);

@@ -1,5 +1,5 @@
 -Iengine
--Iengine/src
+-Iengine/src/**
 -shared
 -fPIC
 -g

@@ -122,7 +122,7 @@ VKBackend::BeginFrame() {
             VK_CHECK(acquire);
     }
 
-    PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
+    // PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
 }
 
 void
@@ -443,6 +443,7 @@ VKBackend::InitVulkan() {
     CreateRenderPass();
     CreateFrameBuffers();
     AllocateCommandBuffers();
+    // CreateDepthResources();
     CreateSyncObjects();
     CreateDescriptorSetLayout();
     CreateUniformBuffer();
