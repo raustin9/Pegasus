@@ -10,7 +10,6 @@ renderer_backend_create(renderer_backend_type type, RendererBackend** backend) {
     switch (type) {
         case RENDERER_BACKEND_VULKAN: {
             *backend = new VulkanBackend();
-            // backend = std::make_unique<VulkanBackend>();
             printf("vk backend\n");
             return true;
         } break;
@@ -20,7 +19,6 @@ renderer_backend_create(renderer_backend_type type, RendererBackend** backend) {
             std::cout << "ERRORR: Invalid backend type" << std::endl;
             return false;
     }
-    // *backend = new VulkanBackend();
     return true;
 }
 

@@ -30,5 +30,6 @@ class VulkanBackend : public RendererBackend {
 
 
         // Vulkan Context
+        VkInstance             m_vkinstance;
         VkAllocationCallbacks *m_vkallocator;
 };

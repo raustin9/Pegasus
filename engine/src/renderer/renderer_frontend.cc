@@ -7,16 +7,9 @@
 // static std::unique_ptr<RendererBackend> backend = nullptr;
 static RendererBackend *backend;
 
+// Initialize the renderer and create the preferred backend
 bool 
 Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, uint32_t height, RendererSettings settings) {
-  // renderer_backend_create(RENDERER_BACKEND_VULKAN, std::move(backend)); 
-  // if (!backend->Initialize(name)) {
-  //   std::cout << "ERROR: Failed to initialize renderer backend" << std::endl;
-  //   return false;
-  // }
-  // backend = std::make_unique<VulkanBackend>();
-
-  // backend = new VulkanBackend();
   renderer_backend_create(RENDERER_BACKEND_VULKAN, &backend);
   auto type = backend->type;
   if (!backend->Initialize(name)) {
@@ -29,11 +22,14 @@ Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, u
 void 
 Renderer::Shutdown() {
   // vkrenderer.OnDestroy();
+  backend->Shutdown();
+  delete backend;
 }
 
 void 
 Renderer::OnResize(uint16_t width, uint16_t height) {
   // vkrenderer.WindowResize(width, height);
+  backend->Resized(width, height);
 }
 
 bool
