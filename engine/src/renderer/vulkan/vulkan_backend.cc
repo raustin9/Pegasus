@@ -21,7 +21,10 @@ VulkanBackend::Initialize(std::string& name) {
         return false;
     }
 
-    // TODO: Create swapchain
+    if (!create_device()) {
+        std::cout << "Error: Failed to create vulkan device" << std::endl;
+    }
+
 
     return true;
 }

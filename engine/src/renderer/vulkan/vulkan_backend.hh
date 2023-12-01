@@ -32,4 +32,5 @@ class VulkanBackend : public RendererBackend {
         bool create_instance(const char* name);
         void create_debug_messenger();
         bool create_surface();
+        bool create_device();
 };
