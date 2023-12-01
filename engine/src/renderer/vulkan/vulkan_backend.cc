@@ -32,6 +32,14 @@ VulkanBackend::Shutdown() {
     vkDestroySurfaceKHR(m_context.instance, m_context.surface, m_context.allocator);
     std::cout << "Destroyed " << std::endl;
 
+#if defined(P_DEBUG)
+    std::cout << "Destroying debug messenger... ";
+    PFN_vkDestroyDebugUtilsMessengerEXT func = 
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_context.instance, "vkDestroyDebugUtilsMessengerEXT");
+    func(m_context.instance, m_context.debug_messenger, m_context.allocator);
+    std::cout << "Destroyed" << std::endl;
+#endif // P_DEBUG
+
     std::cout << "Destroying instance... ";
     vkDestroyInstance(m_context.instance, m_context.allocator);
     std::cout << "Destroyed" << std::endl;

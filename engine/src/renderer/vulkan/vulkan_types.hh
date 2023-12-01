@@ -17,4 +17,8 @@ struct VKContext {
     VkInstance             instance;
     VkAllocationCallbacks *allocator;
     VkSurfaceKHR           surface;
+    
+#if defined(P_DEBUG)
+    VkDebugUtilsMessengerEXT debug_messenger;
+#endif // P_DEBUG
 };
