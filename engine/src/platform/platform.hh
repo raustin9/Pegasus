@@ -1,9 +1,8 @@
 #pragma once
-// #include "renderer/vulkan/vkcommon.hh"
 #include "core/input.hh"
 #include "core/events.hh"
 #include "platform/platform_timer.hh"
-// #include "linux_timer.hh"
+#include "renderer/vulkan/vulkan_types.hh"
 #include "stdafx.hh"
 #include <cstdint>
 #include <memory>
@@ -19,8 +18,9 @@ public:
     static void create_window();
     static void destroy_window();
     static bool pump_messages();
-    // static bool create_vulkan_surface(VKCommonParameters &params);
+    static bool create_vulkan_surface(VKContext& context);
     static void set_title(std::string title);
+    static void get_vulkan_extensions(std::vector<const char*>& exts);
     static std::chrono::time_point<std::chrono::high_resolution_clock> get_current_time();
 
     // WINDOWING INFO

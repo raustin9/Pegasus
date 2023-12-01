@@ -27,7 +27,7 @@
                 "${env.VULKAN_SDK}/include"
             ],
             "defines": [
-                "_PDEBUG",
+                "P_DEBUG",
                 "UNICODE",
                 "_UNICODE",
                 "PEXPORT"

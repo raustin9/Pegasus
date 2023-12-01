@@ -181,19 +181,24 @@ Platform::pump_messages() {
 	return true;
 }
 
+void
+Platform::get_vulkan_extensions(std::vector<const char*>& exts) {
+		exts.push_back("VK_KHR_win32_surface");
+}
+
 // // Windows implementation for getting a vulkan surface
-// bool
-// Platform::create_vulkan_surface(VKCommonParameters &params) {
-// 		VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
-// 		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-// 		surfaceCreateInfo.hinstance = windows_state.hInstance;
-// 		surfaceCreateInfo.hwnd = windows_state.hWindow;
+bool
+Platform::create_vulkan_surface(VKContext& context) {
+		VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
+		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+		surfaceCreateInfo.hinstance = windows_state.hInstance;
+		surfaceCreateInfo.hwnd = windows_state.hWindow;
 		
-// 		VkResult err = vkCreateWin32SurfaceKHR(
-// 			params.Instance, &surfaceCreateInfo, params.Allocator, &params.PresentationSurface);
+		VkResult err = vkCreateWin32SurfaceKHR(
+			context.instance, &surfaceCreateInfo, context.allocator, &context.surface);
 		
-// 		return (err == VK_SUCCESS) ? true : false;
-// }
+		return (err == VK_SUCCESS) ? true : false;
+}
 
 // Callback function for handling messages from the window
 LRESULT CALLBACK 

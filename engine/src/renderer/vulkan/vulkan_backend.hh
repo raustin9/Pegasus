@@ -1,5 +1,8 @@
 #pragma once
 #include "defines.hh"
+#include "vulkan_types.hh"
+#include "vulkan_utils.hh"
+#include "platform/platform.hh"
 #include "renderer/render_types.hh"
 
 #include <vulkan/vulkan.h>
@@ -23,13 +26,10 @@ class VulkanBackend : public RendererBackend {
         uint32_t m_framebuffer_size_generation;
         uint64_t m_framebuffer_size_last_generation;
 
-        #if defined(P_DEBUG)
-        VkDebufUtilsMessengerEXT m_debug_messenger;
-        #endif
+        VKContext m_context;
 
-
-
-        // Vulkan Context
-        VkInstance             m_vkinstance;
-        VkAllocationCallbacks *m_vkallocator;
+        // Member Functions
+        bool create_instance(const char* name);
+        void create_debug_messenger();
+        bool create_surface();
 };

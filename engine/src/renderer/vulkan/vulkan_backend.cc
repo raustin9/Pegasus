@@ -3,62 +3,38 @@
 */
 
 #include "vulkan_backend.hh"
-#include "vulkan_types.inl"
-#include "vulkan_utils.hh"
+#include "vulkan_types.hh"
 
 // Initialize the backend for the vulkan renderer
 bool
 VulkanBackend::Initialize(std::string& name) {
     std::cout << "Vulkan Backend Initialized" << std::endl;
-    m_vkallocator = nullptr; // TODO: eventually create custom allocator
+    m_context.allocator = nullptr; // TODO: eventually create custom allocator
 
-    // TODO: Setup the vulkan instance...
-    VkApplicationInfo app_info = {};
-    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.apiVersion = VK_API_VERSION_1_2;
-    app_info.pApplicationName = name.c_str();
-    app_info.applicationVersion = VK_MAKE_VERSION(1,0,0);
-    app_info.pEngineName = "Pegasus Engine";
-    app_info.engineVersion = VK_MAKE_VERSION(1,0,0);
+    if (!create_instance(name.c_str())) {
+        return false;
+    }
+    create_debug_messenger();
 
-    // Create the vulkan Instance
-    VkInstanceCreateInfo instance_info = {};
-    instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instance_info.pApplicationInfo = &app_info;
+    if (!create_surface()) {
+        std::cout << "Error: failed to create vulkan surface" << std::endl;
+        return false;
+    }
 
-    // TODO: Get platform required extensions
-    std::vector<const char*> required_extensions = {};
-    required_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-    #if defined(P_DEBUG)
-    std::cout << "Validation layers are enabled. Enumerating..." << std::endl;
-    required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-    #endif // debug
-    instance_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
-    instance_info.ppEnabledExtensionNames = required_extensions.data();
-
-    std::vector<const char*> required_validation_layer_names;
-
-    // If debugging, find the validation layers that we want to use
-    #if defined(P_DEBUG)
-    required_validation_layer_names.push_back("VK_LAYER_KHRONOS_validation");
-    #endif
-
-    instance_info.enabledLayerCount = static_cast<uint32_t>(required_validation_layer_names.size());
-    instance_info.ppEnabledLayerNames = required_validation_layer_names.data();
-
-    VK_CHECK(vkCreateInstance(&instance_info, m_vkallocator, &m_vkinstance));
-    // vkCreateInstance(&instance_info, m_vkallocator, &m_vkinstance);
-    std::cout << "Instance created..." << std::endl;
-    
-    // Validation Layers
+    // TODO: Create swapchain
 
     return true;
 }
 
 void
 VulkanBackend::Shutdown() {
-    vkDestroyInstance(m_vkinstance, m_vkallocator);
+    std::cout << "Destroying surface... ";
+    vkDestroySurfaceKHR(m_context.instance, m_context.surface, m_context.allocator);
+    std::cout << "Destroyed " << std::endl;
+
+    std::cout << "Destroying instance... ";
+    vkDestroyInstance(m_context.instance, m_context.allocator);
+    std::cout << "Destroyed" << std::endl;
 }
 
 void
