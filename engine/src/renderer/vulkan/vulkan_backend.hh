@@ -34,9 +34,17 @@ class VulkanBackend : public RendererBackend {
         bool create_surface();
         bool create_device();
         bool create_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
+        bool create_renderpass(
+            VKRenderpass& out_renderpass,
+            float x, float y, float w, float h,
+            float r, float g, float b, float a,
+            float depth,
+            uint32_t stencil
+        );
 
         void destroy_device();
         void destroy_swapchain();
+        void destroy_renderpass(VKRenderpass& renderpass);
 
         bool recreate_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
 };

@@ -28,21 +28,33 @@ VulkanBackend::Initialize(std::string& name) {
         return false;
     }
 
-    // // TODO: Create swapchain
-    create_swapchain(
+    if (!create_swapchain(
         m_context.framebuffer_width,
         m_context.framebuffer_height,
         m_context.swapchain
-    );
+    )) {
+        std::cout << "Error: Failed to create swapchain..." << std::endl;
+    }
 
-
-
+    // TODO: Create renderpass
+    if (!create_renderpass(
+        m_context.main_renderpass,
+        0, 0, m_context.framebuffer_width, m_context.framebuffer_height,
+        0.0f, 0.0f, 0.2f, 1.0f,
+        1.0f,
+        0
+    )) {
+        std::cout << "Error: failed to create main renderpass." << std::endl;
+        return false;
+    }
     return true;
 }
 
 void
 VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
+
+    destroy_renderpass(m_context.main_renderpass);
 
     destroy_swapchain();
 
