@@ -11,9 +11,11 @@ VulkanBackend::Initialize(std::string& name) {
     std::cout << "Vulkan Backend Initialized" << std::endl;
     m_context.allocator = nullptr; // TODO: eventually create custom allocator
 
+    // Initialize all vulkan properties
     if (!create_instance(name.c_str())) {
         return false;
     }
+
     create_debug_messenger();
 
     if (!create_surface()) {
@@ -23,7 +25,16 @@ VulkanBackend::Initialize(std::string& name) {
 
     if (!create_device()) {
         std::cout << "Error: Failed to create vulkan device" << std::endl;
+        return false;
     }
+
+    // // TODO: Create swapchain
+    create_swapchain(
+        m_context.framebuffer_width,
+        m_context.framebuffer_height,
+        m_context.swapchain
+    );
+
 
 
     return true;
@@ -31,6 +42,12 @@ VulkanBackend::Initialize(std::string& name) {
 
 void
 VulkanBackend::Shutdown() {
+    vkDeviceWaitIdle(m_context.device.logical_device);
+
+    destroy_swapchain();
+
+    destroy_device();
+
     std::cout << "Destroying surface... ";
     vkDestroySurfaceKHR(m_context.instance, m_context.surface, m_context.allocator);
     std::cout << "Destroyed " << std::endl;

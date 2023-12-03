@@ -21,10 +21,10 @@ class VulkanBackend : public RendererBackend {
 
     private:
         // Backend Members
-        uint32_t m_framebuffer_width;
-        uint32_t m_framebuffer_height;
-        uint32_t m_framebuffer_size_generation;
-        uint64_t m_framebuffer_size_last_generation;
+        // uint32_t m_framebuffer_width;
+        // uint32_t m_framebuffer_height;
+        // uint32_t m_framebuffer_size_generation;
+        // uint64_t m_framebuffer_size_last_generation;
 
         VKContext m_context;
 
@@ -33,4 +33,10 @@ class VulkanBackend : public RendererBackend {
         void create_debug_messenger();
         bool create_surface();
         bool create_device();
+        bool create_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
+
+        void destroy_device();
+        void destroy_swapchain();
+
+        bool recreate_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
 };

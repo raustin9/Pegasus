@@ -1,4 +1,5 @@
 #include "vulkan_backend.hh"
+#include "vk_device.hh"
 
 struct physical_device_requirements {
     bool graphics;
@@ -42,7 +43,90 @@ VulkanBackend::create_device() {
 
     // Create the logical device
     std::cout << "Creating logical device" << std::endl;
+    // NOTE: Do not create an additional queue for shared indices
+    bool present_shared_graphics_queue = m_context.device.graphics_queue_index == m_context.device.present_queue_index;
+    bool transfered_shared_graphics_queue = m_context.device.graphics_queue_index == m_context.device.transfer_queue_index;
+    uint32_t index_count = 1;
+    if (!present_shared_graphics_queue) {
+        index_count++;
+    }
+    if (!transfered_shared_graphics_queue) {
+        index_count++;
+    }
+
+    uint32_t indices[index_count];
+    uint8_t index = 0;
+    indices[index++] = m_context.device.graphics_queue_index;
+    if (!present_shared_graphics_queue) {
+        indices[index++] = m_context.device.present_queue_index;
+    }
+    if (!transfered_shared_graphics_queue) {
+        indices[index++] = m_context.device.transfer_queue_index;
+    }
+
+    VkDeviceQueueCreateInfo queue_create_infos[index_count];
+    for (uint32_t i = 0; i < index_count; i++) {
+        queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_infos[i].queueFamilyIndex = indices[i];
+        queue_create_infos[i].queueCount = 1;
+
+        queue_create_infos[i].flags = 0;
+        queue_create_infos[i].pNext = nullptr;
+        float queue_priority = 1.0f;
+        queue_create_infos[i].pQueuePriorities = &queue_priority;
+    }
+
+    // Request for device features
+    VkPhysicalDeviceFeatures device_features = {};
+    device_features.samplerAnisotropy = VK_TRUE;
+
+    VkDeviceCreateInfo device_create_info = {};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.queueCreateInfoCount = index_count;
+    device_create_info.pQueueCreateInfos = queue_create_infos;
+    device_create_info.pEnabledFeatures = &device_features;
+    device_create_info.enabledExtensionCount = 1;
+    const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    device_create_info.ppEnabledExtensionNames = &extension_names;
+
+    // Deprecated and ignored
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.ppEnabledLayerNames = nullptr;
+
+    // Create the device
+    VK_CHECK(vkCreateDevice(
+        m_context.device.physical_device,
+        &device_create_info,
+        m_context.allocator,
+        &m_context.device.logical_device
+    ));
+
+    std::cout << "Logical Device created..." << std::endl;
+
+    // Get the device queues
+    vkGetDeviceQueue(
+        m_context.device.logical_device,
+        m_context.device.graphics_queue_index,
+        0,
+        &m_context.device.graphics_queue
+    );
+
+
+    vkGetDeviceQueue(
+        m_context.device.logical_device,
+        m_context.device.present_queue_index,
+        0,
+        &m_context.device.transfer_queue
+    );
     
+    vkGetDeviceQueue(
+        m_context.device.logical_device,
+        m_context.device.transfer_queue_index,
+        0,
+        &m_context.device.transfer_queue
+    );
+    std::cout << "Queues obtained..." << std::endl;
+
     return true;
 }
 
@@ -132,7 +216,6 @@ select_physical_device(VKContext& context) {
             context.device.present_queue_index = queue_family_info.present_family_index;
             context.device.transfer_queue_index = queue_family_info.transfer_family_index;
 
-
             context.device.properties = properties;
             context.device.features = features;
             context.device.memory = memory;
@@ -148,6 +231,107 @@ select_physical_device(VKContext& context) {
 
     std::cout << "Physical device selected." << std::endl;
     return true;
+}
+
+
+void
+vkdevice_query_swapchain_support(VKDevice& device, VkSurfaceKHR surface, VKSwapchainSupportInfo& out_support_info) {
+    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        device.physical_device,
+        surface,
+        &out_support_info.capabilities
+    ));
+
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
+        device.physical_device,
+        surface,
+        &out_support_info.format_count,
+        nullptr
+    ));
+
+    if (out_support_info.format_count != 0) {
+        if (out_support_info.formats.empty()) {
+            out_support_info.formats.resize(out_support_info.format_count);
+        }
+        VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
+            device.physical_device,
+            surface,
+            &out_support_info.format_count,
+            out_support_info.formats.data()
+        ));
+    }
+
+    // Present modes
+    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
+        device.physical_device,
+        surface,
+        &out_support_info.present_mode_count,
+        nullptr
+    ));
+    if (out_support_info.present_mode_count != 0) {
+        if (out_support_info.present_modes.empty()) {
+            out_support_info.present_modes.resize(out_support_info.present_mode_count);
+        }
+        VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device.physical_device,
+            surface,
+            &out_support_info.present_mode_count,
+            out_support_info.present_modes.data()
+        ));
+    }
+}
+
+bool 
+vkdevice_detect_depth_format(
+    VKDevice& device
+) {
+    const uint64_t candidate_count = 3;
+    std::array<VkFormat, 3> candidates = {
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D24_UNORM_S8_UINT
+    };
+
+    uint32_t flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    for (uint64_t i = 0; i < candidate_count; i++) {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(device.physical_device, candidates[i], &properties);
+
+        if ((properties.linearTilingFeatures & flags) == flags) {
+            device.depth_format = candidates[i];
+            return true;
+        } else if ((properties.optimalTilingFeatures & flags) == flags) {
+            device.depth_format = candidates[i];
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void 
+VulkanBackend::destroy_device() {
+    // Unset the queues
+    m_context.device.graphics_queue = nullptr;
+    m_context.device.present_queue = nullptr;
+    m_context.device.transfer_queue = nullptr;
+
+    // TODO: destroy the command pools
+
+    std::cout << "Destroying the logical device... ";
+    if (m_context.device.logical_device) {
+        vkDestroyDevice(m_context.device.logical_device, m_context.allocator);
+        m_context.device.logical_device = nullptr;
+    }
+    std::cout << "Destroyed." << std::endl;
+
+    std::cout << "Releasing physical device resources... ";
+    m_context.device.physical_device = nullptr;
+
+    m_context.device.graphics_queue_index = -1;
+    m_context.device.present_queue_index = -1;
+    m_context.device.transfer_queue_index = -1;
+    std::cout << "Released." << std::endl;
 }
 
 void 
