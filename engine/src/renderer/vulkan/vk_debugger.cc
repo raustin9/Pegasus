@@ -48,7 +48,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            printf("%s", callback_data->pMessage);
+            printf("\n%s\n", callback_data->pMessage);
             break;
     }
 

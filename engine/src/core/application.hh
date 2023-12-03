@@ -22,6 +22,8 @@ class  QAPI Application {
         bool OnKey(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context);
         bool OnResize(uint16_t code, void* sender, void* listener, EventContext context);
+
+        static void GetFramebufferSize(uint32_t& width, uint32_t& height);
     private:
         Pegasus::Game& m_game;
         std::string m_name;

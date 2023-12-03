@@ -4,12 +4,28 @@
 
 #include "vulkan_backend.hh"
 #include "vulkan_types.hh"
+#include "core/application.hh"
+
+static uint32_t cached_framebuffer_width = 0;
+static uint32_t cached_framebuffer_height = 0;
 
 // Initialize the backend for the vulkan renderer
 bool
 VulkanBackend::Initialize(std::string& name) {
     std::cout << "Vulkan Backend Initialized" << std::endl;
     m_context.allocator = nullptr; // TODO: eventually create custom allocator
+    Application::GetFramebufferSize(
+        cached_framebuffer_width,
+        cached_framebuffer_height
+    );
+
+    m_context.framebuffer_width = (cached_framebuffer_width != 0) ? cached_framebuffer_width : 800;
+    m_context.framebuffer_height = (cached_framebuffer_height != 0) ? cached_framebuffer_height : 600;
+    m_context.framebuffer_size_generation = 0;
+    m_context.framebuffer_size_last_generation = 0;
+    cached_framebuffer_width = 0;
+    cached_framebuffer_height = 0;
+
 
     // Initialize all vulkan properties
     if (!create_instance(name.c_str())) {
@@ -36,7 +52,6 @@ VulkanBackend::Initialize(std::string& name) {
         std::cout << "Error: Failed to create swapchain..." << std::endl;
     }
 
-    // TODO: Create renderpass
     if (!create_renderpass(
         m_context.main_renderpass,
         0, 0, m_context.framebuffer_width, m_context.framebuffer_height,
@@ -47,12 +62,20 @@ VulkanBackend::Initialize(std::string& name) {
         std::cout << "Error: failed to create main renderpass." << std::endl;
         return false;
     }
+
+    // Create swapchain framebuffers
+    m_context.swapchain.framebuffers.resize(m_context.swapchain.image_count);
+    regenerate_framebuffers(m_context.swapchain, m_context.main_renderpass);
     return true;
 }
 
 void
 VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
+
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        destroy_framebuffer(m_context.swapchain.framebuffers[i]);
+    }
 
     destroy_renderpass(m_context.main_renderpass);
 

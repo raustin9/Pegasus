@@ -321,3 +321,10 @@ Application::OnKey(uint16_t code, void* sender, void* listener, EventContext con
 
     return false;
 }
+
+
+void 
+Application::GetFramebufferSize(uint32_t& width, uint32_t& height) {
+    width = app_state.width;
+    height = app_state.height;
+}

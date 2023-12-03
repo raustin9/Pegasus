@@ -41,10 +41,20 @@ class VulkanBackend : public RendererBackend {
             float depth,
             uint32_t stencil
         );
+        void create_framebuffer(
+            VKRenderpass& renderpass,
+            uint32_t width,
+            uint32_t height,
+            uint32_t attachment_count,
+            std::vector<VkImageView> &attachments,
+            VKFramebuffer& out_framebuffer
+        );
 
         void destroy_device();
         void destroy_swapchain();
         void destroy_renderpass(VKRenderpass& renderpass);
+        void destroy_framebuffer(VKFramebuffer& framebuffer);
 
         bool recreate_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
+        void regenerate_framebuffers(VKSwapchain& swapchain, VKRenderpass& renderpass);
 };
