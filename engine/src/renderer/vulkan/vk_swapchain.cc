@@ -185,6 +185,7 @@ create(VKContext& context, uint32_t width, uint32_t height, VKSwapchain& swapcha
 // Destroy the swapchain
 void
 destroy(VKContext& context, VKSwapchain& swapchain) {
+    std::cout << "Destroying swapchain... ";
     vkDeviceWaitIdle(context.device.logical_device);
     vkimage_destroy(context, swapchain.depth_attachment);
 
@@ -195,4 +196,5 @@ destroy(VKContext& context, VKSwapchain& swapchain) {
     }
 
     vkDestroySwapchainKHR(context.device.logical_device, swapchain.handle, context.allocator);
+    std::cout << "Destroyed." << std::endl;
 }

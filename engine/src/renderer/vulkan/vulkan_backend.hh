@@ -49,6 +49,7 @@ class VulkanBackend : public RendererBackend {
             std::vector<VkImageView> &attachments,
             VKFramebuffer& out_framebuffer
         );
+        void create_command_buffers();
 
         void destroy_device();
         void destroy_swapchain();
@@ -57,4 +58,6 @@ class VulkanBackend : public RendererBackend {
 
         bool recreate_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
         void regenerate_framebuffers(VKSwapchain& swapchain, VKRenderpass& renderpass);
+        void free_command_buffer(VkCommandPool pool, VKCommandBuffer& command_buffer);
+        void allocate_command_buffer(VkCommandPool pool, bool is_primary, VKCommandBuffer& command_buffer);
 };

@@ -127,6 +127,19 @@ VulkanBackend::create_device() {
     );
     std::cout << "Queues obtained..." << std::endl;
 
+    // Create the command pool for the graphcis queue
+    VkCommandPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.queueFamilyIndex = m_context.device.graphics_queue_index;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VK_CHECK(vkCreateCommandPool(
+        m_context.device.logical_device,
+        &pool_create_info,
+        m_context.allocator,
+        &m_context.device.graphics_command_pool
+    ));
+    std::cout << "Graphics command pool created..." << std::endl;
+
     return true;
 }
 
@@ -316,7 +329,13 @@ VulkanBackend::destroy_device() {
     m_context.device.present_queue = nullptr;
     m_context.device.transfer_queue = nullptr;
 
-    // TODO: destroy the command pools
+    std::cout << "Destroying command pools... ";
+    vkDestroyCommandPool(
+        m_context.device.logical_device,
+        m_context.device.graphics_command_pool,
+        m_context.allocator
+    );
+    std::cout << "Destroyed." << std::endl;
 
     std::cout << "Destroying the logical device... ";
     if (m_context.device.logical_device) {

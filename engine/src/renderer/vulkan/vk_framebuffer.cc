@@ -45,7 +45,7 @@ VulkanBackend::destroy_framebuffer(VKFramebuffer& framebuffer) {
 
     framebuffer.handle = nullptr;
     framebuffer.attachment_count = 0;
-    // framebuffer.renderpass = nullptr;
+    framebuffer.renderpass = nullptr;
 }
 
 

@@ -122,8 +122,10 @@ VulkanBackend::create_renderpass(
 
 void
 VulkanBackend::destroy_renderpass(VKRenderpass& renderpass) {
+    std::cout << "Destroying renderpass... ";
     if (renderpass.handle) {
         vkDestroyRenderPass(m_context.device.logical_device, renderpass.handle, m_context.allocator);
         renderpass.handle = nullptr;
     }
+    std::cout << "Destroyed." << std::endl;
 }

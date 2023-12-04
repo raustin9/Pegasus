@@ -66,6 +66,9 @@ VulkanBackend::Initialize(std::string& name) {
     // Create swapchain framebuffers
     m_context.swapchain.framebuffers.resize(m_context.swapchain.image_count);
     regenerate_framebuffers(m_context.swapchain, m_context.main_renderpass);
+
+    create_command_buffers();
+    
     return true;
 }
 
@@ -73,9 +76,26 @@ void
 VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
 
+    // Command Buffers
+    std::cout << "Freeing command buffers... ";
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        if (m_context.graphics_command_buffers[i].handle) {
+            m_context.graphics_command_buffers[i].free(
+                m_context,
+                m_context.device.graphics_command_pool
+            );
+            m_context.graphics_command_buffers[i].handle = nullptr;
+        }
+    }
+    m_context.graphics_command_buffers.clear();
+    std::cout << "Freed." << std::endl;
+
+    // Framebuffers
+    std::cout << "Destroying framebuffers... ";
     for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
         destroy_framebuffer(m_context.swapchain.framebuffers[i]);
     }
+    std::cout << "Destroyed " << std::endl;
 
     destroy_renderpass(m_context.main_renderpass);
 

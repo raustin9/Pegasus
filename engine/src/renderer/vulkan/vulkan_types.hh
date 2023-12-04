@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
+struct VKContext;
+
 struct VKSwapchainSupportInfo {
     VkSurfaceCapabilitiesKHR capabilities;
     uint32_t format_count;
@@ -52,6 +54,41 @@ struct VKRenderpass {
     float stencil;
 };
 
+enum command_buffer_state : uint32_t {
+    COMMAND_BUFFER_STATE_READY,
+    COMMAND_BUFFER_STATE_RECORDING,       
+    COMMAND_BUFFER_STATE_IN_RENDER_PASS,  
+    COMMAND_BUFFER_STATE_RECORDING_ENDED,
+    COMMAND_BUFFER_STATE_SUBMITTED,       
+    COMMAND_BUFFER_STATE_NOT_ALLOCATED, // cb's start here. Once allocated we switch to READY
+};
+
+struct VKCommandBuffer {
+    VkCommandBuffer handle;
+    command_buffer_state state;
+
+    void allocate(VKContext& context, VkCommandPool pool, bool is_primary);
+    void free(VKContext& context, VkCommandPool pool);
+    void begin(bool is_single_use, bool is_renderpass_continue, bool is_simultaneous_use);
+    void end();
+    void update_submitted();
+    void reset();
+    void allocate_and_begin_single_use(
+        VKContext& context,
+        VkCommandPool pool
+    );
+    void end_single_use(
+        VKContext& context,
+        VkCommandPool pool,
+        VkQueue queue
+    ); 
+};
+
+struct VKFence {
+    VkFence handle;
+    command_buffer_state state;
+};
+
 struct VKFramebuffer {
     VkFramebuffer handle;
     uint32_t attachment_count;
@@ -81,6 +118,7 @@ struct VKContext {
     uint32_t framebuffer_height;
     uint32_t framebuffer_size_generation;
     uint64_t framebuffer_size_last_generation;
+    bool recreating_swapchain;
 
     VkInstance             instance;
     VkAllocationCallbacks *allocator;
@@ -93,6 +131,15 @@ struct VKContext {
     VKDevice device;
     VKSwapchain swapchain;
     VKRenderpass main_renderpass;
+
+    std::vector<VKCommandBuffer> graphics_command_buffers;
+    std::vector<VkSemaphore> image_available_semaphores;
+    std::vector<VkSemaphore> queue_complete_semaphores;
+
+    uint32_t in_flight_fence_count;
+    std::vector<VKFence> in_flight_fences;
+
+
 
     int32_t find_memory_index(uint32_t type_filter, uint32_t property_flags);
 };
