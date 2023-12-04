@@ -68,13 +68,63 @@ VulkanBackend::Initialize(std::string& name) {
     regenerate_framebuffers(m_context.swapchain, m_context.main_renderpass);
 
     create_command_buffers();
-    
+
+    // Create synchronization objects
+    std::cout << "Creating synch objects..." << std::endl;
+    m_context.image_available_semaphores.reserve(m_context.swapchain.max_frames_in_flight);
+    m_context.queue_complete_semaphores.reserve(m_context.swapchain.max_frames_in_flight);
+    m_context.in_flight_fences.reserve(m_context.swapchain.max_frames_in_flight);
+
+    for (uint32_t i = 0; i < m_context.swapchain.max_frames_in_flight; i++) {
+        VkSemaphoreCreateInfo sem_info {};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        vkCreateSemaphore(m_context.device.logical_device, &sem_info, m_context.allocator, &m_context.image_available_semaphores[i]);
+        vkCreateSemaphore(m_context.device.logical_device, &sem_info, m_context.allocator, &m_context.queue_complete_semaphores[i]);
+
+        // Create this fence in a simplified state indicating that the first frame
+        // has already been 'rendrered'. This prevents the application from waiting
+        // indefinitely for the first frame to rendersince it cannot be rendered
+        // until a frame is "rendered before it"
+        m_context.in_flight_fences[i].create(m_context, true);
+    }
+
+    m_context.images_in_flight.resize(m_context.swapchain.image_count);
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        m_context.images_in_flight[i] = nullptr;
+    }
+
+    std::cout << "Vulkan Backend initialized successfully." << std::endl; 
     return true;
 }
 
 void
 VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
+
+    // Sync objects
+    std::cout << "Destroying sync objects... ";
+    for (uint32_t i = 0; i < m_context.swapchain.max_frames_in_flight; i++) {
+        if (m_context.image_available_semaphores[i]) {
+            vkDestroySemaphore(
+                m_context.device.logical_device,
+                m_context.image_available_semaphores[i],
+                m_context.allocator
+            );
+        }
+        if (m_context.queue_complete_semaphores[i]) {
+            vkDestroySemaphore(
+                m_context.device.logical_device,
+                m_context.queue_complete_semaphores[i],
+                m_context.allocator
+            );
+        }
+        m_context.in_flight_fences[i].destroy(m_context);
+    }
+    m_context.image_available_semaphores.clear();
+    m_context.queue_complete_semaphores.clear();
+    m_context.in_flight_fences.clear();
+    m_context.images_in_flight.clear(); // we do not destroy these fences because we do not own them
+    std::cout << "Destroyed." << std::endl;
 
     // Command Buffers
     std::cout << "Freeing command buffers... ";

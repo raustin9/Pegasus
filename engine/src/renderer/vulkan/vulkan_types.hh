@@ -86,7 +86,12 @@ struct VKCommandBuffer {
 
 struct VKFence {
     VkFence handle;
-    command_buffer_state state;
+    bool is_signaled;
+
+    void create(VKContext& context, bool create_signaled);
+    void destroy(VKContext& context);
+    bool wait(VKContext& context, uint64_t timeout_ms);
+    void reset(VKContext& context);
 };
 
 struct VKFramebuffer {
@@ -138,6 +143,7 @@ struct VKContext {
 
     uint32_t in_flight_fence_count;
     std::vector<VKFence> in_flight_fences;
+    std::vector<VKFence*> images_in_flight;
 
 
 
