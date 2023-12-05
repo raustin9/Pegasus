@@ -234,8 +234,6 @@ VulkanBackend::BeginFrame(float delta_time) {
     VKCommandBuffer& command_buffer = m_context.graphics_command_buffers[m_context.image_index];
     command_buffer.reset();
     command_buffer.begin(false, false, false);
-    // m_context.graphics_command_buffers[m_context.image_index].reset();
-    // m_context.graphics_command_buffers[m_context.image_index].begin(false, false, false);
 
     // Dynamic states
     VkViewport viewport;
@@ -263,27 +261,11 @@ VulkanBackend::BeginFrame(float delta_time) {
         1,
         &scissor
     );
-    // vkCmdSetViewport(
-    //     m_context.graphics_command_buffers[m_context.image_index].handle,
-    //     0,
-    //     1,
-    //     &viewport
-    // );
-    // vkCmdSetScissor(
-    //     m_context.graphics_command_buffers[m_context.image_index].handle,
-    //     0,
-    //     1,
-    //     &scissor
-    // );
 
     m_context.main_renderpass.begin(
         command_buffer,
         m_context.swapchain.framebuffers[m_context.image_index]
     );
-    // m_context.main_renderpass.begin(
-    //     m_context.graphics_command_buffers[m_context.image_index],
-    //     m_context.swapchain.framebuffers[m_context.image_index]
-    // );
 
     return true;
 }
@@ -294,12 +276,8 @@ VulkanBackend::EndFrame(float delta_time) {
     m_context.main_renderpass.end(
         command_buffer
     );
-    // m_context.main_renderpass.end(
-    //     m_context.graphics_command_buffers[m_context.image_index]
-    // );
 
     command_buffer.end();
-    // m_context.graphics_command_buffers[m_context.image_index].end();
 
     // Make sure that the previous frame is not using this image
     if (m_context.images_in_flight[m_context.image_index] != VK_NULL_HANDLE) {
@@ -317,7 +295,6 @@ VulkanBackend::EndFrame(float delta_time) {
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer.handle;
-    // submit_info.pCommandBuffers = &m_context.graphics_command_buffers[m_context.image_index].handle;
     submit_info.signalSemaphoreCount =1;
     submit_info.pSignalSemaphores = &m_context.queue_complete_semaphores[m_context.current_frame];
     submit_info.waitSemaphoreCount = 1;
@@ -340,7 +317,6 @@ VulkanBackend::EndFrame(float delta_time) {
     }
 
     command_buffer.update_submitted();
-    // m_context.graphics_command_buffers[m_context.image_index].update_submitted();
     // End queue submission
 
     // Presentation

@@ -249,7 +249,6 @@ VKSwapchain::present(
     present_info.pImageIndices = &present_image_index;
     present_info.pResults = nullptr;
 
-    printf("GOT HERE\n");
     VkResult result = vkQueuePresentKHR(
         present_queue,
         &present_info
