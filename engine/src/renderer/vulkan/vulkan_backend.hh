@@ -56,8 +56,8 @@ class VulkanBackend : public RendererBackend {
         void destroy_renderpass(VKRenderpass& renderpass);
         void destroy_framebuffer(VKFramebuffer& framebuffer);
 
-        bool recreate_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
+        bool recreate_swapchain();
         void regenerate_framebuffers(VKSwapchain& swapchain, VKRenderpass& renderpass);
-        void free_command_buffer(VkCommandPool pool, VKCommandBuffer& command_buffer);
-        void allocate_command_buffer(VkCommandPool pool, bool is_primary, VKCommandBuffer& command_buffer);
+        // void free_command_buffer(VkCommandPool pool, VKCommandBuffer& command_buffer);
+        // void allocate_command_buffer(VkCommandPool pool, bool is_primary, VKCommandBuffer& command_buffer);
 };

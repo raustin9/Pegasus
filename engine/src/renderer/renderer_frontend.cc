@@ -29,7 +29,11 @@ Renderer::Shutdown() {
 void 
 Renderer::OnResize(uint16_t width, uint16_t height) {
   // vkrenderer.WindowResize(width, height);
-  backend->Resized(width, height);
+  if (backend) {
+    backend->Resized(width, height);
+  } else {
+    printf("Renderer backend does not exist for this resize: [%i,%i]\n", width, height);
+  }
 }
 
 bool
@@ -48,5 +52,12 @@ Renderer::DrawFrame(RenderPacket packet) {
   //   vkrenderer.BeginFrame();
   //   vkrenderer.EndFrame(packet);
   // }
+  if (backend->BeginFrame(packet.delta_time)) {
+      bool result = backend->EndFrame(packet.delta_time);
+      if (!result) {
+          std::cout << "Renderer::EndFrame() returned unsuccessfully" << std::endl;
+          return false;
+      }
+  }
   return true;
 }

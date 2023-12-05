@@ -4,6 +4,8 @@
 #include <vector>
 
 struct VKContext;
+struct VKCommandBuffer;
+struct VKFramebuffer;
 
 struct VKSwapchainSupportInfo {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -52,6 +54,9 @@ struct VKRenderpass {
 
     float depth;
     float stencil;
+
+    void end(VKCommandBuffer& command_buffer);
+    void begin(VKCommandBuffer& command_buffer, VKFramebuffer& framebuffer);
 };
 
 enum command_buffer_state : uint32_t {
@@ -87,6 +92,7 @@ struct VKCommandBuffer {
 struct VKFence {
     VkFence handle;
     bool is_signaled;
+    bool is_in_use;
 
     void create(VKContext& context, bool create_signaled);
     void destroy(VKContext& context);
@@ -112,6 +118,25 @@ struct VKSwapchain {
 
     VKImage depth_attachment;
     std::vector<VKFramebuffer> framebuffers;
+
+    void create(VKContext& context, uint32_t width, uint32_t height);
+    void destroy(VKContext& context);
+    bool recreate(VKContext& context, uint32_t width, uint32_t height);
+    bool acquire_next_image_index(
+        VKContext& context, 
+        uint64_t timeout_ms, 
+        VkSemaphore image_available_semaphore, 
+        VkFence fence, 
+        uint32_t& present_image_index
+    );
+    bool present(
+        VKContext& context,
+        VkQueue graphics_queue,
+        VkQueue present_queue,
+        VkSemaphore render_complete_semaphore,
+        uint32_t present_image_index
+    );
+
 };
 
 // Holds vulkan-specific information

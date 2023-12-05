@@ -21,6 +21,7 @@ struct RendererSettings {
 struct RenderPacket {
     UBO ubo;
     float time;
+    float delta_time;
 };
 
 // Structure for a vertex in the model

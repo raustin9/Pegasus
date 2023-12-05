@@ -3,7 +3,8 @@
 
 int32_t 
 VKContext::find_memory_index(uint32_t type_filter, uint32_t property_flags) {
-    VkPhysicalDeviceMemoryProperties mem_properties = {};
+    // VkPhysicalDeviceMemoryProperties mem_properties = {};
+    VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(device.physical_device, &mem_properties);
 
     for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {

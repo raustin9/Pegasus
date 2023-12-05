@@ -42,7 +42,7 @@ vkimage_create(
     ));
 
     // Query the memory requirements for this image
-    VkMemoryRequirements memreqs = {};
+    VkMemoryRequirements memreqs;
     vkGetImageMemoryRequirements(
         context.device.logical_device,
         out_image.handle,

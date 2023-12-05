@@ -77,10 +77,10 @@ VulkanBackend::create_device() {
     }
 
     // Request for device features
-    VkPhysicalDeviceFeatures device_features = {};
+    VkPhysicalDeviceFeatures device_features {};
     device_features.samplerAnisotropy = VK_TRUE;
 
-    VkDeviceCreateInfo device_create_info = {};
+    VkDeviceCreateInfo device_create_info {};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     device_create_info.queueCreateInfoCount = index_count;
     device_create_info.pQueueCreateInfos = queue_create_infos;
@@ -116,7 +116,7 @@ VulkanBackend::create_device() {
         m_context.device.logical_device,
         m_context.device.present_queue_index,
         0,
-        &m_context.device.transfer_queue
+        &m_context.device.present_queue
     );
     
     vkGetDeviceQueue(
@@ -128,7 +128,7 @@ VulkanBackend::create_device() {
     std::cout << "Queues obtained..." << std::endl;
 
     // Create the command pool for the graphcis queue
-    VkCommandPoolCreateInfo pool_create_info{};
+    VkCommandPoolCreateInfo pool_create_info {};
     pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pool_create_info.queueFamilyIndex = m_context.device.graphics_queue_index;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -168,7 +168,7 @@ select_physical_device(VKContext& context) {
         vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory);
 
         // TODO: This should be driven by the engine
-        physical_device_requirements requirements = {};
+        physical_device_requirements requirements {};
         requirements.graphics = true;
         requirements.present = true;
         requirements.transfer = true;
@@ -177,7 +177,7 @@ select_physical_device(VKContext& context) {
         requirements.discrete_gpu = true;
         requirements.device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-        physical_device_queue_family_info queue_family_info = {};
+        physical_device_queue_family_info queue_family_info {};
         bool result = physical_device_meets_requirements(
             physical_devices[i],
             context.surface,

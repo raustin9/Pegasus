@@ -33,7 +33,7 @@ VulkanBackend::create_command_buffers() {
 
 void 
 VKCommandBuffer::allocate(VKContext& context, VkCommandPool pool, bool is_primary) {
-    VkCommandBufferAllocateInfo allocate_info{};
+    VkCommandBufferAllocateInfo allocate_info {};
     allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocate_info.commandPool = pool;
     allocate_info.level = (is_primary) ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
@@ -63,7 +63,7 @@ VKCommandBuffer::free(VKContext& context, VkCommandPool pool) {
 
 void 
 VKCommandBuffer::begin(bool is_single_use, bool is_renderpass_continue, bool is_simultaneous_use) {
-    VkCommandBufferBeginInfo begin_info{};
+    VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = 0;
 
@@ -124,7 +124,7 @@ void VKCommandBuffer::end_single_use(
 ) {
     this->end();
 
-    VkSubmitInfo submit_info{};
+    VkSubmitInfo submit_info {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &this->handle;

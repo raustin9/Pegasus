@@ -23,7 +23,7 @@ VulkanBackend::create_renderpass(
     out_renderpass.stencil = stencil;
 
     // Main subpass
-    VkSubpassDescription subpass = {};
+    VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     // Attachments TODO: Make configurable
@@ -31,11 +31,11 @@ VulkanBackend::create_renderpass(
     VkAttachmentDescription attachment_descriptions[attachment_description_count];
 
     // Color attachment
-    VkAttachmentDescription color_attachment = {};
+    VkAttachmentDescription color_attachment {};
     color_attachment.format  = m_context.swapchain.image_format.format;
     color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -53,7 +53,7 @@ VulkanBackend::create_renderpass(
     subpass.pColorAttachments = &color_attachment_reference;
 
     // Depth attachment
-    VkAttachmentDescription depth_attachment = {};
+    VkAttachmentDescription depth_attachment {};
     depth_attachment.format = m_context.device.depth_format;
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -87,7 +87,7 @@ VulkanBackend::create_renderpass(
     subpass.pPreserveAttachments = nullptr;
 
     // Renderpass dependencies. TODO: Make configurable
-    VkSubpassDependency dependency = {};
+    VkSubpassDependency dependency {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -98,7 +98,7 @@ VulkanBackend::create_renderpass(
 
 
     // Renderpass create info
-    VkRenderPassCreateInfo rp_info = {};
+    VkRenderPassCreateInfo rp_info {};
     rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     rp_info.attachmentCount = attachment_description_count;
     rp_info.pAttachments = attachment_descriptions;
@@ -128,4 +128,40 @@ VulkanBackend::destroy_renderpass(VKRenderpass& renderpass) {
         renderpass.handle = nullptr;
     }
     std::cout << "Destroyed." << std::endl;
+}
+
+void
+VKRenderpass::begin(VKCommandBuffer& command_buffer, VKFramebuffer& framebuffer) {
+    VkRenderPassBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    begin_info.renderPass = this->handle;
+    begin_info.framebuffer = framebuffer.handle;
+    begin_info.renderArea.offset.x = this->x;
+    begin_info.renderArea.offset.y = this->y;
+    begin_info.renderArea.extent.width = this->w;
+    begin_info.renderArea.extent.height = this->h;
+    
+    VkClearValue clear_values[2];
+    clear_values[0].color.float32[0] = this->r;
+    clear_values[0].color.float32[1] = this->g;
+    clear_values[0].color.float32[2] = this->b;
+    clear_values[0].color.float32[3] = this->a;
+    clear_values[1].depthStencil.depth = this->depth;
+    clear_values[1].depthStencil.stencil = this->stencil;
+
+    begin_info.clearValueCount = 2;
+    begin_info.pClearValues = clear_values;
+
+    vkCmdBeginRenderPass(
+        command_buffer.handle,
+        &begin_info,
+        VK_SUBPASS_CONTENTS_INLINE
+    );
+    command_buffer.state = COMMAND_BUFFER_STATE_IN_RENDER_PASS;
+}
+
+void
+VKRenderpass::end(VKCommandBuffer& command_buffer) {
+    vkCmdEndRenderPass(command_buffer.handle);
+    command_buffer.state = COMMAND_BUFFER_STATE_RECORDING;
 }

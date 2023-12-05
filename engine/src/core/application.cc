@@ -33,8 +33,8 @@ Application::Application(Pegasus::Game& game, std::string name, uint32_t width, 
     // Application Init steps
     settings = {};
 
-    app_state.width = width;
-    app_state.height = height;
+    // app_state.width = width;
+    // app_state.height = height;
 
     // TODO: set this to be configurable
     settings.enableValidation = true;
@@ -192,6 +192,7 @@ Application::run() {
             // Render a frame
             RenderPacket packet = {};
             packet.ubo = ubo;
+            packet.delta_time = time;
             Renderer::DrawFrame(packet);
         }
         

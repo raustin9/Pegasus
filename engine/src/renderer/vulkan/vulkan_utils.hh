@@ -29,3 +29,7 @@ std::string errorString(VkResult errorCode);
 //         assert(res == VK_SUCCESS);																		                      \
 //     }																									                      \
 // }
+
+const char* vkresult_string(VkResult result, bool get_extended);
+
+bool vkresult_is_success(VkResult result);
