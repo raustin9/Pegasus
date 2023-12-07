@@ -33,7 +33,7 @@ VKSwapchain::recreate(VKContext& context, uint32_t width, uint32_t height) {
 void
 VKSwapchain::create(VKContext& context, uint32_t width, uint32_t height) {
     VkExtent2D swapchain_extent = {width, height};
-    this->max_frames_in_flight = 2;
+    // this->max_frames_in_flight = 2;
 
     bool found = false;
     for (uint32_t i = 0; i < context.device.swapchain_support.format_count; i++) {
@@ -82,6 +82,7 @@ VKSwapchain::create(VKContext& context, uint32_t width, uint32_t height) {
         && image_count > context.device.swapchain_support.capabilities.maxImageCount) {
         image_count = context.device.swapchain_support.capabilities.maxImageCount;
     }
+    this->max_frames_in_flight = image_count-1;
 
     VkSwapchainCreateInfoKHR swapchain_info {};
     swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

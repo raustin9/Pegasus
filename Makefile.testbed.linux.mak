@@ -3,7 +3,7 @@ OBJ_DIR := obj
 
 ASSEMBLY := testbed
 EXTENSION := 
-COMPILER_FLAGS := -g -fdeclspec -fPIC -std=c++17
+COMPILER_FLAGS := -g -fdeclspec -Werror=vla -fPIC -std=c++17
 INCLUDE_FLAGS := -Iengine/src -I$(VULKAN_SDK)\include -Iengine
 LINKER_FLAGS := -L./$(BUILD_DIR)/ -lengine -Wl,-rpath,./bin/
 DEFINES := -D_DEBUG -DQIMPORT

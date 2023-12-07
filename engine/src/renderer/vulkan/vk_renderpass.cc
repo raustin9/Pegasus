@@ -28,7 +28,8 @@ VulkanBackend::create_renderpass(
 
     // Attachments TODO: Make configurable
     uint32_t attachment_description_count = 2;
-    VkAttachmentDescription attachment_descriptions[attachment_description_count];
+    // VkAttachmentDescription attachment_descriptions[attachment_description_count];
+    VkAttachmentDescription attachment_descriptions[32];
 
     // Color attachment
     VkAttachmentDescription color_attachment {};

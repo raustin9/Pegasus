@@ -22,3 +22,5 @@ IF %ERRORLEVEL% NEQ 0 (echo Error: %ERRORLEVEL% && exit)
 @REM IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
 ECHO "All assemblies built successfully."
+
+post-build.bat

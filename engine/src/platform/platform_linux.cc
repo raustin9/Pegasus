@@ -389,8 +389,10 @@ Platform::_translateKey(uint32_t code) {
         case XK_Control_R:
             return KEY_RCONTROL;
         // case XK_Menu: return KEY_LMENU;
-        case XK_Menu:
-            return KEY_RMENU;
+        case XK_Alt_R:
+            return KEY_RALT;
+        case XK_Alt_L:
+            return KEY_LALT;
 
         case XK_semicolon:
             return KEY_SEMICOLON;

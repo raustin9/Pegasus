@@ -54,7 +54,8 @@ VulkanBackend::create_device() {
         index_count++;
     }
 
-    uint32_t indices[index_count];
+    // uint32_t indices[index_count]; -- VLA
+    uint32_t indices[32];
     uint8_t index = 0;
     indices[index++] = m_context.device.graphics_queue_index;
     if (!present_shared_graphics_queue) {
@@ -64,7 +65,8 @@ VulkanBackend::create_device() {
         indices[index++] = m_context.device.transfer_queue_index;
     }
 
-    VkDeviceQueueCreateInfo queue_create_infos[index_count];
+    // VkDeviceQueueCreateInfo queue_create_infos[index_count];
+    VkDeviceQueueCreateInfo queue_create_infos[32];
     for (uint32_t i = 0; i < index_count; i++) {
         queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_infos[i].queueFamilyIndex = indices[i];
@@ -154,7 +156,9 @@ select_physical_device(VKContext& context) {
         return false;
     }
 
-    VkPhysicalDevice physical_devices[physical_device_count];
+    // VkPhysicalDevice physical_devices[physical_device_count];
+    constexpr uint32_t MAX_DEVICE_COUNT = 32;
+    VkPhysicalDevice physical_devices[MAX_DEVICE_COUNT];
     VK_CHECK(vkEnumeratePhysicalDevices(context.instance, &physical_device_count, physical_devices));
 
     for (uint32_t i = 0; i < physical_device_count; i++) {
@@ -432,7 +436,8 @@ physical_device_meets_requirements(
 
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
-    VkQueueFamilyProperties queue_families[queue_family_count];
+    // VkQueueFamilyProperties queue_families[queue_family_count]; -- VLA
+    VkQueueFamilyProperties queue_families[32];
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families);
 
     std::cout << "Graphics | Present | Compute | Transfer | Name" << std::endl;

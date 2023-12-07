@@ -4,7 +4,7 @@ OBJ_DIR := obj
 
 ASSEMBLY := testbed
 EXTENSION := .exe
-COMPILER_FLAGS := -g -Wno-missing-braces -fdeclspec -std=c++17
+COMPILER_FLAGS := -g -Wno-missing-braces -Werror=vla -fdeclspec -std=c++17
 INCLUDE_FLAGS := -Iengine\src -Iengine -Itestbed\src -I$(VULKAN_SDK)\include 
 LINKER_FLAGS := -g -lengine.lib -L$(OBJ_DIR)\engine -L$(BUILD_DIR) #-Wl,-rpath,.
 DEFINES := -D_QDEBUG -DQIMPORT

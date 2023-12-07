@@ -49,9 +49,24 @@ InputHandler::ProcessResize(uint32_t w, uint32_t h) {
 
 void
 InputHandler::ProcessKey(Keys key, bool pressed) {
+    if (key == KEY_LALT) {
+        std::cout << "LALT\n";
+    } else if (key == KEY_RALT) {
+        std::cout << "RALT\n";
+    } else if (key == KEY_LCONTROL) {
+        std::cout << "LCONTROL\n";
+    } else if (key == KEY_RCONTROL) {
+        std::cout << "RCONTROL\n";
+    } else if (key == KEY_LSHIFT) {
+        std::cout << "LSHIFT\n";
+    } else if (key == KEY_RSHIFT) {
+        std::cout << "RSHIFT\n";
+    }
     // Only do anything if the state has changed
     if (input_state.keyboardCurrent.keys[key] != pressed) {
         input_state.keyboardCurrent.keys[key] = pressed;
+
+
 
         // TODO: Fire an event for immediate processing
         EventContext data = {};

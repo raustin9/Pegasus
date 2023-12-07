@@ -6,7 +6,7 @@ ASSEMBLY := engine
 SHADERS := assets/shaders
 EXTENSION := .dll
 GLSLC := tooling/glslc.exe
-COMPILER_FLAGS := -g -fdeclspec -std=c++17
+COMPILER_FLAGS := -g -fdeclspec -std=c++17 -Werror=vla
 INCLUDE_FLAGS := -Iengine\src -I$(VULKAN_SDK)\include
 LINKER_FLAGS := -g -shared -luser32 -lvulkan-1 -L$(VULKAN_SDK)\Lib -L$(OBJ_DIR)\engine
 DEFINES := -DP_DEBUG -DQEXPORT -D_CRT_SECURE_NO_WARNINGS
