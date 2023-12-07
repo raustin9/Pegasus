@@ -6,6 +6,6 @@ VulkanBackend::create_surface() {
   if (!Platform::create_vulkan_surface(m_context)) {
       return false;
   }
-
+  
   return true;
 }

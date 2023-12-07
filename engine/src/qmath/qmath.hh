@@ -1,0 +1,5 @@
+#include "qvector2.inl"
+#include "qvector3.inl"
+#include "qvector4.inl"
+#include "qmatrix4.inl"
+#include "qquaternion.inl"

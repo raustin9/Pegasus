@@ -6,6 +6,7 @@
 #include "vulkan_types.hh"
 #include "core/application.hh"
 #include "vk_device.hh"
+#include "qmath/qmath.hh"
 
 static uint32_t cached_framebuffer_width = 0;
 static uint32_t cached_framebuffer_height = 0;
@@ -13,6 +14,7 @@ static uint32_t cached_framebuffer_height = 0;
 // Initialize the backend for the vulkan renderer
 bool
 VulkanBackend::Initialize(std::string& name) {
+ 
     std::cout << "Vulkan Backend Initialized" << std::endl;
     m_context.allocator = nullptr; // TODO: eventually create custom allocator
     Application::GetFramebufferSize(
