@@ -14,24 +14,33 @@
 static Settings settings = {};
 
 struct ApplicationState {
+    Pegasus::Game* game_inst;
     uint32_t width = 0;
     uint32_t height = 0;
     bool is_running = false;
     bool is_suspended = true;
     bool initialized = false;
+    float last_time;
+
+    char last_fps[32];
+    uint64_t framecounter;
+    StepTimer timer;
+    std::string name;
+    std::string asset_path; // TODO: move this file subsystem
 };
 
 static ApplicationState app_state = {};
 
-Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath)
-            : m_game(game),
-            m_name(name), 
-            m_assetPath(assetPath), 
-            m_width(width),
-            m_height(height),
-            m_timer{} {
+Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath) {
+}
+
+bool
+Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string asset_path) {
     // Application Init steps
     settings = {};
+
+    app_state.name = name;
+    app_state.asset_path = asset_path;
 
     // app_state.width = width;
     // app_state.height = height;
@@ -49,29 +58,29 @@ Application::Application(Pegasus::Game& game, std::string name, uint32_t width, 
 
     if (!EventHandler::Startup()) {
         std::cout << "Error: failed to initialize event handler" << std::endl;
-        return;
+        return false;
     }
     std::cout << "Event System created..." << std::endl;
 
     // Register for events
-    EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-            this->OnEvent(code, sender, listener, data);
+    EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+            Application::OnEvent(code, sender, listener, data);
             return true;});
 
-    EventHandler::Register(EVENT_CODE_KEY_PRESSED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        this->OnKey(code, sender, listener, data);
+    EventHandler::Register(EVENT_CODE_KEY_PRESSED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        Application::OnKey(code, sender, listener, data);
         return true;});
     
-    EventHandler::Register(EVENT_CODE_RESIZED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        this->OnResize(code, sender, listener, data);
+    EventHandler::Register(EVENT_CODE_RESIZED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        Application::OnResize(code, sender, listener, data);
         return true;});
 
-    EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        this->OnMouseMove(code, sender, listener, data);
+    EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        Application::OnMouseMove(code, sender, listener, data);
         return true;});
 
-    EventHandler::Register(EVENT_CODE_KEY_RELEASED, nullptr, [&, this](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        this->OnKey(code, sender, listener, data);
+    EventHandler::Register(EVENT_CODE_KEY_RELEASED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
+        Application::OnKey(code, sender, listener, data);
         return true;});
 
     // Init the platform
@@ -81,7 +90,7 @@ Application::Application(Pegasus::Game& game, std::string name, uint32_t width, 
     }
     std::cout << "Platform created" << std::endl;
 
-    if (!Renderer::Initialize(name, assetPath, width, height, {true, false})) {
+    if (!Renderer::Initialize(name, asset_path, width, height, {true, false})) {
         std::cout << "Error: failed to initialize Renderer Subsystem" << std::endl;
         exit(1);
     }
@@ -90,6 +99,8 @@ Application::Application(Pegasus::Game& game, std::string name, uint32_t width, 
     // m_renderer.OnInit();
 
     app_state.initialized = true;
+    return true;
+
 }
 
 Application::~Application() {
@@ -162,7 +173,8 @@ Application::run() {
 
         if (!app_state.is_suspended) {
             // Update timer
-            m_timer.Tick(nullptr);
+            app_state.timer.Tick(nullptr);
+            // m_timer.Tick(nullptr);
             static auto startTime = std::chrono::high_resolution_clock::now();
             auto currentTime = std::chrono::high_resolution_clock::now();
             float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -186,8 +198,9 @@ Application::run() {
             ubo.projectionView = proj * view * model;
 
             // Update FPS and framecount
-            snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
-            m_framecounter++;
+            // snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
+            snprintf(app_state.last_fps, static_cast<size_t>(32), "%u fps", app_state.timer.GetFPS());
+            app_state.framecounter++;
 
             // Render a frame
             RenderPacket packet = {};
@@ -196,10 +209,14 @@ Application::run() {
             Renderer::DrawFrame(packet);
         }
         
-        if (m_framecounter % 300 == 0) {
+        if (app_state.framecounter % 300 == 0) {
             Platform::set_title(
-                m_name + " - " + std::string(m_lastFPS)
+                // app_state.name + " - " + std::string(m_lastFPS)
+                app_state.name + " - " + std::string(app_state.last_fps)
             );
+            // Platform::set_title(
+            //     m_name + " - " + std::string(m_lastFPS)
+            // );
         }
     }
 
