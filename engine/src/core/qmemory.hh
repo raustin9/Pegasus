@@ -29,7 +29,7 @@ class QAPI QAllocator {
         static void Initialize();
         static void Shutdown();
 
-        static void* Allocate(uint64_t size, memory_tag tag);
+        static void* Allocate(uint64_t count, uint64_t size, memory_tag tag);
         static void  Free(void* block, uint64_t size, memory_tag tag);
         static void* Zero(void* block, uint64_t size);
         static void* Copy(void* dst, const void* source, uint64_t size);

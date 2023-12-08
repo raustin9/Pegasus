@@ -24,13 +24,13 @@ struct ApplicationState {
     float last_time;
 
     char last_fps[32];
-    uint64_t framecounter;
+    uint64_t framecounter; 
     StepTimer timer;
     std::string name;
     std::string asset_path; // TODO: move this file subsystem
 };
-
-static ApplicationState app_state = {};
+  
+static ApplicationState app_state = {};  
 
 Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath) {
 }
@@ -40,13 +40,19 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     // Application Init steps
     settings = {}; 
 
-    Vector<uint64_t> v;
+    Vector<uint64_t> v = Vector<uint64_t>(MEMORY_TAG_APPLICATION);
     v.push(25);
     v.push(26);
     v.push(27);
-    v.push(28);
-    for (size_t i = 0; i < v.size(); i++) {
-        std::cout << v[i] << " ";
+    v.push(28);  
+ 
+    Vector<uint64_t> v2 = v;
+    for (size_t i = 0; i < v2.size(); i++) { 
+        std::cout << v2[i] << " "; 
+    }
+    std::cout << std::endl;
+    for (size_t i = 0; i < v.size(); i++) { 
+        std::cout << v[i] << " "; 
     }
     std::cout << std::endl;
 
@@ -111,11 +117,9 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
 
     app_state.initialized = true;
     return true;
-
 }
 
 Application::~Application() {
-    
 }
 
 // Event loop of the application

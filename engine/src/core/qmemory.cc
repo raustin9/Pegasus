@@ -1,5 +1,6 @@
 #include "qmemory.hh"
 #include <iostream>
+#include <memory>
 
 struct memory_stats {
     uint64_t total_allocated;
@@ -38,9 +39,8 @@ QAllocator::Shutdown() {
 
 }
 
-
 void*
-QAllocator::Allocate(uint64_t size, memory_tag tag) {
+QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
     if (tag == MEMORY_TAG_UNKNOWN) {
         std::cout << "WARN: Allocating using unknown tag" << std::endl;
     }
@@ -50,8 +50,14 @@ QAllocator::Allocate(uint64_t size, memory_tag tag) {
     // printf("GOT HERE\n");
 
     // TODO: align memory
-    void* block = malloc(size);
-    QAllocator::Zero(block, size);
+    // void* block = malloc(size);
+    // QAllocator::Zero(block, size);
+    void* block;
+    block = std::calloc(count, size);
+    if (!block) {
+        throw std::bad_alloc{}; 
+    }
+
     return block;
 }
 
@@ -84,5 +90,5 @@ QAllocator::Set(void* dst, int32_t value, uint64_t size) {
 }
 
 char* GetUsageString() {
-
+    return "Test";
 }

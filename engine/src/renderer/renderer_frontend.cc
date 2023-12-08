@@ -1,6 +1,7 @@
 #include "renderer_frontend.hh"
 #include "renderer_backend.hh"
 #include "vulkan/vulkan_backend.hh"
+#include "containers/qvector.inl"
 #include <memory>
 // static VKBackend vkrenderer = {};
 
@@ -10,20 +11,33 @@ static RendererBackend *backend;
 // Initialize the renderer and create the preferred backend
 bool 
 Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, uint32_t height, RendererSettings settings) {
-  renderer_backend_create(RENDERER_BACKEND_VULKAN, &backend);
-  auto type = backend->type;
-  if (!backend->Initialize(name)) {
+  Vector<std::string> test;
+  std::string teststr1 = "str1";
+  std::string teststr2 = "str2"; 
+  std::string teststr3 = "str3"; 
+  std::string teststr4 = "str4"; 
+  test.push(teststr1);
+  test.push(teststr2);
+  test.push(teststr3);
+  test.push(teststr4);
+  for (uint64_t i = 0; i < test.size(); i++) {
+      std::cout << test[i].c_str() << " "; 
+  }  
+  std::cout << std::endl;
+  renderer_backend_create(RENDERER_BACKEND_VULKAN, &backend); 
+  auto type = backend->type; 
+  if (!backend->Initialize(name)) {    
     std::cout << "ERROR: Failed to initialize renderer backend" << std::endl;
-    return false;
+    return false; 
   }
   return true;
 }
-
+  
 void 
-Renderer::Shutdown() {
+Renderer::Shutdown() {  
   // vkrenderer.OnDestroy();
   backend->Shutdown();
-  delete backend;
+  delete backend;  
 }
 
 void 
