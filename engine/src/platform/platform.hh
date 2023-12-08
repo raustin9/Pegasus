@@ -22,6 +22,9 @@ public:
     static void* CopyMem(void* dst, const void* src, uint64_t size);
     static void* SetMem(void* dst, int32_t value, uint64_t size);
 
+    static void ConsoleWrite(const char* message, uint8_t color);
+    static void ConsoleError(const char* message, uint8_t color);
+
     static void create_window();
     static void destroy_window();
     static bool pump_messages();

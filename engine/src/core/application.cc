@@ -5,6 +5,7 @@
 #include "game_types.hh"
 #include "containers/qvector.inl"
 #include "core/qmemory.hh"
+#include "core/qlogger.hh"
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
@@ -40,6 +41,8 @@ bool
 Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string asset_path) {
     // Application Init steps
     settings = {}; 
+
+    qlogger::Info("This is a test message");
 
     std::cout << std::endl;
 

@@ -315,4 +315,44 @@ Platform::SetMem(void* dst, int32_t value, uint64_t size) {
 	return memset(dst, value, size);
 }
 
+void
+Platform::ConsoleWrite(const char* message, uint8_t color) {
+	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	static uint8_t levels[6] = {
+		64, 
+		4,
+		6,
+		2,
+		1,
+		8,
+	};
+	SetConsoleTextAttribute(console_handle, levels[color]);
+
+	OutputDebugStringA(message);
+	uint64_t length = strlen(message);
+	LPDWORD number_written = 0;
+	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
+	SetConsoleTextAttribute(console_handle, 0);
+}
+
+void
+Platform::ConsoleError(const char* message, uint8_t color) {
+	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	static uint8_t levels[6] = {
+		64, 
+		4,
+		6,
+		2,
+		1,
+		8,
+	};
+	SetConsoleTextAttribute(console_handle, levels[color]);
+
+	OutputDebugStringA(message);
+	uint64_t length = strlen(message);
+	LPDWORD number_written = 0;
+	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
+}
 #endif /* Q_PLATFORM_WINDOWS */
