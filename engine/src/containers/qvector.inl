@@ -17,12 +17,20 @@ public:
     bool set(uint64_t index, T obj);
     uint64_t size();
     uint64_t capacity();
+
+    T operator[] (int index); 
     
 private:
     T* m_data;
     uint64_t m_length;
     uint64_t m_capacity;
 };
+
+template <typename T>
+T
+Vector<T>::operator[](int index) {
+    return this->at(index);
+}
 
 // Accessors
 template <typename T>

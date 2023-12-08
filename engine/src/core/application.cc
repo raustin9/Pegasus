@@ -46,7 +46,7 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     v.push(27);
     v.push(28);
     for (size_t i = 0; i < v.size(); i++) {
-        std::cout << v.at(i) << " ";
+        std::cout << v[i] << " ";
     }
     std::cout << std::endl;
 
