@@ -287,5 +287,32 @@ Platform::WindowProc(
 	
 	return DefWindowProc(hWnd, code, w_param, l_param);
 }
+    
+void* 
+Platform::Allocate(uint64_t size, bool aligned) {
+	(void)aligned;
+	return malloc(size);
+}
+    
+void  
+Platform::Free(void* block, bool aligned) {
+	(void)aligned;
+	free(block);
+}
+    
+void* 
+Platform::ZeroMem(void* block, uint64_t size) {
+	return memset(block, 0, size);
+}
+    
+void* 
+Platform::CopyMem(void* dst, const void* src, uint64_t size) {
+	return memcpy(dst, src, size);
+}
+    
+void* 
+Platform::SetMem(void* dst, int32_t value, uint64_t size) {
+	return memset(dst, value, size);
+}
 
 #endif /* Q_PLATFORM_WINDOWS */

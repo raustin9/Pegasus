@@ -4,9 +4,10 @@
             "name": "windows-gcc-x64",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/engine/src/",
                 "${workspaceFolder}/engine/src/**",
-                "${workspaceFolder}/engine/src/*",
-                "${VULKAN_SDK}/include"
+                "${workspaceFolder}/testbed/src/**",
+                "${env.VULKAN_SDK}/include"
             ],
             "defines": [
                 "_PDEBUG",
@@ -24,6 +25,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/engine/src/",
                 "${workspaceFolder}/engine/src/**",
+                "${workspaceFolder}/testbed/src/**",
                 "${env.VULKAN_SDK}/include"
             ],
             "defines": [

@@ -41,20 +41,6 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     // Application Init steps
     settings = {}; 
 
-    Vector<uint64_t> v = Vector<uint64_t>(MEMORY_TAG_APPLICATION);
-    v.push(25);
-    v.push(26);
-    v.push(27);
-    v.push(28);  
- 
-    Vector<uint64_t> v2 = v;
-    for (size_t i = 0; i < v2.size(); i++) { 
-        std::cout << v2[i] << " "; 
-    }
-    std::cout << std::endl;
-    for (size_t i = 0; i < v.size(); i++) { 
-        std::cout << v[i] << " "; 
-    }
     std::cout << std::endl;
 
     app_state.name = name;
@@ -79,27 +65,13 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
         return false;
     }
     std::cout << "Event System created..." << std::endl;
-
-    // Register for events
-    EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-            Application::OnEvent(code, sender, listener, data);
-            return true;});
-
-    EventHandler::Register(EVENT_CODE_KEY_PRESSED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        Application::OnKey(code, sender, listener, data);
-        return true;});
     
-    EventHandler::Register(EVENT_CODE_RESIZED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        Application::OnResize(code, sender, listener, data);
-        return true;});
-
-    EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        Application::OnMouseMove(code, sender, listener, data);
-        return true;});
-
-    EventHandler::Register(EVENT_CODE_KEY_RELEASED, nullptr, [](uint16_t code, void* sender, void* listener, EventContext data) -> bool {
-        Application::OnKey(code, sender, listener, data);
-        return true;});
+    // Register for events
+    EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, Application::OnEvent);
+    EventHandler::Register(EVENT_CODE_KEY_PRESSED, nullptr, Application::OnKey);
+    EventHandler::Register(EVENT_CODE_KEY_RELEASED, nullptr, Application::OnKey);
+    EventHandler::Register(EVENT_CODE_RESIZED, nullptr, Application::OnResize);
+    EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, Application::OnMouseMove);
 
     // Init the platform
     if (!Platform::Startup(name, width, height)) {
@@ -126,6 +98,12 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    Vector<uint64_t> v = Vector<uint64_t>(MEMORY_TAG_APPLICATION);
+    v.push(25);
+    v.push(26);
+    v.push(27);
+    v.push(28);  
+ 
     std::cout << QAllocator::GetUsageString() << std::endl << std::endl;
 
     // create temporary objects using the renderer API
@@ -253,9 +231,9 @@ Application::run() {
     return true; 
 }
 
-/////////////////////////////////////
+/////////////////////////////////////////
 // ---------- CALLBACKS ---------- //
-/////////////////////////////////////
+/////////////////////////////////////////
 
 // Behavior for events
 // FOR NOW: handle application shutdown signal

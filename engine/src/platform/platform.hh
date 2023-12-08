@@ -8,12 +8,19 @@
 #include <memory>
 #include <sys/types.h>
 #include <chrono>
+#include <cstdint>
 
 class Platform {
 public:
     Platform(std::string name, uint32_t width, uint32_t height);
     static bool Startup(std::string name, uint32_t width, uint32_t height);
     static void Shutdown();
+
+    static void* Allocate(uint64_t size, bool aligned);
+    static void  Free(void* block, bool aligned);
+    static void* ZeroMem(void* block, uint64_t size);
+    static void* CopyMem(void* dst, const void* src, uint64_t size);
+    static void* SetMem(void* dst, int32_t value, uint64_t size);
 
     static void create_window();
     static void destroy_window();

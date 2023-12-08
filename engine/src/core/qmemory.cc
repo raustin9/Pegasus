@@ -1,4 +1,5 @@
 #include "qmemory.hh"
+#include "platform/platform.hh"
 #include <iostream>
 #include <memory>
 #include <cstdlib>
@@ -17,7 +18,7 @@ static const char* memory_tag_strings[MEMORY_TAG_MAX_TAGS] = {
     "DICT       ",
     "RING_QUEUE ",
     "BST        ",
-    "STRING",
+    "STRING     ",
     "APPLICATION",
     "JOB        ",
     "TEXTURE    ",
@@ -54,7 +55,8 @@ QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
     // void* block = malloc(size);
     // QAllocator::Zero(block, size);
     void* block;
-    block = std::calloc(count, size);
+    // block = std::calloc(count, size);
+    block = Platform::Allocate(size * count, false);
     if (!block) {
         throw std::bad_alloc{}; 
     }
