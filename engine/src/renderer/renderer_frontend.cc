@@ -20,8 +20,10 @@ Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, u
   test.push(teststr2);
   test.push(teststr3);
   test.push(teststr4);
-  for (uint64_t i = 0; i < test.size(); i++) {
-      std::cout << test[i].c_str() << " "; 
+
+  Vector<std::string> v2 = test;
+  for (uint64_t i = 0; i < v2.size(); i++) {
+      std::cout << v2[i].c_str() << " ";  
   }  
   std::cout << std::endl;
   renderer_backend_create(RENDERER_BACKEND_VULKAN, &backend); 
