@@ -1,5 +1,6 @@
 #include "input.hh"
 #include "core/events.hh"
+#include "core/qlogger.hh"
 
 // State for the input handler
 struct InputState {
@@ -18,7 +19,8 @@ static InputState input_state = {};
 void
 InputHandler::Startup() {
     input_state.initialized = true;
-    std::cout << "Input state initialized..." << std::endl;
+
+    qlogger::Info("Input state initialized.");
 }
 
 void
@@ -50,17 +52,17 @@ InputHandler::ProcessResize(uint32_t w, uint32_t h) {
 void
 InputHandler::ProcessKey(Keys key, bool pressed) {
     if (key == KEY_LALT) {
-        std::cout << "LALT\n";
+        qlogger::Info("LALT\n");
     } else if (key == KEY_RALT) {
-        std::cout << "RALT\n";
+        qlogger::Info("RALT\n");
     } else if (key == KEY_LCONTROL) {
-        std::cout << "LCONTROL\n";
+        qlogger::Info("LCONTROL\n");
     } else if (key == KEY_RCONTROL) {
-        std::cout << "RCONTROL\n";
+        qlogger::Info("RCONTROL\n");
     } else if (key == KEY_LSHIFT) {
-        std::cout << "LSHIFT\n";
+        qlogger::Info("LSHIFT\n");
     } else if (key == KEY_RSHIFT) {
-        std::cout << "RSHIFT\n";
+        qlogger::Info("RSHIFT\n");
     }
     // Only do anything if the state has changed
     if (input_state.keyboardCurrent.keys[key] != pressed) {

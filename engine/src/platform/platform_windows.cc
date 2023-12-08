@@ -1,4 +1,5 @@
 #include "platform.hh"
+#include "core/qlogger.hh"
 
 #ifdef Q_PLATFORM_WINDOWS
 
@@ -75,7 +76,7 @@ Platform::Startup(std::string name, uint32_t width, uint32_t height) {
 	}
 
 	Platform::create_window();
-	std::cout << "Window Created..." << std::endl;
+	qlogger::Info("Window Created...");
 
 	return true;
 }

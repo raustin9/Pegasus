@@ -82,7 +82,7 @@ namespace qlogger
     Info(const char* message, ...) {
         va_list args;
         va_start(args, message);
-        log_output(LOG_LEVEL_WARN, message, args);
+        log_output(LOG_LEVEL_INFO, message, args);
         va_end(args);
     }
 

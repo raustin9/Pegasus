@@ -1,5 +1,6 @@
 #include "qmemory.hh"
 #include "platform/platform.hh"
+#include "core/qlogger.hh"
 #include <iostream>
 #include <memory>
 #include <cstdlib>
@@ -44,7 +45,7 @@ QAllocator::Shutdown() {
 void*
 QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
     if (tag == MEMORY_TAG_UNKNOWN) {
-        std::cout << "WARN: Allocating using unknown tag" << std::endl;
+        qlogger::Warn("Allocating using unknown tag");
     }
 
     stats.total_allocated += size * count;
@@ -67,7 +68,7 @@ QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
 void 
 QAllocator::Free(void* block, uint64_t size, memory_tag tag) {
     if (tag == MEMORY_TAG_UNKNOWN) {
-        std::cout << "WARN: Deallocating using unknown tag" << std::endl;
+        qlogger::Warn("Deallocating using unknown tag");
     }
 
     stats.total_allocated -= size;

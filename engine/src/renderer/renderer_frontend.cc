@@ -2,6 +2,7 @@
 #include "renderer_backend.hh"
 #include "vulkan/vulkan_backend.hh"
 #include "containers/qvector.inl"
+#include "core/qlogger.hh"
 #include <memory>
 // static VKBackend vkrenderer = {};
 
@@ -23,13 +24,12 @@ Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, u
 
   Vector<std::string> v2 = test;
   for (uint64_t i = 0; i < v2.size(); i++) {
-      std::cout << v2[i].c_str() << " ";  
+      qlogger::Debug("%s ", v2[i].c_str());
   }  
-  std::cout << std::endl;
   renderer_backend_create(RENDERER_BACKEND_VULKAN, &backend); 
   auto type = backend->type; 
   if (!backend->Initialize(name)) {    
-    std::cout << "ERROR: Failed to initialize renderer backend" << std::endl;
+    qlogger::Error("Failed to initialize renderer backend");
     return false; 
   }
   return true;
@@ -48,7 +48,7 @@ Renderer::OnResize(uint16_t width, uint16_t height) {
   if (backend) {
     backend->Resized(width, height);
   } else {
-    printf("Renderer backend does not exist for this resize: [%i,%i]\n", width, height);
+    qlogger::Info("Renderer backend does not exist for this resize: [%i,%i]", width, height);
   }
 }
 
@@ -71,7 +71,7 @@ Renderer::DrawFrame(RenderPacket packet) {
   if (backend->BeginFrame(packet.delta_time)) {
       bool result = backend->EndFrame(packet.delta_time);
       if (!result) {
-          std::cout << "Renderer::EndFrame() returned unsuccessfully" << std::endl;
+          qlogger::Error("Renderer::EndFrame() returned unsuccessfully");
           return false;
       }
   }

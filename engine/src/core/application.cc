@@ -42,10 +42,6 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     // Application Init steps
     settings = {}; 
 
-    qlogger::Info("This is a test message");
-
-    std::cout << std::endl;
-
     app_state.name = name;
     app_state.asset_path = asset_path;
 
@@ -64,10 +60,11 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     app_state.is_suspended = false;
 
     if (!EventHandler::Startup()) {
-        std::cout << "Error: failed to initialize event handler" << std::endl;
+        // std::cout << "Error: failed to initialize event handler" << std::endl;
+        qlogger::Error("Error: failed to initialize event handler");
         return false;
     }
-    std::cout << "Event System created..." << std::endl;
+    qlogger::Info("Event System created...");
     
     // Register for events
     EventHandler::Register(EVENT_CODE_APPLICATION_QUIT, nullptr, Application::OnEvent);
@@ -78,16 +75,16 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
 
     // Init the platform
     if (!Platform::Startup(name, width, height)) {
-        std::cout << "Error: failed to initialize Platform Layer" << std::endl;
+        qlogger::Error("Error: failed to initialize platform layer");
         exit(1);
     }
-    std::cout << "Platform created" << std::endl;
+    qlogger::Info("Platform created.");
 
     if (!Renderer::Initialize(name, asset_path, width, height, {true, false})) {
-        std::cout << "Error: failed to initialize Renderer Subsystem" << std::endl;
+        qlogger::Error("Error: failed to initialize renderer");
         exit(1);
     }
-    std::cout << "Renderer created" << std::endl;
+    qlogger::Info("Renderer created.");
 
     // m_renderer.OnInit();
 
@@ -106,8 +103,8 @@ Application::run() {
     v.push(26);
     v.push(27);
     v.push(28);  
- 
-    std::cout << QAllocator::GetUsageString() << std::endl << std::endl;
+
+    qlogger::Debug(QAllocator::GetUsageString().c_str());
 
     // create temporary objects using the renderer API
     // TODO: remove these and do this through UI
@@ -197,7 +194,6 @@ Application::run() {
             ubo.projectionView = proj * view * model;
 
             // Update FPS and framecount
-            // snprintf(m_lastFPS, static_cast<size_t>(32), "%u fps", m_timer.GetFPS());
             snprintf(app_state.last_fps, static_cast<size_t>(32), "%u fps", app_state.timer.GetFPS());
             app_state.framecounter++;
 
@@ -219,7 +215,7 @@ Application::run() {
         }
     }
 
-    std::cout << "Shutting down application" << std::endl;
+    qlogger::Info("Shutting down application");
 
     EventHandler::Unregister(EVENT_CODE_APPLICATION_QUIT, nullptr);
     EventHandler::Unregister(EVENT_CODE_KEY_PRESSED, nullptr);
@@ -230,7 +226,7 @@ Application::run() {
     InputHandler::Shutdown();
     Renderer::Shutdown();
     Platform::Shutdown();
-    std::cout << "Application shutdown successfully" << std::endl;
+    qlogger::Info("Application shutdown successfully.");
     return true; 
 }
 
@@ -267,7 +263,7 @@ Application::OnMouseMove(uint16_t code, void* sender, void* listener, EventConte
     (void)sender;
     switch(code) {
         case EVENT_CODE_MOUSE_MOVED: {
-            printf("X: %i, Y: %i\n", context.u16[0], context.u16[1]);
+            qlogger::Debug("X: %i, Y: %i", context.u16[0], context.u16[1]);
             return true;
         }; break;
         default:
@@ -291,7 +287,7 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
 
         // Check if either the width or height are different
         if (app_state.width != w || app_state.height != h) {
-            printf("[%i, %i] != [%i, %i]\n", app_state.width, app_state.height, w, h);
+            qlogger::Debug("[%i, %i] != [%i, %i]", app_state.width, app_state.height, w, h);
             app_state.width = w;
             app_state.height = h;
 
@@ -329,11 +325,11 @@ Application::OnKey(uint16_t code, void* sender, void* listener, EventContext con
 
             return true;
         } else {
-            printf("'%c' key pressed in window\n", static_cast<char>(keycode));
+            qlogger::Debug("'%c' key pressed in window", static_cast<char>(keycode));
         }
     } else if (code == EVENT_CODE_KEY_RELEASED) {
         uint16_t keycode = context.u16[0];
-        printf("'%c' key released in window\n", keycode);
+        qlogger::Debug("'%c' key released in window", keycode);
     }
 
     return false;

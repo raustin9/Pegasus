@@ -7,6 +7,7 @@
 #include "core/application.hh"
 #include "vk_device.hh"
 #include "qmath/qmath.hh"
+#include "core/qlogger.hh"
 
 static uint32_t cached_framebuffer_width = 0;
 static uint32_t cached_framebuffer_height = 0;
@@ -15,7 +16,7 @@ static uint32_t cached_framebuffer_height = 0;
 bool
 VulkanBackend::Initialize(std::string& name) {
  
-    std::cout << "Vulkan Backend Initialized" << std::endl;
+    qlogger::Info("Vulkan Backend Initialized");
     m_context.allocator = nullptr; // TODO: eventually create custom allocator
     Application::GetFramebufferSize(
         cached_framebuffer_width,
@@ -38,12 +39,12 @@ VulkanBackend::Initialize(std::string& name) {
     create_debug_messenger();
 
     if (!create_surface()) {
-        std::cout << "Error: failed to create vulkan surface" << std::endl;
+        qlogger::Info("Error: failed to create vulkan surface");
         return false;
     }
 
     if (!create_device()) {
-        std::cout << "Error: Failed to create vulkan device" << std::endl;
+        qlogger::Info("Error: Failed to create vulkan device");
         return false;
     }
 
@@ -52,7 +53,7 @@ VulkanBackend::Initialize(std::string& name) {
         m_context.framebuffer_height,
         m_context.swapchain
     )) {
-        std::cout << "Error: Failed to create swapchain..." << std::endl;
+        qlogger::Info("Error: Failed to create swapchain...");
     }
 
     if (!create_renderpass(
@@ -62,7 +63,7 @@ VulkanBackend::Initialize(std::string& name) {
         1.0f,
         0
     )) {
-        std::cout << "Error: failed to create main renderpass." << std::endl;
+        qlogger::Info("Error: failed to create main renderpass.");
         return false;
     }
 
@@ -73,7 +74,7 @@ VulkanBackend::Initialize(std::string& name) {
     create_command_buffers();
 
     // Create synchronization objects
-    std::cout << "Creating synch objects..." << std::endl;
+    qlogger::Info("Creating synch objects...");
     m_context.image_available_semaphores.resize(m_context.swapchain.max_frames_in_flight);
     m_context.queue_complete_semaphores.resize(m_context.swapchain.max_frames_in_flight);
     m_context.in_flight_fences.resize(m_context.swapchain.max_frames_in_flight);
@@ -97,7 +98,7 @@ VulkanBackend::Initialize(std::string& name) {
         m_context.images_in_flight[i] = 0;
     }
 
-    std::cout << "Vulkan Backend initialized successfully." << std::endl; 
+    qlogger::Info("Vulkan Backend initialized successfully.");
     return true;
 }
 
@@ -106,7 +107,7 @@ VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
 
     // Sync objects
-    std::cout << "Destroying sync objects... ";
+    qlogger::Info("Destroying sync objects... ");
     for (uint32_t i = 0; i < m_context.swapchain.max_frames_in_flight; i++) {
         if (m_context.image_available_semaphores[i]) {
             vkDestroySemaphore(
@@ -128,10 +129,10 @@ VulkanBackend::Shutdown() {
     m_context.queue_complete_semaphores.clear();
     m_context.in_flight_fences.clear();
     m_context.images_in_flight.clear(); // we do not destroy these fences because we do not own them
-    std::cout << "Destroyed." << std::endl;
+    qlogger::Info("Destroyed.");
 
     // Command Buffers
-    std::cout << "Freeing command buffers... ";
+    qlogger::Info("Freeing command buffers... ");
     for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
         if (m_context.graphics_command_buffers[i].handle) {
             m_context.graphics_command_buffers[i].free(
@@ -142,14 +143,14 @@ VulkanBackend::Shutdown() {
         }
     }
     m_context.graphics_command_buffers.clear();
-    std::cout << "Freed." << std::endl;
+    qlogger::Info("Freed.");
 
     // Framebuffers
-    std::cout << "Destroying framebuffers... ";
+    qlogger::Info("Destroying framebuffers... ");
     for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
         destroy_framebuffer(m_context.swapchain.framebuffers[i]);
     }
-    std::cout << "Destroyed " << std::endl;
+    qlogger::Info("Destroyed ");
 
     destroy_renderpass(m_context.main_renderpass);
 
@@ -157,21 +158,21 @@ VulkanBackend::Shutdown() {
 
     destroy_device();
 
-    std::cout << "Destroying surface... ";
+    qlogger::Info("Destroying surface... ");
     vkDestroySurfaceKHR(m_context.instance, m_context.surface, m_context.allocator);
-    std::cout << "Destroyed " << std::endl;
+    qlogger::Info("Destroyed ");
 
 #if defined(P_DEBUG)
-    std::cout << "Destroying debug messenger... ";
+    qlogger::Info("Destroying debug messenger... ");
     PFN_vkDestroyDebugUtilsMessengerEXT func = 
         (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_context.instance, "vkDestroyDebugUtilsMessengerEXT");
     func(m_context.instance, m_context.debug_messenger, m_context.allocator);
-    std::cout << "Destroyed" << std::endl;
+    qlogger::Info("Destroyed");
 #endif // P_DEBUG
 
-    std::cout << "Destroying instance... ";
+    qlogger::Info("Destroying instance... ");
     vkDestroyInstance(m_context.instance, m_context.allocator);
-    std::cout << "Destroyed" << std::endl;
+    qlogger::Info("Destroyed");
 }
 
 void
@@ -180,7 +181,7 @@ VulkanBackend::Resized(uint32_t width, uint32_t height) {
     cached_framebuffer_height = height;
     m_context.framebuffer_size_generation++;
 
-    printf("VulkanBackend->resized: w/h/gen: %i/%i/%i\n", width, height, m_context.framebuffer_size_generation);
+    qlogger::Debug("VulkanBackend->resized: w/h/gen: %i/%i/%i\n", width, height, m_context.framebuffer_size_generation);
 }
 
 bool
@@ -190,10 +191,10 @@ VulkanBackend::BeginFrame(float delta_time) {
     if (m_context.recreating_swapchain) {
         VkResult result = vkDeviceWaitIdle(device.logical_device);
         if (!vkresult_is_success(result)) {
-            std::cout << "VulkanBackend::BeginFrame() vkDeviceWaitIdle(1) failed: " << vkresult_string(result, true) << std::endl;
+            qlogger::Info("VulkanBackend::BeginFrame() vkDeviceWaitIdle(1) failed: %s", vkresult_string(result, true));
             return false;
         }
-        std::cout << "Recreating swapchain. Booting..." << std::endl;
+        qlogger::Info("Recreating swapchain. Booting...");
     }
 
     // Check if the framebuffer has been resized to 
@@ -201,7 +202,7 @@ VulkanBackend::BeginFrame(float delta_time) {
     if (m_context.framebuffer_size_generation != m_context.framebuffer_size_last_generation) {
         VkResult result = vkDeviceWaitIdle(device.logical_device);
         if (!vkresult_is_success(result)) {
-            std::cout << "VulkanBackend::BeginFrame() vkDeviceWaitIdle(2) failed: " << vkresult_string(result, true) << std::endl;
+            qlogger::Info("VulkanBackend::BeginFrame() vkDeviceWaitIdle(2) failed: %s", vkresult_string(result, true));
             return false;
         }
 
@@ -209,14 +210,14 @@ VulkanBackend::BeginFrame(float delta_time) {
             return false;
         }
 
-        std::cout << "Resized. Booting..." << std::endl;
+        qlogger::Info("Resized. Booting...");
         return false;
     }
 
     // Wait for the execution of teh current frame to complete
     // This will move on once the fence is free
     if(!m_context.in_flight_fences[m_context.current_frame].wait(m_context, UINT64_MAX)) {
-        std::cout << "Warning: In-Flight fence wait failure" << std::endl;
+        qlogger::Info("Warning: In-Flight fence wait failure");
         return false;
     }
 
@@ -314,7 +315,7 @@ VulkanBackend::EndFrame(float delta_time) {
     );
 
     if (result != VK_SUCCESS) {
-        std::cout << "Error: vkQueueSubmit failed with result: " << vkresult_string(result, true) << std::endl;
+        qlogger::Info("Error: vkQueueSubmit failed with result: %s", vkresult_string(result, true));
         return false;
     }
 
@@ -337,12 +338,12 @@ VulkanBackend::EndFrame(float delta_time) {
 bool
 VulkanBackend::recreate_swapchain() {
     if (m_context.recreating_swapchain) {
-        std::cout << "VulkanBackend::recreate_swapchain() called when already recreating swapchain. Booting..." << std::endl;
+        qlogger::Info("VulkanBackend::recreate_swapchain() called when already recreating swapchain. Booting...");
         return false;
     }
 
     if (m_context.framebuffer_height == 0 || m_context.framebuffer_width == 0) {
-        std::cout << "VulkanBackend::recreate_swapchain() called when windows < 1 in a dimension. Booting..." << std::endl;
+        qlogger::Info("VulkanBackend::recreate_swapchain() called when windows < 1 in a dimension. Booting...");
         return false;
     }
 
