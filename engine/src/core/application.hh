@@ -20,11 +20,6 @@ class  QAPI Application {
         static bool Create(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string asset_path = "./assets");
         static void Shutdown();
 
-        // static Settings settings;
-        // bool OnEvent(uint16_t code, void* sender, void* listener, EventContext context);
-        // bool OnKey(uint16_t code, void* sender, void* listener, EventContext context);
-        // bool OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context);
-        // bool OnResize(uint16_t code, void* sender, void* listener, EventContext context);
         static bool OnEvent(uint16_t code, void* sender, void* listener, EventContext context);
         static bool OnKey(uint16_t code, void* sender, void* listener, EventContext context);
         static bool OnMouseMove(uint16_t code, void* sender, void* listener, EventContext context);

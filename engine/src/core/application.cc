@@ -3,6 +3,7 @@
 // #include "renderer/vulkan/renderer.hh"
 #include "renderer/renderer_frontend.hh"
 #include "game_types.hh"
+#include "containers/qvector.inl"
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
@@ -37,7 +38,17 @@ Application::Application(Pegasus::Game& game, std::string name, uint32_t width, 
 bool
 Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string asset_path) {
     // Application Init steps
-    settings = {};
+    settings = {}; 
+
+    Vector<uint64_t> v;
+    v.push(25);
+    v.push(26);
+    v.push(27);
+    v.push(28);
+    for (size_t i = 0; i < v.size(); i++) {
+        std::cout << v.at(i) << " ";
+    }
+    std::cout << std::endl;
 
     app_state.name = name;
     app_state.asset_path = asset_path;
