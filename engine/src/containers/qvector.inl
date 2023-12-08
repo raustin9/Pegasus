@@ -162,6 +162,7 @@ Vector<T>::push(T obj) {
             new_arr[i] = (T)m_data[i];
         }
         
+        QAllocator::Free(m_data, m_length * sizeof(T), m_tag);
         m_data = new_arr;
         m_capacity = m_capacity * 2;
     }

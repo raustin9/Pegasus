@@ -1,6 +1,7 @@
 #include "qmemory.hh"
 #include <iostream>
 #include <memory>
+#include <cstdlib>
 
 struct memory_stats {
     uint64_t total_allocated;
@@ -45,8 +46,8 @@ QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
         std::cout << "WARN: Allocating using unknown tag" << std::endl;
     }
 
-    stats.total_allocated += size;
-    stats.tagged_allocations[tag] += size;
+    stats.total_allocated += size * count;
+    stats.tagged_allocations[tag] += size * count;
     // printf("GOT HERE\n");
 
     // TODO: align memory
@@ -89,6 +90,39 @@ QAllocator::Set(void* dst, int32_t value, uint64_t size) {
     return memset(dst, value, size);
 }
 
-char* GetUsageString() {
-    return "Test";
+std::string 
+QAllocator::GetUsageString(){
+    const uint64_t gib = 1024 * 1024 * 1024;
+    const uint64_t mib = 1024 * 1024;
+    const uint64_t kib = 1024;
+
+    char buffer[8000] = "System memory use (tagged):\n";
+    uint64_t offset = strlen(buffer);
+    
+    for (uint64_t i = 0; i < MEMORY_TAG_MAX_TAGS; i++) {
+        char unit[4] = "Xib";
+        float amount = 1.0f;
+
+        // Check for which unit we should be using
+        if (stats.tagged_allocations[i] >= gib) {
+            unit[0] = 'G';
+            amount = stats.tagged_allocations[i] / (static_cast<float>(gib));
+        } else if (stats.tagged_allocations[i] >= mib) {
+            unit[0] = 'M';
+            amount = stats.tagged_allocations[i] / (static_cast<float>(mib));
+        } else if (stats.tagged_allocations[i] >= kib) {
+            unit[0] = 'K';
+            amount = stats.tagged_allocations[i] / (static_cast<float>(kib));
+        } else {
+            unit[0] = 'B';
+            unit[1] = 0;
+            amount = static_cast<float>(stats.tagged_allocations[i]);
+        }
+
+        int32_t length = snprintf(buffer + offset, 8000, " %s: %.2f%s\n", memory_tag_strings[i], amount, unit);
+        offset += length;
+    }
+
+    std::string out_string = buffer;
+    return out_string;
 }

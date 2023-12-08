@@ -1,6 +1,7 @@
 #pragma once
 #include "defines.hh"
 #include <cstdint>
+#include <string>
 
 enum memory_tag : uint32_t {
     MEMORY_TAG_UNKNOWN,
@@ -34,6 +35,5 @@ class QAPI QAllocator {
         static void* Zero(void* block, uint64_t size);
         static void* Copy(void* dst, const void* source, uint64_t size);
         static void* Set(void* dst, int32_t value, uint64_t size);
-        static char* GetUsageString();
-    private:
+        static std::string GetUsageString();
 };

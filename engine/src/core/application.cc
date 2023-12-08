@@ -4,6 +4,7 @@
 #include "renderer/renderer_frontend.hh"
 #include "game_types.hh"
 #include "containers/qvector.inl"
+#include "core/qmemory.hh"
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
@@ -125,6 +126,8 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    std::cout << QAllocator::GetUsageString() << std::endl << std::endl;
+
     // create temporary objects using the renderer API
     // TODO: remove these and do this through UI
     Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
