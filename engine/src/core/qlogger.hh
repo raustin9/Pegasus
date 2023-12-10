@@ -17,10 +17,10 @@ namespace qlogger
     bool Initialize();
     void Shutdown();
 
-    void Fatal(const char* message, ...);
-    void Error(const char* message, ...);
-    void Warn(const char* message, ...);
-    void Info(const char* message, ...);
-    void Debug(const char* message, ...);
-    void Trace(const char* message, ...);
+    void QAPI Fatal(const char* message, ...);
+    void QAPI Error(const char* message, ...);
+    void QAPI Warn(const char* message, ...);
+    void QAPI Info(const char* message, ...);
+    void QAPI Debug(const char* message, ...);
+    void QAPI Trace(const char* message, ...);
 } // qlogger

@@ -11,22 +11,17 @@ REM Testbed
 make -f "Makefile.testbed.windows.mak" All
 IF %ERRORLEVEL% NEQ 0 (echo Error: %ERRORLEVEL% && exit)
 
-REM Build the tests. I dont feel like making a whole Makefile for this yet
-PUSHD tests
+PUSHD tests 
 CALL build.bat
 POPD
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
-
-@REM PUSHD engine
-@REM CALL build.bat
-@REM POPD
-@REM IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
 @REM PUSHD testbed
 @REM CALL build.bat
 @REM POPD
 @REM IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
-ECHO "All assemblies built successfully."
+ECHO "All assemblies built successfully..."
+ECHO "Running [testbed]"
 
-post-build.bat
+.\bin\tests.exe
