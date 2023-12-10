@@ -181,7 +181,7 @@ VulkanBackend::Resized(uint32_t width, uint32_t height) {
     cached_framebuffer_height = height;
     m_context.framebuffer_size_generation++;
 
-    qlogger::Debug("VulkanBackend->resized: w/h/gen: %i/%i/%i\n", width, height, m_context.framebuffer_size_generation);
+    qlogger::Trace("VulkanBackend->resized: w/h/gen: %i/%i/%i", width, height, m_context.framebuffer_size_generation);
 }
 
 bool

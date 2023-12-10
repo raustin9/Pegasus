@@ -45,9 +45,6 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     app_state.name = name;
     app_state.asset_path = asset_path;
 
-    // app_state.width = width;
-    // app_state.height = height;
-
     // TODO: set this to be configurable
     settings.enableValidation = true;
     settings.enableVsync = false; // disable vsync for higher fps
@@ -287,20 +284,20 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
 
         // Check if either the width or height are different
         if (app_state.width != w || app_state.height != h) {
-            qlogger::Debug("[%i, %i] != [%i, %i]", app_state.width, app_state.height, w, h);
+            qlogger::Trace("[%i, %i] != [%i, %i]", app_state.width, app_state.height, w, h);
             app_state.width = w;
             app_state.height = h;
 
             // Handle minimization
             if (w == 0 || h == 0) {
-                std::cout << "Application minimized" << std::endl;
+                qlogger::Trace("Application minimized");
                 // TODO: add suspended states to the application 
                 app_state.is_suspended = true;
                 return true;
             } else {
                 // TODO: check if app is suspended and only act if not
                 if (app_state.is_suspended) {
-                    std::cout << "Window restored. Resuming application" << std::endl;
+                    qlogger::Trace("Window restored. Resuming application");
                     app_state.is_suspended = false;
                 }
                 Renderer::OnResize(w, h);

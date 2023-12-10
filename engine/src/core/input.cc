@@ -52,17 +52,17 @@ InputHandler::ProcessResize(uint32_t w, uint32_t h) {
 void
 InputHandler::ProcessKey(Keys key, bool pressed) {
     if (key == KEY_LALT) {
-        qlogger::Info("LALT\n");
+        qlogger::Debug("LALT\n");
     } else if (key == KEY_RALT) {
-        qlogger::Info("RALT\n");
+        qlogger::Debug("RALT\n");
     } else if (key == KEY_LCONTROL) {
-        qlogger::Info("LCONTROL\n");
+        qlogger::Debug("LCONTROL\n");
     } else if (key == KEY_RCONTROL) {
-        qlogger::Info("RCONTROL\n");
+        qlogger::Debug("RCONTROL\n");
     } else if (key == KEY_LSHIFT) {
-        qlogger::Info("LSHIFT\n");
+        qlogger::Debug("LSHIFT\n");
     } else if (key == KEY_RSHIFT) {
-        qlogger::Info("RSHIFT\n");
+        qlogger::Debug("RSHIFT\n");
     }
     // Only do anything if the state has changed
     if (input_state.keyboardCurrent.keys[key] != pressed) {
