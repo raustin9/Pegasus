@@ -1,5 +1,6 @@
 #include "vulkan_backend.hh"
 #include "vk_fence.hh"
+#include "core/qlogger.hh"
 
 void
 VKFence::create(VKContext& context, bool create_signaled) {
@@ -17,7 +18,7 @@ VKFence::create(VKContext& context, bool create_signaled) {
         context.allocator,
         &this->handle
     ));
-    std::cout << "VKFence created..." << std::endl;
+    qlogger::Info("VKFence created...");
 }
 
 void 
@@ -50,19 +51,19 @@ VKFence::wait(VKContext& context, uint64_t timeout_ms) {
                 this->is_signaled = true;
                 return true;
             case VK_TIMEOUT: 
-                std::cout << "VKFence.wait(): timed out" << std::endl;
+                qlogger::Error("VKFence.wait(): timed out");
                 break;
             case VK_ERROR_DEVICE_LOST: 
-                std::cout << "VKFence.wait(): VK_ERROR_DEVICE_LOST" << std::endl;
+                qlogger::Error("VKFence.wait(): VK_ERROR_DEVICE_LOST");
                 break;
             case VK_ERROR_OUT_OF_HOST_MEMORY: 
-                std::cout << "VKFence.wait(): VK_ERROR_OUT_OF_HOST_MEMORY" << std::endl;
+                qlogger::Error("VKFence.wait(): VK_ERROR_OUT_OF_HOST_MEMORY");
                 break;
             case VK_ERROR_OUT_OF_DEVICE_MEMORY: 
-                std::cout << "VKFence.wait(): VK_ERROR_OUT_OF_DEVICE_MEMORY" << std::endl;
+                qlogger::Error("VKFence.wait(): VK_ERROR_OUT_OF_DEVICE_MEMORY");
                 break;
             default:
-                std::cout << "VKFence.wait(): An unknown error has occured" << std::endl;
+                qlogger::Error("VKFence.wait(): An unknown error has occured");
                 break;
         }
     } else {

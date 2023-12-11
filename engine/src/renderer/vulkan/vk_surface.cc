@@ -1,8 +1,9 @@
 #include "vulkan_backend.hh"
+#include "core/qlogger.hh"
 
 bool
 VulkanBackend::create_surface() {
-  std::cout << "Creating Vulkan surface..." << std::endl;
+  qlogger::Info("Creating Vulkan surface...");
   if (!Platform::create_vulkan_surface(m_context)) {
       return false;
   }

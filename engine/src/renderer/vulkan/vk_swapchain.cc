@@ -1,6 +1,7 @@
 #include "vulkan_backend.hh"
 #include "vk_device.hh"
 #include "vk_image.hh"
+#include "core/qlogger.hh"
 
 // VULKAN BACKEND METHODS //
 bool 
@@ -168,7 +169,7 @@ VKSwapchain::create(VKContext& context, uint32_t width, uint32_t height) {
 
     if (!vkdevice_detect_depth_format(context.device)) {
         context.device.depth_format = VK_FORMAT_UNDEFINED;
-        std::cout << "Failed to find a supported depth format" << std::endl;
+        qlogger::Info("Failed to find a supported depth format");
     }
 
     (void)vkimage_create(
@@ -185,13 +186,13 @@ VKSwapchain::create(VKContext& context, uint32_t width, uint32_t height) {
         this->depth_attachment
     );
 
-    std::cout << "Swapchain created..." << std::endl;
+    qlogger::Info("Swapchain created...");
 }
 
 // Destroy the swapchain
 void
 VKSwapchain::destroy(VKContext& context) {
-    std::cout << "Destroying swapchain... ";
+    qlogger::Info("Destroying swapchain... ");
     vkDeviceWaitIdle(context.device.logical_device);
     vkimage_destroy(context, this->depth_attachment);
 
@@ -202,7 +203,7 @@ VKSwapchain::destroy(VKContext& context) {
     }
 
     vkDestroySwapchainKHR(context.device.logical_device, this->handle, context.allocator);
-    std::cout << "Destroyed." << std::endl;
+    qlogger::Info("Destroyed.");
 }
 
 bool
@@ -226,7 +227,7 @@ VKSwapchain::acquire_next_image_index(
         this->recreate(context, context.framebuffer_width, context.framebuffer_height);
         return false;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        std::cout << "Error: Failed to acquire swapchain image" << std::endl;
+        qlogger::Info("Error: Failed to acquire swapchain image");
         return false;
     }
 
@@ -260,7 +261,7 @@ VKSwapchain::present(
         this->recreate(context, context.framebuffer_width, context.framebuffer_height);
         return false;
     } else if (result != VK_SUCCESS) {
-        std::cout << "Error: Failed to present swapchain image" << std::endl;
+        qlogger::Info("Error: Failed to present swapchain image");
         return false;
     }
 

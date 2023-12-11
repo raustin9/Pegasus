@@ -1,5 +1,6 @@
 #include "vulkan_backend.hh"
 #include "vk_command_buffer.hh"
+#include "core/qlogger.hh"
 
 void
 VulkanBackend::create_command_buffers() {
@@ -28,7 +29,7 @@ VulkanBackend::create_command_buffers() {
         );
     }
 
-    std::cout << "Graphics command buffers created [" << m_context.graphics_command_buffers.size() << "]" << std::endl;
+    qlogger::Info("Graphics command buffers created [%llu]", m_context.graphics_command_buffers.size());
 }
 
 void 

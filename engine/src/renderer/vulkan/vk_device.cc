@@ -1,5 +1,6 @@
 #include "vulkan_backend.hh"
 #include "vk_device.hh"
+#include "core/qlogger.hh"
 
 struct physical_device_requirements {
     bool graphics;
@@ -42,7 +43,7 @@ VulkanBackend::create_device() {
     } 
 
     // Create the logical device
-    std::cout << "Creating logical device" << std::endl;
+    qlogger::Info("Creating logical device");
     // NOTE: Do not create an additional queue for shared indices
     bool present_shared_graphics_queue = m_context.device.graphics_queue_index == m_context.device.present_queue_index;
     bool transfered_shared_graphics_queue = m_context.device.graphics_queue_index == m_context.device.transfer_queue_index;
@@ -103,7 +104,7 @@ VulkanBackend::create_device() {
         &m_context.device.logical_device
     ));
 
-    std::cout << "Logical Device created..." << std::endl;
+    qlogger::Info("Logical Device created...");
 
     // Get the device queues
     vkGetDeviceQueue(
@@ -127,7 +128,7 @@ VulkanBackend::create_device() {
         0,
         &m_context.device.transfer_queue
     );
-    std::cout << "Queues obtained..." << std::endl;
+    qlogger::Info("Queues obtained...");
 
     // Create the command pool for the graphcis queue
     VkCommandPoolCreateInfo pool_create_info {};
@@ -140,7 +141,7 @@ VulkanBackend::create_device() {
         m_context.allocator,
         &m_context.device.graphics_command_pool
     ));
-    std::cout << "Graphics command pool created..." << std::endl;
+    qlogger::Info("Graphics command pool created...");
 
     return true;
 }
@@ -152,7 +153,7 @@ select_physical_device(VKContext& context) {
     uint32_t physical_device_count = 0;
     VK_CHECK(vkEnumeratePhysicalDevices(context.instance, &physical_device_count, nullptr));
     if (physical_device_count == 0) {
-        std::cout << "No devices which support vulkan were found";
+        qlogger::Info("No devices which support vulkan were found");
         return false;
     }
 
@@ -193,27 +194,27 @@ select_physical_device(VKContext& context) {
         );
 
         if (result) {
-            std::cout << "Selected device '" << properties.deviceName << "'" << std::endl;
+            qlogger::Info("Selected device %s", properties.deviceName);
             switch(properties.deviceType) {
                 default:
                 case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-                    std::cout << "GPU Type is unknown" << std::endl;
+                    qlogger::Info("GPU Type is unknown");
                 case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-                    std::cout << "GPU Type is Integrated" << std::endl;
+                    qlogger::Info("GPU Type is Integrated");
                 case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-                    std::cout << "GPU Type is Discrete" << std::endl;
+                    qlogger::Info("GPU Type is Discrete");
                 case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-                    std::cout << "GPU Type is Virtual" << std::endl;
+                    qlogger::Info("GPU Type is Virtual");
                 case VK_PHYSICAL_DEVICE_TYPE_CPU:
-                    std::cout << "GPU Type is CPU" << std::endl;
+                    qlogger::Info("GPU Type is CPU");
             }
 
-            printf("GPU Driver Version: %d.%d.%d\n",
+            qlogger::Info("GPU Driver Version: %d.%d.%d",
                 VK_VERSION_MAJOR(properties.driverVersion),
                 VK_VERSION_MINOR(properties.driverVersion),
                 VK_VERSION_PATCH(properties.driverVersion));
             
-            printf("GPU API Version: %d.%d.%d\n",
+            qlogger::Info("GPU API Version: %d.%d.%d",
                 VK_VERSION_MAJOR(properties.apiVersion),
                 VK_VERSION_MINOR(properties.apiVersion),
                 VK_VERSION_PATCH(properties.apiVersion));
@@ -222,9 +223,9 @@ select_physical_device(VKContext& context) {
             for (uint32_t j = 0; j < memory.memoryHeapCount; j++) {
                 float memory_size_gib = (((float)memory.memoryHeaps[j].size) / 1024.0F / 1024.0F / 1024.0F);
                 if (memory.memoryHeaps[j].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-                    printf("Local GPU memory: %.2f GiB\n", memory_size_gib);
+                    qlogger::Info("Local GPU memory: %.2f GiB", memory_size_gib);
                 } else {
-                    printf("Shared System memory: %.2f\n", memory_size_gib);
+                    qlogger::Info("Shared System memory: %.2f", memory_size_gib);
                 }
             }
 
@@ -242,11 +243,11 @@ select_physical_device(VKContext& context) {
 
     // Make sure we selected a device
     if (!context.device.physical_device) {
-        std::cout << "ERROR: Failed to select a physical device that meets the requirements" << std::endl;
+        qlogger::Info("ERROR: Failed to select a physical device that meets the requirements");
         return false;
     }
 
-    std::cout << "Physical device selected." << std::endl;
+    qlogger::Info("Physical device selected.");
     return true;
 }
 
@@ -333,28 +334,28 @@ VulkanBackend::destroy_device() {
     m_context.device.present_queue = nullptr;
     m_context.device.transfer_queue = nullptr;
 
-    std::cout << "Destroying command pools... ";
+    qlogger::Info("Destroying command pools... ");
     vkDestroyCommandPool(
         m_context.device.logical_device,
         m_context.device.graphics_command_pool,
         m_context.allocator
     );
-    std::cout << "Destroyed." << std::endl;
+    qlogger::Info("Destroyed.");
 
-    std::cout << "Destroying the logical device... ";
+    qlogger::Info("Destroying the logical device... ");
     if (m_context.device.logical_device) {
         vkDestroyDevice(m_context.device.logical_device, m_context.allocator);
         m_context.device.logical_device = nullptr;
     }
-    std::cout << "Destroyed." << std::endl;
+    qlogger::Info("Destroyed.");
 
-    std::cout << "Releasing physical device resources... ";
+    qlogger::Info("Releasing physical device resources... ");
     m_context.device.physical_device = nullptr;
 
     m_context.device.graphics_queue_index = -1;
     m_context.device.present_queue_index = -1;
     m_context.device.transfer_queue_index = -1;
-    std::cout << "Released." << std::endl;
+    qlogger::Info("Released.");
 }
 
 void 
@@ -429,7 +430,7 @@ physical_device_meets_requirements(
     // Discrete GPU?
     if (requirements.discrete_gpu) {
         if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            std::cout << "Device is not a discrete GPU, and one is required. Skipping..." << std::endl;
+            qlogger::Info("Device is not a discrete GPU, and one is required. Skipping...");
             return false;
         }
     }
@@ -440,7 +441,7 @@ physical_device_meets_requirements(
     VkQueueFamilyProperties queue_families[32];
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families);
 
-    std::cout << "Graphics | Present | Compute | Transfer | Name" << std::endl;
+    qlogger::Info("Graphics | Present | Compute | Transfer | Name");
     uint8_t min_transfer_score = 255;
     for (uint32_t i = 0; i < queue_family_count; i++) {
         uint8_t current_transfer_score = 0;
@@ -475,7 +476,7 @@ physical_device_meets_requirements(
         }
     }
 
-    printf("        %d |        %d |        %d |        %d | %s\n",
+    qlogger::Info("        %d |        %d |        %d |        %d | %s\n",
         out_queue_family_info.graphics_family_index != -1,
         out_queue_family_info.present_family_index != -1,
         out_queue_family_info.compute_family_index != -1,
@@ -498,7 +499,7 @@ physical_device_meets_requirements(
         if (out_swapchain_support.present_modes.size() > 0) {
             out_swapchain_support.present_modes.clear();
         }
-        std::cout << "Required swapchain support not present, skipping device." << std::endl;
+        qlogger::Debug("Required swapchain support not present, skipping device.");
         return false;
     }
 
@@ -533,7 +534,7 @@ physical_device_meets_requirements(
                 }
 
                 if (!found) {
-                    printf("Required extension not found: '%s'. Skipping device...\n", requirements.device_extension_names[i]);
+                    qlogger::Info("Required extension not found: '%s'. Skipping device...\n", requirements.device_extension_names[i]);
                     return false;
                 }
             }
@@ -541,7 +542,7 @@ physical_device_meets_requirements(
 
         // Sampler anisotropy
         if (requirements.sampler_anisotropy && !features.samplerAnisotropy) {
-            std::cout << "Device does not support sampler anisotropy. Skipping..." << std::endl;
+            qlogger::Info("Device does not support sampler anisotropy. Skipping...");
             return false;
         }
 

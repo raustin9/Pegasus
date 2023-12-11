@@ -1,5 +1,5 @@
 #include "vulkan_backend.hh"
-
+#include "core/qlogger.hh"
 
 bool 
 VulkanBackend::create_renderpass(
@@ -117,18 +117,18 @@ VulkanBackend::create_renderpass(
         &out_renderpass.handle
     ));
 
-    std::cout << "Renderpass created..." << std::endl;
+    qlogger::Info("Renderpass created...");
     return true;
 }
 
 void
 VulkanBackend::destroy_renderpass(VKRenderpass& renderpass) {
-    std::cout << "Destroying renderpass... ";
+    qlogger::Info("Destroying renderpass... ");
     if (renderpass.handle) {
         vkDestroyRenderPass(m_context.device.logical_device, renderpass.handle, m_context.allocator);
         renderpass.handle = nullptr;
     }
-    std::cout << "Destroyed." << std::endl;
+    qlogger::Info("Destroyed.");
 }
 
 void

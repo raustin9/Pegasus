@@ -5,7 +5,7 @@
 #include <memory/qlinear_allocator.hh>
 #include <defines.hh>
 
-bool linear_allocator_should_create_and_destroy() {
+uint8_t linear_allocator_should_create_and_destroy() {
     qmemory::QLinearAllocator alloc;
     alloc.Create(sizeof(uint64_t), NULL);
 
@@ -19,7 +19,7 @@ bool linear_allocator_should_create_and_destroy() {
     expect_should_be(0, alloc.total_size);
     expect_should_be(0, alloc.allocated);
 
-    return true;
+    return TRUE;
 
 }
 

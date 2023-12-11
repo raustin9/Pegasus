@@ -1,4 +1,5 @@
 #include "vulkan_backend.hh"
+#include "core/qlogger.hh"
 
 // Forward declare the debug messenger callback for Vulkan
 VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
@@ -31,7 +32,7 @@ VulkanBackend::create_debug_messenger() {
     PFN_vkCreateDebugUtilsMessengerEXT func = 
         (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_context.instance, "vkCreateDebugUtilsMessengerEXT");
     VK_CHECK(func(m_context.instance, &debug_create_info, m_context.allocator, &m_context.debug_messenger));
-    std::cout << "Debug messenger created." << std::endl;
+    qlogger::Info("Debug messenger created.");
 #endif
 }
 

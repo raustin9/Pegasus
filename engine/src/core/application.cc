@@ -240,7 +240,7 @@ Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext c
     (void)sender;
     switch(code) {
         case EVENT_CODE_APPLICATION_QUIT: {
-            std::cout << "EVENT_CODE_APPLICATION_QUIT received. Shutting down..." << std::endl;
+            qlogger::Info("EVENT_CODE_APPLICATION_QUIT received. Shutting down...");
             app_state.is_running = false;
             return true;
         }; break;

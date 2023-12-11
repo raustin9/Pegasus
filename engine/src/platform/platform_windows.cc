@@ -318,7 +318,10 @@ Platform::SetMem(void* dst, int32_t value, uint64_t size) {
 
 void
 Platform::ConsoleWrite(const char* message, uint8_t color) {
+	CONSOLE_SCREEN_BUFFER_INFO Info;
 	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(console_handle, &Info);
+	WORD Attributes = Info.wAttributes;
 
 	static uint8_t levels[6] = {
 		64, 
@@ -334,12 +337,15 @@ Platform::ConsoleWrite(const char* message, uint8_t color) {
 	uint64_t length = strlen(message);
 	LPDWORD number_written = 0;
 	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
-	SetConsoleTextAttribute(console_handle, 0);
+	SetConsoleTextAttribute(console_handle, Attributes);
 }
 
 void
 Platform::ConsoleError(const char* message, uint8_t color) {
+	CONSOLE_SCREEN_BUFFER_INFO Info;
 	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(console_handle, &Info);
+	WORD Attributes = Info.wAttributes;
 
 	static uint8_t levels[6] = {
 		64, 
@@ -355,5 +361,6 @@ Platform::ConsoleError(const char* message, uint8_t color) {
 	uint64_t length = strlen(message);
 	LPDWORD number_written = 0;
 	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
+	SetConsoleTextAttribute(console_handle, Attributes);
 }
 #endif /* Q_PLATFORM_WINDOWS */

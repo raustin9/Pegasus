@@ -12,7 +12,7 @@ TestManager::~TestManager() {
 }
 
 void
-TestManager::Register(PFN_test test, char* desc) {
+TestManager::Register(PFN_test test, const char* desc) {
     test_entry e {};
     e.func = test;
     e.desc = desc;
@@ -30,11 +30,11 @@ TestManager::RunTests() {
     float total_time = 0;
     for (size_t i = 0; i < count; i++) {
         auto test_start = std::chrono::high_resolution_clock::now();
-        bool result = tests[i].func();
+        uint8_t result = tests[i].func();
         auto test_finish = std::chrono::high_resolution_clock::now();
         float test_duration = std::chrono::duration<float, std::chrono::seconds::period>(test_finish - test_start).count();
 
-        if (result == true) {
+        if (result == TRUE) {
             passed++;
         } else if (result == BYPASS) {
             qlogger::Warn("[SKIPPED]: %s", tests[i].desc);

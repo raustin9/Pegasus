@@ -7,11 +7,13 @@
 #define BYPASS 2
 
 // typedef uint8_t (*PFN_test)();
-typedef std::function<bool()> PFN_test;
+typedef std::function<uint8_t()> PFN_test;
+#define TRUE 1
+#define FALSE 0
 
 struct test_entry {
     PFN_test func;
-    char* desc;
+    const char* desc;
 };
 
 class TestManager {
@@ -19,7 +21,7 @@ public:
     TestManager();
     ~TestManager();
 
-    void Register(PFN_test, char* desc);
+    void Register(PFN_test, const char* desc);
     void RunTests();
 
     std::vector<test_entry> tests;

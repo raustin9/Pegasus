@@ -7,7 +7,7 @@ SET cFilenames=
 FOR /R %%f in (*.cc) do (SET cFilenames=!cFilenames! %%f)
 
 SET assembly=tests
-SET cFlags=-g -std=c++17 -Wno-missing-braces -Wall
+SET cFlags=-g -std=c++17 -Wno-missing-braces
 SET Includes=-Isrc -I../engine/src/
 SET ldflags= -L../bin/ -lengine.lib
 SET defines=-DP_DEBUG -DQIMPORT
