@@ -21,6 +21,8 @@ public:
     memory_tag tag() const;
     T* data() const;
 
+    void clear();
+
     T operator[] (int index) const; 
     Vector<T>& operator= (const Vector<T>& v2);
     
@@ -58,7 +60,6 @@ Vector<T>::capacity() const { return m_capacity; }
 //
 // Constructors
 // 
-
 // Constructor without memory tag
 template <typename T>
 Vector<T>::Vector()
@@ -109,7 +110,6 @@ Vector<T>::Vector(const Vector<T>& v)
 template <typename T>
 Vector<T>::~Vector() {
     QAllocator::Free((void*)m_data, sizeof(T) * m_capacity, m_tag);
-    // delete[] m_data;
 }
 
 //
@@ -168,4 +168,11 @@ Vector<T>::push(T obj) {
     }
     m_data[m_length] = obj;
     m_length++;
+}
+
+template <typename T> void
+Vector<T>::clear() {
+    for (uint64_t i = 0; i < m_length; i++) {
+        delete[] m_data[i];
+    }
 }

@@ -36,5 +36,6 @@ class QAPI QAllocator {
         static void* Zero(void* block, uint64_t size);
         static void* Copy(void* dst, const void* source, uint64_t size);
         static void* Set(void* dst, int32_t value, uint64_t size);
+        template <typename T> static void Delete(T* block, uint64_t size, memory_tag tag);
         static std::string GetUsageString();
 };

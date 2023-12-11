@@ -66,6 +66,21 @@ QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
     return block;
 }
 
+template <typename T> void
+QAllocator::Delete(T* block, uint64_t size, memory_tag tag) {
+    if (tag == MEMORY_TAG_UNKNOWN) {
+        qlogger::Warn("Deallocating using unknown tag");
+    }
+
+    stats.total_allocated -= size;
+    stats.tagged_allocations[tag] -= size;
+
+    // TODO: align memory
+    delete[] block;
+    
+    // free(block);
+}
+
 void 
 QAllocator::Free(void* block, uint64_t size, memory_tag tag) {
     if (tag == MEMORY_TAG_UNKNOWN) {
