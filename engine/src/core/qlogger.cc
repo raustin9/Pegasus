@@ -2,17 +2,33 @@
 #include "qmemory.hh"
 #include "platform/platform.hh"
 #include <stdarg.h>
+#include <cstdint>
 
 namespace qlogger 
 {
+    struct logger_system_state {
+        bool initialized;
+    };
+
+    static logger_system_state* state_ptr;
+
     bool 
-    Initialize() {
+    Initialize(uint64_t& memory_requirement, void* state) {
+        memory_requirement = sizeof(logger_system_state);
+        if (state == nullptr) {
+            return false;
+        }
         // TODO: be able to configure files and other outputs
+        state_ptr = static_cast<logger_system_state*>(state);
+        state_ptr->initialized = true;
         return true;
     }
 
+    // Release the state pointer. 
+    // This memory is owned somewhere else
     void 
-    Shutdown() {
+    Shutdown(void* state) {
+        state_ptr = nullptr;
         // TODO: likely close file descriptors
         return;
     }

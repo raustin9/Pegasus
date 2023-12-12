@@ -14,8 +14,18 @@ namespace qlogger
     };
 
 
-    bool Initialize();
-    void Shutdown();
+    /**
+     * @brief Set the memory requirement's value to the space needed to allocate the logger system state
+     *     If state is nullptr, then we only set memory requirements and return
+     *     Call twice, once to get the requirement. Second to initialize the system
+     * @return true if we initialized. False if not
+    */
+    bool Initialize(uint64_t& memory_requirement, void* state);
+
+    /**
+     * @brief Set the state to a nullptr
+    */
+    void Shutdown(void* state);
 
     void QAPI Fatal(const char* message, ...);
     void QAPI Error(const char* message, ...);

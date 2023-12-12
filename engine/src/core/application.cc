@@ -6,6 +6,7 @@
 #include "containers/qvector.inl"
 #include "core/qmemory.hh"
 #include "core/qlogger.hh"
+#include "memory/qlinear_allocator.hh"
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
@@ -13,8 +14,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-static Settings settings = {};
 
 struct ApplicationState {
     Pegasus::Game* game_inst;
@@ -30,34 +29,58 @@ struct ApplicationState {
     StepTimer timer;
     std::string name;
     std::string asset_path; // TODO: move this file subsystem
+
+    qmemory::QLinearAllocator systems_allocator;
+
+    uint64_t logging_system_memory_requirement;
+    void* logging_system_state;
 };
   
-static ApplicationState app_state = {};  
+static ApplicationState* app_state;
 
 Application::Application(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string assetPath) {
 }
 
 bool
-Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint32_t height, std::string asset_path) {
-    // Application Init steps
-    settings = {}; 
+Application::Create(
+    Pegasus::Game& game, 
+    std::string name,   
+    uint32_t width, 
+    uint32_t height, 
+    std::string asset_path
+) {
+    if (game.application_state) {
+        qlogger::Error("Application::Create: called more than once");
+        return false;
+    }
 
-    app_state.name = name;
-    app_state.asset_path = asset_path;
+    // Initialize Application State
+    game.application_state = static_cast<ApplicationState*>(QAllocator::Allocate(1, sizeof(ApplicationState), MEMORY_TAG_APPLICATION));
+    app_state = new (game.application_state) ApplicationState;
+    app_state->game_inst = &game;
+    app_state->is_running = false;
+    app_state->is_suspended = false;
 
-    // TODO: set this to be configurable
-    settings.enableValidation = true;
-    settings.enableVsync = false; // disable vsync for higher fps
+    // Setup the systems linear allocator
+    uint64_t systems_allocator_total_size = 64 * 1024 * 1024; // 64 MB
+    app_state->systems_allocator.Create(systems_allocator_total_size, nullptr);
+    app_state->systems_allocator.Allocate(systems_allocator_total_size);
+
+
+    app_state->name = name;
+    app_state->asset_path = asset_path;
 
     // Startup subsystems
-    /* TODO: Logging startup */
+    qlogger::Initialize(app_state->logging_system_memory_requirement, nullptr);
+    app_state->logging_system_state = app_state->systems_allocator.Allocate(app_state->logging_system_memory_requirement);
+    if (qlogger::Initialize(app_state->logging_system_memory_requirement, app_state->logging_system_state)) {
+        qlogger::Error("Failed to initialize logging system.");
+        return false;
+    }
     InputHandler::Startup();
 
-    app_state.is_running = true;
-    app_state.is_suspended = false;
 
     if (!EventHandler::Startup()) {
-        // std::cout << "Error: failed to initialize event handler" << std::endl;
         qlogger::Error("Error: failed to initialize event handler");
         return false;
     }
@@ -70,7 +93,6 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     EventHandler::Register(EVENT_CODE_RESIZED, nullptr, Application::OnResize);
     EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, Application::OnMouseMove);
 
-    // Init the platform
     if (!Platform::Startup(name, width, height)) {
         qlogger::Error("Error: failed to initialize platform layer");
         exit(1);
@@ -83,9 +105,7 @@ Application::Create(Pegasus::Game& game, std::string name, uint32_t width, uint3
     }
     qlogger::Info("Renderer created.");
 
-    // m_renderer.OnInit();
-
-    app_state.initialized = true;
+    app_state->initialized = true;
     return true;
 }
 
@@ -95,6 +115,8 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    app_state->is_running = true;
+
     Vector<uint64_t> v = Vector<uint64_t>(MEMORY_TAG_APPLICATION);
     v.push(25);
     v.push(26);
@@ -160,14 +182,13 @@ Application::run() {
     Renderer::CreateModel(obj2);
 
     // Application Event loop
-    while (app_state.is_running) {
+    while (app_state->is_running) {
         if (!Platform::pump_messages())
-            app_state.is_running = false;
+            app_state->is_running = false;
 
-        if (!app_state.is_suspended) {
+        if (!app_state->is_suspended) {
             // Update timer
-            app_state.timer.Tick(nullptr);
-            // m_timer.Tick(nullptr);
+            app_state->timer.Tick(nullptr);
             static auto startTime = std::chrono::high_resolution_clock::now();
             auto currentTime = std::chrono::high_resolution_clock::now();
             float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -186,13 +207,13 @@ Application::run() {
             glm::mat4 proj = glm::perspective(
                 // 1.f + glm::cos(0.7f * time) *
                 glm::radians(45.0f),
-                static_cast<float>(app_state.width) / static_cast<float>(app_state.height), 0.1f, 10.0f);
+                static_cast<float>(app_state->width) / static_cast<float>(app_state->height), 0.1f, 10.0f);
 
             ubo.projectionView = proj * view * model;
 
             // Update FPS and framecount
-            snprintf(app_state.last_fps, static_cast<size_t>(32), "%u fps", app_state.timer.GetFPS());
-            app_state.framecounter++;
+            snprintf(app_state->last_fps, static_cast<size_t>(32), "%u fps", app_state->timer.GetFPS());
+            app_state->framecounter++;
 
             // Render a frame
             RenderPacket packet = {};
@@ -201,14 +222,11 @@ Application::run() {
             Renderer::DrawFrame(packet);
         }
         
-        if (app_state.framecounter % 300 == 0) {
+        if (app_state->framecounter % 300 == 0) {
             Platform::set_title(
-                // app_state.name + " - " + std::string(m_lastFPS)
-                app_state.name + " - " + std::string(app_state.last_fps)
+                // app_state->name + " - " + std::string(m_lastFPS)
+                app_state->name + " - " + std::string(app_state->last_fps)
             );
-            // Platform::set_title(
-            //     m_name + " - " + std::string(m_lastFPS)
-            // );
         }
     }
 
@@ -221,6 +239,7 @@ Application::run() {
 
     EventHandler::Shutdown();
     InputHandler::Shutdown();
+    qlogger::Shutdown(app_state->logging_system_state);
     Renderer::Shutdown();
     Platform::Shutdown();
     qlogger::Info("Application shutdown successfully.");
@@ -241,7 +260,7 @@ Application::OnEvent(uint16_t code, void* sender, void* listener, EventContext c
     switch(code) {
         case EVENT_CODE_APPLICATION_QUIT: {
             qlogger::Info("EVENT_CODE_APPLICATION_QUIT received. Shutting down...");
-            app_state.is_running = false;
+            app_state->is_running = false;
             return true;
         }; break;
         default:
@@ -283,22 +302,22 @@ Application::OnResize(uint16_t code, void* sender, void* listener, EventContext 
         uint32_t h = context.u32[1];
 
         // Check if either the width or height are different
-        if (app_state.width != w || app_state.height != h) {
-            qlogger::Trace("[%i, %i] != [%i, %i]", app_state.width, app_state.height, w, h);
-            app_state.width = w;
-            app_state.height = h;
+        if (app_state->width != w || app_state->height != h) {
+            qlogger::Trace("[%i, %i] != [%i, %i]", app_state->width, app_state->height, w, h);
+            app_state->width = w;
+            app_state->height = h;
 
             // Handle minimization
             if (w == 0 || h == 0) {
                 qlogger::Trace("Application minimized");
                 // TODO: add suspended states to the application 
-                app_state.is_suspended = true;
+                app_state->is_suspended = true;
                 return true;
             } else {
                 // TODO: check if app is suspended and only act if not
-                if (app_state.is_suspended) {
+                if (app_state->is_suspended) {
                     qlogger::Trace("Window restored. Resuming application");
-                    app_state.is_suspended = false;
+                    app_state->is_suspended = false;
                 }
                 Renderer::OnResize(w, h);
             }
@@ -335,6 +354,6 @@ Application::OnKey(uint16_t code, void* sender, void* listener, EventContext con
 
 void 
 Application::GetFramebufferSize(uint32_t& width, uint32_t& height) {
-    width = app_state.width;
-    height = app_state.height;
+    width = app_state->width;
+    height = app_state->height;
 }
