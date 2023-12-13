@@ -75,10 +75,8 @@ InputHandler::ProcessKey(Keys key, bool pressed) {
     // Only do anything if the state has changed
     if (input_state_ptr->keyboardCurrent.keys[key] != pressed) {
         input_state_ptr->keyboardCurrent.keys[key] = pressed;
-
-
-
-        // TODO: Fire an event for immediate processing
+        
+        // Fire an event for immediate processing
         EventContext data = {};
         data.u16[0] = static_cast<uint16_t>(key);
         EventHandler::Fire(
