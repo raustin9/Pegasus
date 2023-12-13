@@ -10,7 +10,14 @@ struct memory_stats {
     uint64_t tagged_allocations[MEMORY_TAG_MAX_TAGS];
 };
 
-static memory_stats stats {};
+struct memory_state {
+    memory_stats stats;
+    uint64_t num_allocs;
+};
+
+static memory_state* state_ptr = nullptr;
+// static memory_stats stats {};
+// static memory_stats *stats = nullptr;
 
 static const char* memory_tag_strings[MEMORY_TAG_MAX_TAGS] = {
     "UNKNOWN    ",
@@ -34,13 +41,20 @@ static const char* memory_tag_strings[MEMORY_TAG_MAX_TAGS] = {
 };
 
 void 
-QAllocator::Initialize() {
-    QAllocator::Zero(&stats, sizeof(stats));
+QAllocator::Initialize(uint64_t& memory_requirements, void* state) {
+    memory_requirements = sizeof(memory_state);
+    if (state == nullptr) {
+        return;
+    }
+
+    state_ptr = new (static_cast<memory_state*>(state)) memory_state;
+    state_ptr->num_allocs = 0;
+    QAllocator::Zero(&state_ptr->stats, sizeof(state_ptr->stats));
 }
 
 void 
 QAllocator::Shutdown() {
-
+    state_ptr = nullptr;
 }
 
 void*
@@ -49,9 +63,13 @@ QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
         qlogger::Warn("Allocating using unknown tag");
     }
 
-    stats.total_allocated += size * count;
-    stats.tagged_allocations[tag] += size * count;
-    // printf("GOT HERE\n");
+    if (state_ptr != nullptr) {
+        state_ptr->stats.total_allocated += size * count;
+        state_ptr->stats.tagged_allocations[tag] += size * count;
+        state_ptr->num_allocs++;
+    } else {
+        qlogger::Warn("QAllocator::Allocate attempted allocation before memory subsystem is initialized");
+    }
 
     // TODO: align memory
     // void* block = malloc(size);
@@ -63,6 +81,8 @@ QAllocator::Allocate(uint64_t count, uint64_t size, memory_tag tag) {
         throw std::bad_alloc{}; 
     }
 
+    Platform::ZeroMem(block, count * size);
+
     return block;
 }
 
@@ -72,8 +92,8 @@ QAllocator::Delete(T* block, uint64_t size, memory_tag tag) {
         qlogger::Warn("Deallocating using unknown tag");
     }
 
-    stats.total_allocated -= size;
-    stats.tagged_allocations[tag] -= size;
+    state_ptr->stats.total_allocated -= size;
+    state_ptr->stats.tagged_allocations[tag] -= size;
 
     // TODO: align memory
     delete[] block;
@@ -87,8 +107,10 @@ QAllocator::Free(void* block, uint64_t size, memory_tag tag) {
         qlogger::Warn("Deallocating using unknown tag");
     }
 
-    stats.total_allocated -= size;
-    stats.tagged_allocations[tag] -= size;
+    if (state_ptr != nullptr) {
+        state_ptr->stats.total_allocated -= size;
+        state_ptr->stats.tagged_allocations[tag] -= size;
+    }
 
     // TODO: align memory
     free(block);
@@ -123,19 +145,19 @@ QAllocator::GetUsageString(){
         float amount = 1.0f;
 
         // Check for which unit we should be using
-        if (stats.tagged_allocations[i] >= gib) {
+        if (state_ptr->stats.tagged_allocations[i] >= gib) {
             unit[0] = 'G';
-            amount = stats.tagged_allocations[i] / (static_cast<float>(gib));
-        } else if (stats.tagged_allocations[i] >= mib) {
+            amount = state_ptr->stats.tagged_allocations[i] / (static_cast<float>(gib));
+        } else if (state_ptr->stats.tagged_allocations[i] >= mib) {
             unit[0] = 'M';
-            amount = stats.tagged_allocations[i] / (static_cast<float>(mib));
-        } else if (stats.tagged_allocations[i] >= kib) {
+            amount = state_ptr->stats.tagged_allocations[i] / (static_cast<float>(mib));
+        } else if (state_ptr->stats.tagged_allocations[i] >= kib) {
             unit[0] = 'K';
-            amount = stats.tagged_allocations[i] / (static_cast<float>(kib));
+            amount = state_ptr->stats.tagged_allocations[i] / (static_cast<float>(kib));
         } else {
             unit[0] = 'B';
             unit[1] = 0;
-            amount = static_cast<float>(stats.tagged_allocations[i]);
+            amount = static_cast<float>(state_ptr->stats.tagged_allocations[i]);
         }
 
         int32_t length = snprintf(buffer + offset, 8000, " %s: %.2f%s\n", memory_tag_strings[i], amount, unit);
@@ -144,4 +166,9 @@ QAllocator::GetUsageString(){
 
     std::string out_string = buffer;
     return out_string;
+}
+
+uint64_t
+QAllocator::AllocationCount() {
+    return (state_ptr != nullptr) ? state_ptr->num_allocs : 0;
 }

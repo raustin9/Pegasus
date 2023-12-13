@@ -4,40 +4,48 @@
 
 // State for the input handler
 struct InputState {
-    bool initialized = false;
+    bool initialized;
     uint32_t mousex;
     uint32_t mousey;
 
-    KeyboardState keyboardCurrent;
-    KeyboardState keyboardPrev;
-    MouseState mouseCurrent;
-    MouseState mousePrev;
+    KeyboardState keyboardCurrent{};
+    KeyboardState keyboardPrev{};
+    MouseState mouseCurrent{};
+    MouseState mousePrev{};
 };
 
-static InputState input_state = {};
+// static InputState input_state = {};
+static InputState* input_state_ptr;
 
 void
-InputHandler::Startup() {
-    input_state.initialized = true;
+InputHandler::Startup(uint64_t& memory_requirement, void* state) {
+    memory_requirement = sizeof(InputState);
+    if (state == nullptr) {
+        return;
+    }
+    input_state_ptr = new ((InputState*)state) InputState;
+    input_state_ptr->initialized = true;
 
     qlogger::Info("Input state initialized.");
+    return;
 }
 
 void
 InputHandler::Shutdown() {
-    input_state.initialized = false;
+    input_state_ptr->initialized = false;
+    input_state_ptr = nullptr;
 }
 
 
 void
 InputHandler::Update(double deltaTime) {
     (void)deltaTime;
-    if (!input_state.initialized)
+    if (!input_state_ptr->initialized)
         return;
 
     // Copy current state to the previous states
-    input_state.keyboardPrev = input_state.keyboardCurrent;
-    input_state.mousePrev = input_state.mouseCurrent;
+    input_state_ptr->keyboardPrev = input_state_ptr->keyboardCurrent;
+    input_state_ptr->mousePrev = input_state_ptr->mouseCurrent;
 }
 
 void
@@ -65,8 +73,8 @@ InputHandler::ProcessKey(Keys key, bool pressed) {
         qlogger::Debug("RSHIFT\n");
     }
     // Only do anything if the state has changed
-    if (input_state.keyboardCurrent.keys[key] != pressed) {
-        input_state.keyboardCurrent.keys[key] = pressed;
+    if (input_state_ptr->keyboardCurrent.keys[key] != pressed) {
+        input_state_ptr->keyboardCurrent.keys[key] = pressed;
 
 
 
@@ -83,9 +91,9 @@ InputHandler::ProcessKey(Keys key, bool pressed) {
 void
 InputHandler::ProcessMouseMove(int32_t x, int32_t y) {
     // Only do anything if the state actually changed
-    if (input_state.mouseCurrent.x != x || input_state.mouseCurrent.y != y) {
-        input_state.mouseCurrent.x = x;
-        input_state.mouseCurrent.y = y;
+    if (input_state_ptr->mouseCurrent.x != x || input_state_ptr->mouseCurrent.y != y) {
+        input_state_ptr->mouseCurrent.x = x;
+        input_state_ptr->mouseCurrent.y = y;
 
         // TODO: fire an event
         EventContext data = {};
@@ -104,8 +112,8 @@ InputHandler::ProcessMouseWheel(int16_t zDelta) {
 // Set the parameters to the current position of the mouse's x and y positions
 void
 InputHandler::GetMousePosition(int32_t &x, int32_t &y) {
-    x = input_state.mouseCurrent.x;
-    y = input_state.mouseCurrent.y;
+    x = input_state_ptr->mouseCurrent.x;
+    y = input_state_ptr->mouseCurrent.y;
 }
 
 //
@@ -113,64 +121,66 @@ InputHandler::GetMousePosition(int32_t &x, int32_t &y) {
 //
 
 bool
-InputHandler::_isKeyDown(Keys key) {
-    if (!input_state.initialized)
+InputHandler::IsKeyDown(Keys key) {
+    if (!input_state_ptr->initialized)
         return false;
 
-    return input_state.keyboardCurrent.keys[key] == true;;
+    return input_state_ptr->keyboardCurrent.keys[key] == true;;
 }
 
 bool
-InputHandler::_isKeyUp(Keys key) {
-    if (!input_state.initialized)
+InputHandler::IsKeyUp(Keys key) {
+    if (!input_state_ptr->initialized) {
+        qlogger::Warn("Input::IsKeyUp called when uninitialized");
         return false;
+    }
 
-    return input_state.keyboardCurrent.keys[key] == false;
+    return input_state_ptr->keyboardCurrent.keys[key] == false;
 }
 bool
-InputHandler::_wasKeyDown(Keys key) {
-    if (!input_state.initialized)
+InputHandler::WasKeyDown(Keys key) {
+    if (!input_state_ptr->initialized)
         return false;
 
-    return input_state.keyboardPrev.keys[key] == true;
+    return input_state_ptr->keyboardPrev.keys[key] == true;
 }
 bool
-InputHandler::_wasKeyUp(Keys key) {
-    if (!input_state.initialized)
+InputHandler::WasKeyUp(Keys key) {
+    if (!input_state_ptr->initialized)
         return false;
 
-    return input_state.keyboardPrev.keys[key] == false;
-}
-
-bool
-InputHandler::_isButtonDown(Buttons button) {
-    if (!input_state.initialized)
-        return false;
-
-    return input_state.mouseCurrent.buttons[button] == true;
+    return input_state_ptr->keyboardPrev.keys[key] == false;
 }
 
 bool
-InputHandler::_isButtonUp(Buttons button) {
-    if (!input_state.initialized)
+InputHandler::IsButtonDown(Buttons button) {
+    if (!input_state_ptr->initialized)
         return false;
 
-    return input_state.mouseCurrent.buttons[button] == false;
+    return input_state_ptr->mouseCurrent.buttons[button] == true;
+}
+
+bool
+InputHandler::IsButtonUp(Buttons button) {
+    if (!input_state_ptr->initialized)
+        return false;
+
+    return input_state_ptr->mouseCurrent.buttons[button] == false;
 }
 bool
-InputHandler::_wasButtonDown(Buttons button) {
-    if (!input_state.initialized)
+InputHandler::WasButtonDown(Buttons button) {
+    if (!input_state_ptr->initialized)
         return false;
 
-    return input_state.mousePrev.buttons[button] == true;
+    return input_state_ptr->mousePrev.buttons[button] == true;
 
 }
 bool
-InputHandler::_wasButtonUp(Buttons button) {
-    if (!input_state.initialized)
+InputHandler::WasButtonUp(Buttons button) {
+    if (!input_state_ptr->initialized)
         return false;
 
-    return input_state.mousePrev.buttons[button] == false;
+    return input_state_ptr->mousePrev.buttons[button] == false;
 }
 
 

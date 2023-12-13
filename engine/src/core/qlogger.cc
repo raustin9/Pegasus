@@ -19,7 +19,7 @@ namespace qlogger
             return false;
         }
         // TODO: be able to configure files and other outputs
-        state_ptr = static_cast<logger_system_state*>(state);
+        state_ptr = new (static_cast<logger_system_state*>(state)) logger_system_state;
         state_ptr->initialized = true;
         return true;
     }

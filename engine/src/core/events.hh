@@ -89,7 +89,7 @@ struct EventState {
 
 class EventHandler {
     public:
-        static bool Startup();
+        static bool Startup(uint64_t& memory_requirements, void* state);
         static void Shutdown();
         static bool Register(uint16_t code, void* listener, CallbackFunc callback);
         static bool Unregister(uint16_t code, void* listener);

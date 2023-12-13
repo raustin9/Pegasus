@@ -13,7 +13,8 @@ struct PlatformState {
 };
 
 // Global state for windows platform
-static PlatformState windows_state = {};
+// static PlatformState windows_state = {};
+static PlatformState *windows_state_ptr;
 
 Platform::Platform(std::string name, uint32_t width, uint32_t height) 
 	: name{name} , width{width} , height{height} {
@@ -46,20 +47,28 @@ Platform::Platform(std::string name, uint32_t width, uint32_t height)
 
 // Startup behavior for the platform layer subsystem
 bool
-Platform::Startup(std::string name, uint32_t width, uint32_t height) {
-	windows_state.hInstance = GetModuleHandle(0);
-	windows_state.width = width;
-	windows_state.height = height;
-	windows_state.name = name;
+Platform::Startup(uint64_t& memory_requirements, void* state, std::string name, uint32_t width, uint32_t height) {
+	memory_requirements = sizeof(PlatformState);
+	if (state == nullptr) {
+		return true;
+	}
+
+	windows_state_ptr = new (static_cast<PlatformState*>(state)) PlatformState;
+
+	windows_state_ptr = new (static_cast<PlatformState*>(state)) PlatformState;
+	windows_state_ptr->hInstance = GetModuleHandle(0);
+	windows_state_ptr->width = width;
+	windows_state_ptr->height = height;
+	windows_state_ptr->name = name;
 
 	// Setup and register window class
-	HICON icon = LoadIcon(windows_state.hInstance, IDI_APPLICATION);
+	HICON icon = LoadIcon(windows_state_ptr->hInstance, IDI_APPLICATION);
 	WNDCLASSA wc { 0 };
 	wc.style = CS_DBLCLKS;
 	wc.lpfnWndProc = Platform::WindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = windows_state.hInstance;
+	wc.hInstance = windows_state_ptr->hInstance;
 	wc.hIcon = icon;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;
@@ -84,10 +93,12 @@ Platform::Startup(std::string name, uint32_t width, uint32_t height) {
 // Shutdown for platform layer
 void
 Platform::Shutdown() {
-	if (windows_state.hWindow) {
-		DestroyWindow(windows_state.hWindow);
-		windows_state.hWindow = nullptr;
+	if (windows_state_ptr->hWindow) {
+		DestroyWindow(windows_state_ptr->hWindow);
+		windows_state_ptr->hWindow = nullptr;
 	}
+
+	windows_state_ptr = nullptr;
 }
 
 // Windows implementation for getting the current time
@@ -99,7 +110,7 @@ Platform::get_current_time() {
 // Set the title of the window
 void
 Platform::set_title(std::string title) {
-	SetWindowTextA(windows_state.hWindow, static_cast<LPCSTR>(title.c_str()));
+	SetWindowTextA(windows_state_ptr->hWindow, static_cast<LPCSTR>(title.c_str()));
 }
 
 // Create the window for the application
@@ -108,8 +119,8 @@ Platform::create_window() {
 	// Create the window
 	uint32_t client_x = 300;
 	uint32_t client_y = 100;
-	uint32_t client_width = windows_state.width;
-	uint32_t client_height = windows_state.height;
+	uint32_t client_width = windows_state_ptr->width;
+	uint32_t client_height = windows_state_ptr->height;
 
 	uint32_t window_x = client_x;
 	uint32_t window_y = client_y;
@@ -135,10 +146,10 @@ Platform::create_window() {
 	window_height += border_rect.bottom - border_rect.top;
 
 	// Create the window
-	windows_state.hWindow = CreateWindowExA(
+	windows_state_ptr->hWindow = CreateWindowExA(
 		window_ex_style,
 		"Pegasus Window Class",
-		windows_state.name.c_str(),
+		windows_state_ptr->name.c_str(),
 		window_style,
 		window_x,
 		window_y,
@@ -146,11 +157,11 @@ Platform::create_window() {
 		window_height,
 		nullptr,
 		nullptr,
-		windows_state.hInstance,
+		windows_state_ptr->hInstance,
 		nullptr
 	);
 
-	if (windows_state.hWindow == nullptr) {
+	if (windows_state_ptr->hWindow == nullptr) {
 		MessageBoxA(NULL, "Window creation failed", "Error!", MB_ICONEXCLAMATION | MB_OK);
 		return;
 	}
@@ -159,7 +170,7 @@ Platform::create_window() {
 	bool should_activate = true;
 	int32_t show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 
-	ShowWindow(windows_state.hWindow, show_window_command_flags);
+	ShowWindow(windows_state_ptr->hWindow, show_window_command_flags);
 }
 
 // Destroy the window
@@ -192,8 +203,8 @@ bool
 Platform::create_vulkan_surface(VKContext& context) {
 		VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
 		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-		surfaceCreateInfo.hinstance = windows_state.hInstance;
-		surfaceCreateInfo.hwnd = windows_state.hWindow;
+		surfaceCreateInfo.hinstance = windows_state_ptr->hInstance;
+		surfaceCreateInfo.hwnd = windows_state_ptr->hWindow;
 		
 		VkResult err = vkCreateWin32SurfaceKHR(
 			context.instance, &surfaceCreateInfo, context.allocator, &context.surface);

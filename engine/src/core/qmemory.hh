@@ -28,9 +28,10 @@ enum memory_tag : uint32_t {
 
 class QAPI QAllocator {
     public:
-        static void Initialize();
+        static void Initialize(uint64_t& memory_requirements, void* state);
         static void Shutdown();
 
+        static uint64_t AllocationCount();
         static void* Allocate(uint64_t count, uint64_t size, memory_tag tag);
         static void  Free(void* block, uint64_t size, memory_tag tag);
         static void* Zero(void* block, uint64_t size);

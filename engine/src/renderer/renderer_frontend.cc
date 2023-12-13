@@ -3,6 +3,7 @@
 #include "vulkan/vulkan_backend.hh"
 #include "containers/qvector.inl"
 #include "core/qlogger.hh"
+#include "core/qmemory.hh"
 #include <memory>
 // static VKBackend vkrenderer = {};
 

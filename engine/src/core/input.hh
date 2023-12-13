@@ -156,7 +156,7 @@ struct MouseState {
 
 class InputHandler {
     public:
-        static void Startup();
+        static void Startup(uint64_t& memory_requirements, void* state);
         static void Shutdown();
         
         static void Update(double deltaTime);
@@ -169,29 +169,14 @@ class InputHandler {
         static void GetMousePosition(int32_t& x, int32_t& y);
         static void ProcessResize(uint32_t w, uint32_t h);
 
-
-    private:
-        // EventHandler &m_eventHandler;
-
-//        bool m_initialized = false;
-//        uint32_t m_mousex;
-//        uint32_t m_mousey;
-//
-//
-//        KeyboardState m_keyboardCurrent;
-//        KeyboardState m_keyboardPrev;
-//        MouseState m_mouseCurrent;
-//        MouseState m_mousePrev;
-        
-        // Mouse Input
-        static bool _isButtonDown(Buttons button);
-        static bool _isButtonUp(Buttons button);
-        static bool _wasButtonDown(Buttons button);
-        static bool _wasButtonUp(Buttons button);
+        static bool IsButtonDown(Buttons button);
+        static bool IsButtonUp(Buttons button);
+        static bool WasButtonDown(Buttons button);
+        static bool WasButtonUp(Buttons button);
         
         // Keyboard input
-        static bool _isKeyDown(Keys key);
-        static bool _isKeyUp(Keys key);
-        static bool _wasKeyDown(Keys key);
-        static bool _wasKeyUp(Keys key);
+        static bool IsKeyDown(Keys key);
+        static bool IsKeyUp(Keys key);
+        static bool WasKeyDown(Keys key);
+        static bool WasKeyUp(Keys key);
 };

@@ -13,7 +13,7 @@
 class Platform {
 public:
     Platform(std::string name, uint32_t width, uint32_t height);
-    static bool Startup(std::string name, uint32_t width, uint32_t height);
+    static bool Startup(uint64_t& memory_requirements, void* state, std::string name, uint32_t width, uint32_t height);
     static void Shutdown();
 
     static void* Allocate(uint64_t size, bool aligned);

@@ -2,6 +2,7 @@
 //TODO: add header guards around each file
 #include "vulkan/vulkan_backend.hh"
 #include "core/qlogger.hh"
+#include "core/qmemory.hh"
 
 // Create the backend for the renderer based on the input type
 // TODO: eventually this will support multiple backend types, but
@@ -10,7 +11,8 @@ bool
 renderer_backend_create(renderer_backend_type type, RendererBackend** backend) {
     switch (type) {
         case RENDERER_BACKEND_VULKAN: {
-            *backend = new VulkanBackend();
+            *backend = new (QAllocator::Allocate(1, sizeof(VulkanBackend), MEMORY_TAG_RENDERER)) VulkanBackend;
+            // *backend = new VulkanBackend();
             qlogger::Debug("Vulkan Backend Selected");
             return true;
         } break;

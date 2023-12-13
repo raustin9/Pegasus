@@ -34,6 +34,18 @@ struct ApplicationState {
 
     uint64_t logging_system_memory_requirement;
     void* logging_system_state;
+
+    uint64_t input_system_memory_requirement;
+    void* input_system_state;
+
+    uint64_t event_system_memory_requirement;
+    void* event_system_state;
+
+    uint64_t memory_system_memory_requirement;
+    void* memory_system_state;
+    
+    uint64_t platform_system_memory_requirement;
+    void* platform_system_state;
 };
   
 static ApplicationState* app_state;
@@ -53,7 +65,7 @@ Application::Create(
         qlogger::Error("Application::Create: called more than once");
         return false;
     }
-
+    
     // Initialize Application State
     game.application_state = static_cast<ApplicationState*>(QAllocator::Allocate(1, sizeof(ApplicationState), MEMORY_TAG_APPLICATION));
     app_state = new (game.application_state) ApplicationState;
@@ -64,8 +76,10 @@ Application::Create(
     // Setup the systems linear allocator
     uint64_t systems_allocator_total_size = 64 * 1024 * 1024; // 64 MB
     app_state->systems_allocator.Create(systems_allocator_total_size, nullptr);
-    app_state->systems_allocator.Allocate(systems_allocator_total_size);
-
+    
+    QAllocator::Initialize(app_state->memory_system_memory_requirement, nullptr);
+    app_state->memory_system_state = app_state->systems_allocator.Allocate(app_state->memory_system_memory_requirement);
+    QAllocator::Initialize(app_state->memory_system_memory_requirement, app_state->memory_system_state);
 
     app_state->name = name;
     app_state->asset_path = asset_path;
@@ -73,14 +87,19 @@ Application::Create(
     // Startup subsystems
     qlogger::Initialize(app_state->logging_system_memory_requirement, nullptr);
     app_state->logging_system_state = app_state->systems_allocator.Allocate(app_state->logging_system_memory_requirement);
-    if (qlogger::Initialize(app_state->logging_system_memory_requirement, app_state->logging_system_state)) {
+    if (!qlogger::Initialize(app_state->logging_system_memory_requirement, app_state->logging_system_state)) {
         qlogger::Error("Failed to initialize logging system.");
         return false;
     }
-    InputHandler::Startup();
+
+    InputHandler::Startup(app_state->input_system_memory_requirement, nullptr);
+    app_state->input_system_state = app_state->systems_allocator.Allocate(app_state->input_system_memory_requirement);
+    InputHandler::Startup(app_state->input_system_memory_requirement, app_state->input_system_state);
 
 
-    if (!EventHandler::Startup()) {
+    EventHandler::Startup(app_state->event_system_memory_requirement, nullptr);
+    app_state->event_system_state = app_state->systems_allocator.Allocate(app_state->event_system_memory_requirement);    
+    if (!EventHandler::Startup(app_state->event_system_memory_requirement, app_state->event_system_state)) {
         qlogger::Error("Error: failed to initialize event handler");
         return false;
     }
@@ -93,7 +112,9 @@ Application::Create(
     EventHandler::Register(EVENT_CODE_RESIZED, nullptr, Application::OnResize);
     EventHandler::Register(EVENT_CODE_MOUSE_MOVED, nullptr, Application::OnMouseMove);
 
-    if (!Platform::Startup(name, width, height)) {
+    Platform::Startup(app_state->platform_system_memory_requirement, nullptr, name, width, height);
+    app_state->platform_system_state = app_state->systems_allocator.Allocate(app_state->platform_system_memory_requirement);
+    if (!Platform::Startup(app_state->platform_system_memory_requirement, app_state->platform_system_state, name, width, height)) {
         qlogger::Error("Error: failed to initialize platform layer");
         exit(1);
     }
@@ -193,6 +214,18 @@ Application::run() {
             auto currentTime = std::chrono::high_resolution_clock::now();
             float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
+            if (!app_state->game_inst->Update(time)) {
+                qlogger::Fatal("Game update failed. Shutting down.");
+                app_state->is_running = false;
+                break;
+            }
+
+            if (!app_state->game_inst->Render(time)) {
+                qlogger::Fatal("Game render failed. Shutting down.");
+                app_state->is_running = false;
+                break;
+            }
+
             UBO ubo{};
             glm::mat4 model = glm::rotate(
                 glm::mat4(1.0f), 
@@ -220,6 +253,8 @@ Application::run() {
             packet.ubo = ubo;
             packet.delta_time = time;
             Renderer::DrawFrame(packet);
+
+            InputHandler::Update(time);
         }
         
         if (app_state->framecounter % 300 == 0) {
@@ -229,6 +264,8 @@ Application::run() {
             );
         }
     }
+
+    app_state->is_running = false;
 
     qlogger::Info("Shutting down application");
 
@@ -242,6 +279,7 @@ Application::run() {
     qlogger::Shutdown(app_state->logging_system_state);
     Renderer::Shutdown();
     Platform::Shutdown();
+    QAllocator::Shutdown();
     qlogger::Info("Application shutdown successfully.");
     return true; 
 }
