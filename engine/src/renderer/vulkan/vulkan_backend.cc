@@ -98,6 +98,11 @@ VulkanBackend::Initialize(std::string& name) {
         m_context.images_in_flight[i] = 0;
     }
 
+    if (!m_context.object_shader.Create(m_context)) {
+        qlogger::Error("Unable to load built-in object shader");
+        return false;
+    }
+
     qlogger::Info("Vulkan Backend initialized successfully.");
     return true;
 }

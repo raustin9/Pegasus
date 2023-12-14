@@ -1,7 +1,6 @@
 #pragma once
 #include "defines.hh"
 #include <cstdint>
-#include <exception>
 #include "core/qmemory.hh"
 
 template <typename T>
@@ -12,7 +11,7 @@ public:
     Vector(const Vector& v);
     ~Vector();
 
-    T at(uint64_t index) const;
+    T& at(uint64_t index) const;
     T pop();
     void push(T obj);
     bool set(uint64_t index, T obj);
@@ -23,7 +22,7 @@ public:
 
     void clear();
 
-    T operator[] (int index) const; 
+    T& operator[] (int index) const; 
     Vector<T>& operator= (const Vector<T>& v2);
     
 private:
@@ -39,7 +38,7 @@ private:
 template <typename T> Vector<T>& 
 Vector<T>::operator= (const Vector<T>& other) { return *this; }
 
-template <typename T> T
+template <typename T> T&
 Vector<T>::operator[](int index) const { return this->at(index); }
 
 //
@@ -117,13 +116,13 @@ Vector<T>::~Vector() {
 //
 
 // Get object at an index
-template <typename T> T
+template <typename T> T&
 Vector<T>::at(uint64_t index) const {
     if (index < m_length && index >= 0) {
-        return (T)m_data[index];
+        return (T&)m_data[index];
     }
 
-    throw std::runtime_error("QVector: accessing invalid index");
+    // throw std::runtime_error("QVector: accessing invalid index");
     return m_data[0];
 }
 
@@ -136,7 +135,7 @@ Vector<T>::pop() {
         return T;
     }
 
-    throw std::runtime_error("QVector: accessing invalid index");
+    // throw std::runtime_error("QVector: accessing invalid index");
     return m_data[0];
 }
 

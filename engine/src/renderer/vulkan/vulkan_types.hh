@@ -59,6 +59,30 @@ struct VKRenderpass {
     void begin(VKCommandBuffer& command_buffer, VKFramebuffer& framebuffer);
 };
 
+struct VKShaderStage {
+    VkShaderModuleCreateInfo create_info;
+    VkShaderModule handle;
+    VkPipelineShaderStageCreateInfo shader_stage_create_info;
+};
+
+struct VKPipeline {
+    VkPipeline handle;
+    VkPipelineLayout layout;
+};
+
+constexpr uint64_t OBJECT_SHADER_STAGE_COUNT = 2; // Vert/Frag
+struct VKObjShader {
+    VKShaderStage stages[OBJECT_SHADER_STAGE_COUNT];
+    VKPipeline pipeline;
+
+    
+
+    bool Create(VKContext& context);
+    void Destroy(VKContext& context);
+
+    void Use(VKContext& context);
+};
+
 enum command_buffer_state : uint32_t {
     COMMAND_BUFFER_STATE_READY,
     COMMAND_BUFFER_STATE_RECORDING,       
@@ -170,7 +194,6 @@ struct VKContext {
     std::vector<VKFence> in_flight_fences;
     std::vector<VKFence*> images_in_flight;
 
-
-
+    VKObjShader object_shader;
     int32_t find_memory_index(uint32_t type_filter, uint32_t property_flags);
 };
