@@ -111,6 +111,9 @@ void
 VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
 
+    // Destroy builtin shader modules
+    m_context.object_shader.Destroy(m_context);
+
     // Sync objects
     qlogger::Info("Destroying sync objects... ");
     for (uint32_t i = 0; i < m_context.swapchain.max_frames_in_flight; i++) {

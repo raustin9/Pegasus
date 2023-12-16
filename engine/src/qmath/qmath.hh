@@ -3,3 +3,4 @@
 #include "qvector4.inl"
 #include "qmatrix4.inl"
 #include "qquaternion.inl"
+#include "qvertex.inl"

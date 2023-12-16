@@ -1,16 +1,29 @@
 #include "qlogger.hh"
 #include "qmemory.hh"
 #include "platform/platform.hh"
+#include "platform/file_system.hh"
 #include <stdarg.h>
 #include <cstdint>
+#include <string>
 
 namespace qlogger 
 {
     struct logger_system_state {
-        bool initialized;
+        QFilesystem::QFile log_file_handle;
     };
 
     static logger_system_state* state_ptr;
+
+    void 
+    append_to_log_file(std::string message) {
+        if (state_ptr && state_ptr->log_file_handle.is_valid) {
+            uint64_t length = message.length();
+            uint64_t written = 0;
+            if (!state_ptr->log_file_handle.write(length, (void*)message.data(), written)) {
+                Platform::ConsoleError("ERROR: unable to write to console.log\n", LOG_LEVEL_ERROR);
+            }
+        }
+    }
 
     bool 
     Initialize(uint64_t& memory_requirement, void* state) {
@@ -20,7 +33,11 @@ namespace qlogger
         }
         // TODO: be able to configure files and other outputs
         state_ptr = new (static_cast<logger_system_state*>(state)) logger_system_state;
-        state_ptr->initialized = true;
+
+        if (!state_ptr->log_file_handle.open("console.log", QFilesystem::FILE_MODE_WRITE, false)) {
+            Platform::ConsoleError("ERRROR: Unable to open console.log for writing", LOG_LEVEL_ERROR);
+            return false;
+        }
         return true;
     }
 
@@ -34,6 +51,8 @@ namespace qlogger
     }
 
     void log_output(log_level level, const char* message, va_list args) {
+        // TODO: Split into a different thread once threading 
+        //    and job assignment is available
         const char* level_strings[6] = {
             "[FATAL]",
             "[ERROR]",
@@ -45,17 +64,13 @@ namespace qlogger
 
         bool is_error = level > LOG_LEVEL_WARN;
 
-        // Masive buffer to avoid runtime allcoations that are slow
+        // Massive buffer to avoid runtime allcoations that are slow
         constexpr size_t message_length = 32000;
         char error_message[message_length];
         QAllocator::Zero(error_message, message_length);
 
         // Format the message
         vsnprintf(error_message, message_length, message, args);
-        // __builtin_va_list arg_ptr;
-        // va_start(arg_ptr, message);
-        // vsnprintf(error_message, message_length, message, arg_ptr);
-        // va_end(arg_ptr);
 
         // Prepend the error message level to the message string
         char out_message[message_length];
@@ -68,6 +83,8 @@ namespace qlogger
         } else {
             Platform::ConsoleWrite(out_message, level);
         }
+
+        append_to_log_file(out_message);
     }
 
     void 

@@ -1,0 +1,83 @@
+[INFO]Input state initialized.
+[INFO]Event System created...
+[TRACE][0, 0] != [800, 600]
+[INFO]Renderer backend does not exist for this resize: [800,600]
+[INFO]Window Created...
+[INFO]Platform created.
+[WARN]Allocating using unknown tag
+[WARN]Allocating using unknown tag
+[WARN]Deallocating using unknown tag
+[WARN]Allocating using unknown tag
+[WARN]Deallocating using unknown tag
+[WARN]Allocating using unknown tag
+[WARN]Allocating using unknown tag
+[WARN]Deallocating using unknown tag
+[WARN]Allocating using unknown tag
+[WARN]Deallocating using unknown tag
+[DEBUG]str1 
+[DEBUG]str2 
+[DEBUG]str3 
+[DEBUG]str4 
+[DEBUG]Vulkan Backend Selected
+[INFO]Vulkan Backend Initialized
+[INFO]Required extensions: 
+[INFO]	VK_KHR_surface
+[INFO]	VK_KHR_win32_surface
+[INFO]	VK_EXT_debug_utils
+[INFO]Validation layers enabled. Enumerating...
+[INFO]Searching for layer: VK_LAYER_KHRONOS_validation...
+[INFO]Found.
+[INFO]All validation layers found.
+[INFO]Instance created...
+[INFO]Debug messenger created.
+[INFO]Creating Vulkan surface...
+[INFO]Device is not a discrete GPU, and one is required. Skipping...
+[INFO]Graphics | Present | Compute | Transfer | Name
+[INFO]        1 |        1 |        1 |        1 | NVIDIA GeForce RTX 3070 Laptop GPU
+
+[INFO]Selected device NVIDIA GeForce RTX 3070 Laptop GPU
+[INFO]GPU Type is Discrete
+[INFO]GPU Type is Virtual
+[INFO]GPU Type is CPU
+[INFO]GPU Driver Version: 512.312.0
+[INFO]GPU API Version: 1.3.194
+[INFO]Local GPU memory: 7.86 GiB
+[INFO]Shared System memory: 7.70
+[INFO]Physical device selected.
+[INFO]Creating logical device
+[INFO]Logical Device created...
+[INFO]Queues obtained...
+[INFO]Graphics command pool created...
+[INFO]Swapchain created...
+[INFO]Renderpass created...
+[INFO]Graphics command buffers created [3]
+[INFO]Creating synch objects...
+[INFO]VKFence created...
+[INFO]VKFence created...
+[DEBUG]Graphcis pipeline is created.
+[INFO]Vulkan Backend initialized successfully.
+[WARN]Deallocating using unknown tag
+[WARN]Deallocating using unknown tag
+[INFO]Renderer created.
+[DEBUG]System memory use (tagged):
+ UNKNOWN    : 0.00B
+ ARRAY      : 0.00B
+ LINEAR_ALLOCATOR : 0.00B
+ DARRAY     : 0.00B
+ DICT       : 0.00B
+ RING_QUEUE : 0.00B
+ BST        : 0.00B
+ STRING     : 0.00B
+ APPLICATION: 32.00B
+ JOB        : 0.00B
+ TEXTURE    : 0.00B
+ MAT_ISNT   : 0.00B
+ RENDERER   : 2.31Kib
+ GAME       : 0.00B
+ TRANSFORM  : 0.00B
+ ENTITY     : 0.00B
+ ENTITY_NODE: 0.00B
+ SCENE      : 0.00B
+
+[INFO]EVENT_CODE_APPLICATION_QUIT received. Shutting down...
+[INFO]Shutting down application
