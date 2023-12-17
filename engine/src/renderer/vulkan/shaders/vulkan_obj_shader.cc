@@ -109,5 +109,7 @@ VKObjShader::Destroy(VKContext& context) {
 
 void
 VKObjShader::Use(VKContext& context) {
+    uint32_t image_index = context.image_index;
 
+    this->pipeline.Bind(context.graphics_command_buffers[image_index], VK_PIPELINE_BIND_POINT_GRAPHICS);
 }

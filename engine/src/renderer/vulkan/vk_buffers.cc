@@ -216,7 +216,7 @@ VKBuffer::CopyTo(
     temp_cmd_buffer.allocate_and_begin_single_use(context, pool);
 
     // Prepare the copy command and add it to the command buffer
-    VkBufferCopy copy_region {};
+    VkBufferCopy copy_region;
     copy_region.srcOffset = source_offset;
     copy_region.dstOffset = dest_offset;
     copy_region.size = size;

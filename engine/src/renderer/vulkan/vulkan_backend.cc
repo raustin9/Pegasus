@@ -8,9 +8,27 @@
 #include "vk_device.hh"
 #include "qmath/qmath.hh"
 #include "core/qlogger.hh"
+#include "core/qmemory.hh"
 
 static uint32_t cached_framebuffer_width = 0;
 static uint32_t cached_framebuffer_height = 0;
+
+void
+upload_data_range(VKContext& context, VkCommandPool pool, VkFence fence, VkQueue queue, VKBuffer& buffer, uint64_t offset, uint64_t size, void* data) {
+    VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VKBuffer staging;
+    staging.Create(
+        context,
+        size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        flags,
+        true
+    );
+
+    staging.LoadData(context, 0, size, 0, data);
+    staging.CopyTo(context, pool, fence, queue, 0, buffer.handle, offset, size);
+    staging.Destroy(context);
+}
 
 // Initialize the backend for the vulkan renderer
 bool
@@ -104,6 +122,52 @@ VulkanBackend::Initialize(std::string& name) {
     }
 
     create_buffers();
+
+    // TEMP TEST GEOMETRY
+    constexpr uint32_t vert_count = 4;
+    qmath::Vertex3D vertices[vert_count];
+    QAllocator::Zero(vertices, sizeof(qmath::Vertex3D) * vert_count); 
+
+    vertices[0].position.x = 0.0;
+    vertices[0].position.y = -0.5;
+    // vertices[0].position.z = 1.0;
+    
+    vertices[1].position.x = 0.5;
+    vertices[1].position.y = 0.5;
+    // vertices[1].position.z = 1.0;
+    
+    vertices[2].position.x = 0.0;
+    vertices[2].position.y = 0.5;
+    // vertices[2].position.z = 1.0;
+    
+    vertices[3].position.x = 0.5;
+    vertices[3].position.y = -0.5;
+
+    constexpr uint32_t index_count = 6;
+    uint32_t indices[index_count] = {0, 1, 2, 0, 3, 1};
+
+    upload_data_range(
+        m_context,
+        m_context.device.graphics_command_pool,
+        nullptr,
+        m_context.device.graphics_queue,
+        m_context.object_vertex_buffer,
+        0,
+        sizeof(qmath::Vertex3D) * vert_count,
+        vertices
+    );
+
+    upload_data_range(
+        m_context,
+        m_context.device.graphics_command_pool,
+        nullptr,
+        m_context.device.graphics_queue,
+        m_context.object_index_buffer,
+        0,
+        sizeof(uint32_t) * index_count,
+        indices
+    );
+    // END TEST CODE
 
     qlogger::Info("Vulkan Backend initialized successfully.");
     return true;
@@ -282,6 +346,14 @@ VulkanBackend::BeginFrame(float delta_time) {
         m_context.swapchain.framebuffers[m_context.image_index]
     );
 
+    // TODO: TEMP TEST CODE
+    m_context.object_shader.Use(m_context);
+    VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(command_buffer.handle, 0, 1, &m_context.object_vertex_buffer.handle, static_cast<VkDeviceSize*>(offsets));
+    vkCmdBindIndexBuffer(command_buffer.handle, m_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(command_buffer.handle, 6, 1, 0, 0, 0);
+    // TODO: END TEST CODE
+
     return true;
 }
 
@@ -440,7 +512,7 @@ VulkanBackend::create_buffers() {
     if (!m_context.object_index_buffer.Create(
         m_context,
         index_buffer_size,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         memory_property_flags,
         true
     )) {

@@ -61,6 +61,7 @@ VKPipeline::Create(
 
     // Color Blending
     VkPipelineColorBlendAttachmentState color_blend_attachment_state {};
+    QAllocator::Zero(&color_blend_attachment_state, sizeof(VkPipelineColorBlendAttachmentState));
     color_blend_attachment_state.blendEnable = VK_TRUE;
     color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     color_blend_attachment_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
