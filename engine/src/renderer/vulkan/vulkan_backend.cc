@@ -103,6 +103,8 @@ VulkanBackend::Initialize(std::string& name) {
         return false;
     }
 
+    create_buffers();
+
     qlogger::Info("Vulkan Backend initialized successfully.");
     return true;
 }
@@ -110,6 +112,8 @@ VulkanBackend::Initialize(std::string& name) {
 void
 VulkanBackend::Shutdown() {
     vkDeviceWaitIdle(m_context.device.logical_device);
+
+    destroy_buffers();
 
     // Destroy builtin shader modules
     m_context.object_shader.Destroy(m_context);
@@ -411,4 +415,45 @@ VulkanBackend::recreate_swapchain() {
     // Clear the recreating flag
     m_context.recreating_swapchain = false;
     return true;
+}
+
+// Create the index and vertex buffers
+bool
+VulkanBackend::create_buffers() {
+    VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    const uint64_t vertex_buffer_size = sizeof(qmath::Vertex3D) * 1024 * 1024;
+    if (!m_context.object_vertex_buffer.Create(
+        m_context,
+        vertex_buffer_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        memory_property_flags,
+        true
+    )) {
+        qlogger::Error("Failed to create object vertex buffer");
+        return false;
+    }
+
+    m_context.geometry_vertex_offset = 0;
+
+    const uint64_t index_buffer_size = sizeof(uint32_t) * 1024 * 1024;
+    if (!m_context.object_index_buffer.Create(
+        m_context,
+        index_buffer_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        memory_property_flags,
+        true
+    )) {
+        qlogger::Error("Failed to create object index buffer");
+        return false;
+    }
+    m_context.geometry_index_offset = 0;
+
+    return true;
+}
+
+void
+VulkanBackend::destroy_buffers() {
+    m_context.object_index_buffer.Destroy(m_context);
+    m_context.object_vertex_buffer.Destroy(m_context);
 }

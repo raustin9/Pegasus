@@ -50,11 +50,13 @@ class VulkanBackend : public RendererBackend {
             VKFramebuffer& out_framebuffer
         );
         void create_command_buffers();
+        bool create_buffers(); // create vertex and index buffers
 
         void destroy_device();
         void destroy_swapchain();
         void destroy_renderpass(VKRenderpass& renderpass);
         void destroy_framebuffer(VKFramebuffer& framebuffer);
+        void destroy_buffers();
 
         bool recreate_swapchain();
         void regenerate_framebuffers(VKSwapchain& swapchain, VKRenderpass& renderpass);

@@ -7,6 +7,46 @@ struct VKContext;
 struct VKCommandBuffer;
 struct VKFramebuffer;
 
+struct VKBuffer {
+    uint64_t total_size;
+    VkBuffer handle;
+    VkBufferUsageFlags usage;
+    bool is_locked;
+    VkDeviceMemory memory;
+    int32_t memory_index;
+    uint32_t memory_property_flags; 
+
+    bool Create(
+        VKContext& context,
+        uint64_t size,
+        VkBufferUsageFlags usage,
+        uint32_t memory_property_flags,
+        bool bind_on_create
+    );
+    void Destroy(VKContext& context);
+    bool Resize(
+        VKContext& context,
+        uint64_t new_size,
+        VkQueue queue,
+        VkCommandPool pool
+    );
+    void Bind(VKContext& context, uint64_t offset);
+    void* LockMemory(VKContext& context, uint64_t offset, uint64_t size, uint32_t flags);
+    void UnlockMemory(VKContext& context);
+    void LoadData(VKContext& context, uint64_t offset, uint64_t size, uint32_t flags, const void* data);
+
+    void CopyTo(
+        VKContext& context,
+        VkCommandPool pool,
+        VkFence fence,
+        VkQueue queue,
+        uint64_t source_offset,
+        VkBuffer dest,
+        uint64_t dest_offset,
+        uint64_t size
+    );
+};
+
 struct VKSwapchainSupportInfo {
     VkSurfaceCapabilitiesKHR capabilities;
     uint32_t format_count;
@@ -180,6 +220,7 @@ struct VKSwapchain {
 
 };
 
+
 // Holds vulkan-specific information
 // for the renderer backend
 struct VKContext {
@@ -203,6 +244,9 @@ struct VKContext {
     VKSwapchain swapchain;
     VKRenderpass main_renderpass;
 
+    VKBuffer object_vertex_buffer;
+    VKBuffer object_index_buffer;
+
     std::vector<VKCommandBuffer> graphics_command_buffers;
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> queue_complete_semaphores;
@@ -212,5 +256,8 @@ struct VKContext {
     std::vector<VKFence*> images_in_flight;
 
     VKObjShader object_shader;
+
+    uint64_t geometry_vertex_offset = 0;
+    uint64_t geometry_index_offset = 0;
     int32_t find_memory_index(uint32_t type_filter, uint32_t property_flags);
 };
