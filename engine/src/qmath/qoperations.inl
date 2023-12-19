@@ -1,7 +1,15 @@
 #pragma once
+#include "qdefines.hh"
 #include <cmath>
 
 namespace qmath {
+
+inline float
+deg_to_rad(int32_t deg) {
+    return (
+        static_cast<float>(Q_PI / 180) * deg
+    );
+}
 
 template <typename T>
 T qsqrt(T num) {

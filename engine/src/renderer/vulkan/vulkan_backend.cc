@@ -128,20 +128,22 @@ VulkanBackend::Initialize(std::string& name) {
     qmath::Vertex3D vertices[vert_count];
     QAllocator::Zero(vertices, sizeof(qmath::Vertex3D) * vert_count); 
 
-    vertices[0].position.x = 0.0;
-    vertices[0].position.y = -0.5;
+    const float f = 10.0f;
+
+    vertices[0].position.x = f * -0.5;
+    vertices[0].position.y = f * -0.5;
     // vertices[0].position.z = 1.0;
     
-    vertices[1].position.x = 0.5;
-    vertices[1].position.y = 0.5;
+    vertices[1].position.x = f * 0.5;
+    vertices[1].position.y = f * 0.5;
     // vertices[1].position.z = 1.0;
     
-    vertices[2].position.x = 0.0;
-    vertices[2].position.y = 0.5;
+    vertices[2].position.x = f * -0.5;
+    vertices[2].position.y = f * 0.5;
     // vertices[2].position.z = 1.0;
     
-    vertices[3].position.x = 0.5;
-    vertices[3].position.y = -0.5;
+    vertices[3].position.x = f * 0.5;
+    vertices[3].position.y = f * -0.5;
 
     constexpr uint32_t index_count = 6;
     uint32_t indices[index_count] = {0, 1, 2, 0, 3, 1};
@@ -346,6 +348,27 @@ VulkanBackend::BeginFrame(float delta_time) {
         m_context.swapchain.framebuffers[m_context.image_index]
     );
 
+    return true;
+}
+
+void
+VulkanBackend::UpdateGlobalState(
+    qmath::Mat4<float> projection,
+    qmath::Mat4<float> view,
+    qmath::Vec3<float> view_position,
+    qmath::Vec4<float> ambient_color,
+    int32_t mode
+) {
+    VKCommandBuffer& command_buffer = m_context.graphics_command_buffers[m_context.image_index];
+    m_context.object_shader.Use(m_context);
+
+    m_context.object_shader.global_ubo.projection = projection;
+    m_context.object_shader.global_ubo.view = view;
+
+    // TODO: other UBO properties
+
+    m_context.object_shader.UpdateGlobalState(m_context);
+    
     // TODO: TEMP TEST CODE
     m_context.object_shader.Use(m_context);
     VkDeviceSize offsets[1] = {0};
@@ -354,7 +377,6 @@ VulkanBackend::BeginFrame(float delta_time) {
     vkCmdDrawIndexed(command_buffer.handle, 6, 1, 0, 0, 0);
     // TODO: END TEST CODE
 
-    return true;
 }
 
 bool 

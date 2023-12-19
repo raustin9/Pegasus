@@ -1,5 +1,6 @@
 #pragma once
 #include "defines.hh"
+#include "renderer/render_types.hh"
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -130,14 +131,26 @@ struct VKPipeline {
 constexpr uint64_t OBJECT_SHADER_STAGE_COUNT = 2; // Vert/Frag
 struct VKObjShader {
     VKShaderStage stages[OBJECT_SHADER_STAGE_COUNT];
-    VKPipeline pipeline;
 
+    global_uniform_object global_ubo;
+
+    VKBuffer global_uniform_buffer;
+
+    VkDescriptorPool global_descriptor_pool;
+    VkDescriptorSetLayout global_descriptor_set_layout;
+
+    // One descriptor set per frame -- max of 3 for triple buffering
+    VkDescriptorSet global_descriptor_sets[3];
+    
+    VKPipeline pipeline;
     
 
     bool Create(VKContext& context);
     void Destroy(VKContext& context);
 
     void Use(VKContext& context);
+
+    void UpdateGlobalState(VKContext& context);
 };
 
 enum command_buffer_state : uint32_t {

@@ -4,6 +4,7 @@
 #include "containers/qvector.inl"
 #include "core/qlogger.hh"
 #include "core/qmemory.hh"
+#include "qmath/qmath.hh"
 #include <memory>
 // static VKBackend vkrenderer = {};
 
@@ -65,16 +66,28 @@ Renderer::CreateModel(Pegasus::GameObject& obj) {
 
 bool 
 Renderer::DrawFrame(RenderPacket packet) {
-  // if (vkrenderer.IsInitialized()) {
-  //   vkrenderer.BeginFrame();
-  //   vkrenderer.EndFrame(packet);
-  // }
   if (backend->BeginFrame(packet.delta_time)) {
-      bool result = backend->EndFrame(packet.delta_time);
-      if (!result) {
-          qlogger::Error("Renderer::EndFrame() returned unsuccessfully");
-          return false;
-      }
+    auto projection = qmath::Mat4<float>::Perspective(qmath::deg_to_rad(45), static_cast<float>(800/600), 0.1f, 1000.0f);
+    static float z = -1.0f;
+    z -= 0.01f;
+    auto view = qmath::Mat4<float>::GetTranslation(
+      qmath::Vec3<float>::New(0.0f, 0.0f, z)
+    );
+
+
+    backend->UpdateGlobalState(
+      projection,
+      view,
+      qmath::Vec3<float>::Zero(),
+      qmath::Vec4<float>::New(0.1, 0.4, 0.3, 1.0),
+      0 
+    );
+
+    bool result = backend->EndFrame(packet.delta_time);
+    if (!result) {
+        qlogger::Error("Renderer::EndFrame() returned unsuccessfully");
+        return false;
+    }
   }
   return true;
 }

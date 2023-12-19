@@ -4,6 +4,7 @@
 #include "vulkan_utils.hh"
 #include "platform/platform.hh"
 #include "renderer/render_types.hh"
+#include "qmath/qmath.hh"
 
 #include <vulkan/vulkan.h>
 
@@ -17,6 +18,7 @@ class VulkanBackend : public RendererBackend {
         void Resized(uint32_t width, uint32_t height) override;
 
         bool BeginFrame(float delta_time) override;
+        void UpdateGlobalState(qmath::Mat4<float> projection, qmath::Mat4<float> view, qmath::Vec3<float> view_position, qmath::Vec4<float> ambient_color, int32_t mode) override;
         bool EndFrame(float delta_time) override;
 
     private:
