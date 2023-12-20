@@ -68,12 +68,14 @@ bool
 Renderer::DrawFrame(RenderPacket packet) {
   if (backend->BeginFrame(packet.delta_time)) {
     auto projection = qmath::Mat4<float>::Perspective(qmath::deg_to_rad(45), static_cast<float>(800/600), 0.1f, 1000.0f);
-    static float z = -1.0f;
-    z -= 0.01f;
-    auto view = qmath::Mat4<float>::GetTranslation(
+    static float z = 0.0f;
+    z += 0.01f;
+    qmath::Mat4<float> view = qmath::Mat4<float>::GetTranslation(
+      // qmath::Vec3<float>::New(0.0f, 0.0f, -30.0f)
       qmath::Vec3<float>::New(0.0f, 0.0f, z)
     );
-
+    view.Invert();
+    // view = qmath::Mat4<float>::GetInverse(view);
 
     backend->UpdateGlobalState(
       projection,
@@ -82,6 +84,19 @@ Renderer::DrawFrame(RenderPacket packet) {
       qmath::Vec4<float>::New(0.1, 0.4, 0.3, 1.0),
       0 
     );
+
+    static float angle = 0.01f;
+    angle += 0.1f;
+    qmath::Quaternion<float> rotation = qmath::Quaternion<float>::FromAxisAngle(
+      qmath::Vec3<float>::Forward(),
+      angle,
+      false
+    );
+    auto model = rotation.ToRotationMatrix(
+      qmath::Vec3<float>::Zero()
+    );
+
+    backend->UpdateObject(model);
 
     bool result = backend->EndFrame(packet.delta_time);
     if (!result) {

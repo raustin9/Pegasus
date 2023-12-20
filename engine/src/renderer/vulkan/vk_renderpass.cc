@@ -27,7 +27,7 @@ VulkanBackend::create_renderpass(
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     // Attachments TODO: Make configurable
-    uint32_t attachment_description_count = 2;
+    constexpr uint32_t attachment_description_count = 2;
     // VkAttachmentDescription attachment_descriptions[attachment_description_count];
     VkAttachmentDescription attachment_descriptions[32];
 
@@ -92,6 +92,7 @@ VulkanBackend::create_renderpass(
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // dependency.srcAccessMask = VK_ACCESS_NONE;
     dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -135,6 +136,7 @@ void
 VKRenderpass::begin(VKCommandBuffer& command_buffer, VKFramebuffer& framebuffer) {
     VkRenderPassBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    begin_info.pNext = nullptr;
     begin_info.renderPass = this->handle;
     begin_info.framebuffer = framebuffer.handle;
     begin_info.renderArea.offset.x = this->x;

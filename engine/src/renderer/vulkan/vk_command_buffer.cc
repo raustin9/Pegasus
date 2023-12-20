@@ -64,8 +64,9 @@ VKCommandBuffer::free(VKContext& context, VkCommandPool pool) {
 
 void 
 VKCommandBuffer::begin(bool is_single_use, bool is_renderpass_continue, bool is_simultaneous_use) {
-    VkCommandBufferBeginInfo begin_info {};
+    VkCommandBufferBeginInfo begin_info  = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = nullptr;
     begin_info.flags = 0;
 
     if (is_single_use) {

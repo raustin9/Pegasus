@@ -116,6 +116,14 @@ VKPipeline::Create(
     // Pipeline Layout
     VkPipelineLayoutCreateInfo pipeline_layout_create_info {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+    // Push Constants
+    VkPushConstantRange push_constant {};
+    push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant.offset = qmath::Mat4<float>::Size() * 0;
+    push_constant.size = qmath::Mat4<float>::Size() * 2;
+    pipeline_layout_create_info.pushConstantRangeCount = 1;
+    pipeline_layout_create_info.pPushConstantRanges = &push_constant;
     
     // Descriptor Set Layouts
     pipeline_layout_create_info.setLayoutCount = descriptor_set_layout_count;

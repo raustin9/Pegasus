@@ -230,3 +230,24 @@ VKObjShader::UpdateGlobalState(VKContext& context) {
     
 
 }
+
+void 
+VKObjShader::Object(VKContext& context, qmath::Mat4<float> model) {
+    uint32_t image_index = context.image_index;
+    VkCommandBuffer& command_buffer = context.graphics_command_buffers[image_index].handle;
+
+    if (qmath::Mat4<float>::Size() > 128) {
+        printf("Size of Mat4<float> is %i which exceeds Push Constant limit of 128 bytes\n", 
+            static_cast<uint32_t>(qmath::Mat4<float>::Size()));
+        exit(1);
+    }
+
+    vkCmdPushConstants(
+        command_buffer, 
+        this->pipeline.layout, 
+        VK_SHADER_STAGE_VERTEX_BIT, 
+        0, 
+        static_cast<uint32_t>(qmath::Mat4<float>::Size()), 
+        model.data
+    );
+}

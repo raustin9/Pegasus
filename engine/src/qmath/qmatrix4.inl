@@ -13,6 +13,9 @@ template <typename T>
 struct Mat4 {
     T data[16];
 
+    Mat4();
+    Mat4(const Mat4<T>& m);
+
     static Mat4<T> Identity();
 
     static Mat4<float> Orthographic(
@@ -22,6 +25,8 @@ struct Mat4 {
     );
 
     void Print();
+
+    static uint64_t Size() { return 16 * sizeof(T); }
 
     static Mat4<float> Perspective(float fov_radians, float aspect_ratio, float near_clip, float far_clip);
 
@@ -49,8 +54,39 @@ struct Mat4 {
     static Vec3<T> Left(const Mat4<T>& matrix);
     static Vec3<T> Right(const Mat4<T>& matrix);
 
-    Mat4<T>& operator= (Mat4<T>& m1);
+    Mat4<T>& operator= (const Mat4<T>& m1);
 };
+
+template <typename T>
+Mat4<T>::Mat4() {
+    for(uint32_t i = 0; i < 16; i++) {
+        data[i] = 0;
+    }
+}
+
+// Copy Constructor
+template <typename T>
+Mat4<T>::Mat4(const Mat4<T>& m) {
+    this->data[0] = m.data[0];
+    this->data[1] = m.data[1];
+    this->data[2] = m.data[2];
+    this->data[3] = m.data[3];
+
+    this->data[4] = m.data[4];
+    this->data[5] = m.data[5];
+    this->data[6] = m.data[6];
+    this->data[7] = m.data[7];
+
+    this->data[8] = m.data[8];
+    this->data[9] = m.data[9];
+    this->data[10] = m.data[10];
+    this->data[11] = m.data[11];
+
+    this->data[12] = m.data[12];
+    this->data[13] = m.data[13];
+    this->data[14] = m.data[14];
+    this->data[15] = m.data[15];
+}
 
 template <typename T>
 void
@@ -64,7 +100,7 @@ Mat4<T>::Print() {
 
 template <typename T>
 Mat4<T>&
-Mat4<T>::operator=(Mat4<T>& m2) {
+Mat4<T>::operator=(const Mat4<T>& m2) {
     this->data[0] = m2.data[0];
     this->data[1] = m2.data[1];
     this->data[2] = m2.data[2];
@@ -87,6 +123,7 @@ Mat4<T>::operator=(Mat4<T>& m2) {
 
     return *this;
 }
+
 
 template <typename T>
 Mat4<T> operator* (const Mat4<T>& m1, const Mat4<T>& m2) {
@@ -472,7 +509,8 @@ Mat4<T>::Invert() {
     for (size_t i = 0; i < 16; i++)
         tmatrix.data[i] = this->data[i];
 
-    *this = tmatrix;
+    *this = Mat4<T>::GetInverse(tmatrix);
+    // *this = tmatrix;
 }
 
 template <typename T>

@@ -147,10 +147,9 @@ struct VKObjShader {
 
     bool Create(VKContext& context);
     void Destroy(VKContext& context);
-
     void Use(VKContext& context);
-
     void UpdateGlobalState(VKContext& context);
+    void Object(VKContext& context, qmath::Mat4<float> model);
 };
 
 enum command_buffer_state : uint32_t {

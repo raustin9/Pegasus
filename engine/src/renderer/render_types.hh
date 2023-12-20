@@ -80,6 +80,9 @@ class RendererBackend {
         virtual void UpdateGlobalState(qmath::Mat4<float> projection, qmath::Mat4<float> view, qmath::Vec3<float> view_position, qmath::Vec4<float> ambient_color, int32_t mode) {}
         virtual bool EndFrame(float delta_time) { return false; }
 
+
+        virtual void UpdateObject(qmath::Mat4<float> model) {}
+
         // Mutators and Accessors
         inline void     SetFrameNumber(uint64_t fn) { m_frame_number = fn; }
         inline uint64_t GetFrameNumber()            { return m_frame_number; }

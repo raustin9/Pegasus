@@ -267,6 +267,7 @@ VulkanBackend::BeginFrame(float delta_time) {
     VKDevice& device = m_context.device;
 
     if (m_context.recreating_swapchain) {
+        
         VkResult result = vkDeviceWaitIdle(device.logical_device);
         if (!vkresult_is_success(result)) {
             qlogger::Info("VulkanBackend::BeginFrame() vkDeviceWaitIdle(1) failed: %s", vkresult_string(result, true));
@@ -317,7 +318,7 @@ VulkanBackend::BeginFrame(float delta_time) {
     command_buffer.begin(false, false, false);
 
     // Dynamic states
-    VkViewport viewport;
+    VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = static_cast<float>(m_context.framebuffer_height);
     viewport.width = static_cast<float>(m_context.framebuffer_width);
@@ -325,7 +326,7 @@ VulkanBackend::BeginFrame(float delta_time) {
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
-    VkRect2D scissor {};
+    VkRect2D scissor  = {};
     scissor.offset.x = scissor.offset.y = 0;
     scissor.extent.width = m_context.framebuffer_width;
     scissor.extent.height = m_context.framebuffer_height;
@@ -368,14 +369,6 @@ VulkanBackend::UpdateGlobalState(
     // TODO: other UBO properties
 
     m_context.object_shader.UpdateGlobalState(m_context);
-    
-    // TODO: TEMP TEST CODE
-    m_context.object_shader.Use(m_context);
-    VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(command_buffer.handle, 0, 1, &m_context.object_vertex_buffer.handle, static_cast<VkDeviceSize*>(offsets));
-    vkCmdBindIndexBuffer(command_buffer.handle, m_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(command_buffer.handle, 6, 1, 0, 0, 0);
-    // TODO: END TEST CODE
 
 }
 
@@ -404,7 +397,7 @@ VulkanBackend::EndFrame(float delta_time) {
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer.handle;
-    submit_info.signalSemaphoreCount =1;
+    submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &m_context.queue_complete_semaphores[m_context.current_frame];
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &m_context.image_available_semaphores[m_context.current_frame];
@@ -550,4 +543,18 @@ void
 VulkanBackend::destroy_buffers() {
     m_context.object_index_buffer.Destroy(m_context);
     m_context.object_vertex_buffer.Destroy(m_context);
+}
+
+void 
+VulkanBackend::UpdateObject(qmath::Mat4<float> model) {
+    VKCommandBuffer &command_buffer = m_context.graphics_command_buffers[m_context.image_index];
+    m_context.object_shader.Object(m_context, model);
+    
+    // TODO: TEMP TEST CODE
+    m_context.object_shader.Use(m_context);
+    VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(command_buffer.handle, 0, 1, &m_context.object_vertex_buffer.handle, static_cast<VkDeviceSize*>(offsets));
+    vkCmdBindIndexBuffer(command_buffer.handle, m_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(command_buffer.handle, 6, 1, 0, 0, 0);
+    // TODO: END TEST CODE
 }

@@ -119,7 +119,7 @@ struct Vec3 {
             (T)0,
             (T)0,
             (T)-1
-        }
+        };
     }
 
     PINLINE static Vec3<T> Backward() {

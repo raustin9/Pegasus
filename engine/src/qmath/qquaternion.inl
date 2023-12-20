@@ -364,22 +364,22 @@ Quaternion<T>::ToMat4() {
 template <typename T>
 Mat4<T> 
 Quaternion<T>::ToRotationMatrix(Vec3<T> center) {
-mat4 out_matrix;
+    Mat4<T> out_matrix;
 
     T* o = out_matrix.data;
-    o[0] = (q.x * q.x) - (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
-    o[1] = 2.0f * ((q.x * q.y) + (q.z * q.w));
-    o[2] = 2.0f * ((q.x * q.z) - (q.y * q.w));
+    o[0] = (this->x * this->x) - (this->y * this->y) - (this->z * this->z) + (this->w * this->w);
+    o[1] = 2.0f * ((this->x * this->y) + (this->z * this->w));
+    o[2] = 2.0f * ((this->x * this->z) - (this->y * this->w));
     o[3] = center.x - center.x * o[0] - center.y * o[1] - center.z * o[2];
 
-    o[4] = 2.0f * ((q.x * q.y) - (q.z * q.w));
-    o[5] = -(q.x * q.x) + (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
-    o[6] = 2.0f * ((q.y * q.z) + (q.x * q.w));
+    o[4] = 2.0f * ((this->x * this->y) - (this->z * this->w));
+    o[5] = -(this->x * this->x) + (this->y * this->y) - (this->z * this->z) + (this->w * this->w);
+    o[6] = 2.0f * ((this->y * this->z) + (this->x * this->w));
     o[7] = center.y - center.x * o[4] - center.y * o[5] - center.z * o[6];
 
-    o[8] = 2.0f * ((q.x * q.z) + (q.y * q.w));
-    o[9] = 2.0f * ((q.y * q.z) - (q.x * q.w));
-    o[10] = -(q.x * q.x) - (q.y * q.y) + (q.z * q.z) + (q.w * q.w);
+    o[8] = 2.0f * ((this->x * this->z) + (this->y * this->w));
+    o[9] = 2.0f * ((this->y * this->z) - (this->x * this->w));
+    o[10] = -(this->x * this->x) - (this->y * this->y) + (this->z * this->z) + (this->w * this->w);
     o[11] = center.z - center.x * o[8] - center.y * o[9] - center.z * o[10];
 
     o[12] = 0.0f;

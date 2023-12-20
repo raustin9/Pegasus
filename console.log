@@ -79,5 +79,368 @@
  ENTITY_NODE: 0.00B
  SCENE      : 0.00B
 
+[TRACE][800, 600] != [799, 600]
+[TRACE]VulkanBackend->resized: w/h/gen: 799/600/1
+[TRACE][799, 600] != [798, 600]
+[TRACE]VulkanBackend->resized: w/h/gen: 798/600/2
+[TRACE][798, 600] != [797, 600]
+[TRACE]VulkanBackend->resized: w/h/gen: 797/600/3
+[TRACE][797, 600] != [796, 599]
+[TRACE]VulkanBackend->resized: w/h/gen: 796/599/4
+[TRACE][796, 599] != [794, 598]
+[TRACE]VulkanBackend->resized: w/h/gen: 794/598/5
+[TRACE][794, 598] != [790, 596]
+[TRACE]VulkanBackend->resized: w/h/gen: 790/596/6
+[TRACE][790, 596] != [790, 594]
+[TRACE]VulkanBackend->resized: w/h/gen: 790/594/7
+[TRACE][790, 594] != [786, 592]
+[TRACE]VulkanBackend->resized: w/h/gen: 786/592/8
+[TRACE][786, 592] != [783, 588]
+[TRACE]VulkanBackend->resized: w/h/gen: 783/588/9
+[TRACE][783, 588] != [780, 586]
+[TRACE]VulkanBackend->resized: w/h/gen: 780/586/10
+[TRACE][780, 586] != [777, 582]
+[TRACE]VulkanBackend->resized: w/h/gen: 777/582/11
+[TRACE][777, 582] != [775, 581]
+[TRACE]VulkanBackend->resized: w/h/gen: 775/581/12
+[TRACE][775, 581] != [773, 577]
+[TRACE]VulkanBackend->resized: w/h/gen: 773/577/13
+[TRACE][773, 577] != [766, 569]
+[TRACE]VulkanBackend->resized: w/h/gen: 766/569/14
+[TRACE][766, 569] != [763, 565]
+[TRACE]VulkanBackend->resized: w/h/gen: 763/565/15
+[TRACE][763, 565] != [756, 557]
+[TRACE]VulkanBackend->resized: w/h/gen: 756/557/16
+[TRACE][756, 557] != [755, 555]
+[TRACE]VulkanBackend->resized: w/h/gen: 755/555/17
+[TRACE][755, 555] != [753, 552]
+[TRACE]VulkanBackend->resized: w/h/gen: 753/552/18
+[TRACE][753, 552] != [749, 547]
+[TRACE]VulkanBackend->resized: w/h/gen: 749/547/19
+[TRACE][749, 547] != [741, 540]
+[TRACE]VulkanBackend->resized: w/h/gen: 741/540/20
+[TRACE][741, 540] != [739, 536]
+[TRACE]VulkanBackend->resized: w/h/gen: 739/536/21
+[TRACE][739, 536] != [737, 534]
+[TRACE]VulkanBackend->resized: w/h/gen: 737/534/22
+[TRACE][737, 534] != [735, 532]
+[TRACE]VulkanBackend->resized: w/h/gen: 735/532/23
+[TRACE][735, 532] != [733, 531]
+[TRACE]VulkanBackend->resized: w/h/gen: 733/531/24
+[TRACE][733, 531] != [731, 529]
+[TRACE]VulkanBackend->resized: w/h/gen: 731/529/25
+[TRACE][731, 529] != [730, 527]
+[TRACE]VulkanBackend->resized: w/h/gen: 730/527/26
+[TRACE][730, 527] != [727, 524]
+[TRACE]VulkanBackend->resized: w/h/gen: 727/524/27
+[TRACE][727, 524] != [726, 523]
+[TRACE]VulkanBackend->resized: w/h/gen: 726/523/28
+[TRACE][726, 523] != [725, 522]
+[TRACE]VulkanBackend->resized: w/h/gen: 725/522/29
+[TRACE][725, 522] != [724, 522]
+[TRACE]VulkanBackend->resized: w/h/gen: 724/522/30
+[TRACE][724, 522] != [723, 521]
+[TRACE]VulkanBackend->resized: w/h/gen: 723/521/31
+[TRACE][723, 521] != [722, 520]
+[TRACE]VulkanBackend->resized: w/h/gen: 722/520/32
+[TRACE][722, 520] != [721, 519]
+[TRACE]VulkanBackend->resized: w/h/gen: 721/519/33
+[TRACE][721, 519] != [720, 517]
+[TRACE]VulkanBackend->resized: w/h/gen: 720/517/34
+[TRACE][720, 517] != [718, 516]
+[TRACE]VulkanBackend->resized: w/h/gen: 718/516/35
+[TRACE][718, 516] != [717, 515]
+[TRACE]VulkanBackend->resized: w/h/gen: 717/515/36
+[TRACE][717, 515] != [716, 514]
+[TRACE]VulkanBackend->resized: w/h/gen: 716/514/37
+[TRACE][716, 514] != [715, 513]
+[TRACE]VulkanBackend->resized: w/h/gen: 715/513/38
+[TRACE][715, 513] != [714, 513]
+[TRACE]VulkanBackend->resized: w/h/gen: 714/513/39
+[TRACE][714, 513] != [714, 512]
+[TRACE]VulkanBackend->resized: w/h/gen: 714/512/40
+[TRACE][714, 512] != [713, 512]
+[TRACE]VulkanBackend->resized: w/h/gen: 713/512/41
+[TRACE][713, 512] != [713, 511]
+[TRACE]VulkanBackend->resized: w/h/gen: 713/511/42
+[TRACE][713, 511] != [712, 511]
+[TRACE]VulkanBackend->resized: w/h/gen: 712/511/43
+[TRACE][712, 511] != [713, 511]
+[TRACE]VulkanBackend->resized: w/h/gen: 713/511/44
+[INFO]Destroying swapchain... 
+[INFO]Destroyed.
+[INFO]Swapchain created...
+[INFO]Graphics command buffers created [3]
+[INFO]Resized. Booting...
+[TRACE][713, 511] != [713, 510]
+[TRACE]VulkanBackend->resized: w/h/gen: 713/510/45
+[TRACE][713, 510] != [714, 512]
+[TRACE]VulkanBackend->resized: w/h/gen: 714/512/46
+[TRACE][714, 512] != [716, 515]
+[TRACE]VulkanBackend->resized: w/h/gen: 716/515/47
+[TRACE][716, 515] != [716, 516]
+[TRACE]VulkanBackend->resized: w/h/gen: 716/516/48
+[TRACE][716, 516] != [718, 519]
+[TRACE]VulkanBackend->resized: w/h/gen: 718/519/49
+[TRACE][718, 519] != [721, 522]
+[TRACE]VulkanBackend->resized: w/h/gen: 721/522/50
+[TRACE][721, 522] != [724, 527]
+[TRACE]VulkanBackend->resized: w/h/gen: 724/527/51
+[TRACE][724, 527] != [726, 530]
+[TRACE]VulkanBackend->resized: w/h/gen: 726/530/52
+[TRACE][726, 530] != [728, 532]
+[TRACE]VulkanBackend->resized: w/h/gen: 728/532/53
+[TRACE][728, 532] != [730, 538]
+[TRACE]VulkanBackend->resized: w/h/gen: 730/538/54
+[TRACE][730, 538] != [732, 540]
+[TRACE]VulkanBackend->resized: w/h/gen: 732/540/55
+[TRACE][732, 540] != [736, 545]
+[TRACE]VulkanBackend->resized: w/h/gen: 736/545/56
+[TRACE][736, 545] != [737, 549]
+[TRACE]VulkanBackend->resized: w/h/gen: 737/549/57
+[TRACE][737, 549] != [741, 554]
+[TRACE]VulkanBackend->resized: w/h/gen: 741/554/58
+[TRACE][741, 554] != [744, 557]
+[TRACE]VulkanBackend->resized: w/h/gen: 744/557/59
+[TRACE][744, 557] != [745, 559]
+[TRACE]VulkanBackend->resized: w/h/gen: 745/559/60
+[TRACE][745, 559] != [748, 564]
+[TRACE]VulkanBackend->resized: w/h/gen: 748/564/61
+[TRACE][748, 564] != [750, 565]
+[TRACE]VulkanBackend->resized: w/h/gen: 750/565/62
+[TRACE][750, 565] != [753, 569]
+[TRACE]VulkanBackend->resized: w/h/gen: 753/569/63
+[TRACE][753, 569] != [757, 575]
+[TRACE]VulkanBackend->resized: w/h/gen: 757/575/64
+[TRACE][757, 575] != [761, 580]
+[TRACE]VulkanBackend->resized: w/h/gen: 761/580/65
+[TRACE][761, 580] != [762, 582]
+[TRACE]VulkanBackend->resized: w/h/gen: 762/582/66
+[TRACE][762, 582] != [769, 590]
+[TRACE]VulkanBackend->resized: w/h/gen: 769/590/67
+[TRACE][769, 590] != [772, 593]
+[TRACE]VulkanBackend->resized: w/h/gen: 772/593/68
+[TRACE][772, 593] != [777, 598]
+[TRACE]VulkanBackend->resized: w/h/gen: 777/598/69
+[TRACE][777, 598] != [779, 601]
+[TRACE]VulkanBackend->resized: w/h/gen: 779/601/70
+[TRACE][779, 601] != [783, 607]
+[TRACE]VulkanBackend->resized: w/h/gen: 783/607/71
+[TRACE][783, 607] != [787, 610]
+[TRACE]VulkanBackend->resized: w/h/gen: 787/610/72
+[TRACE][787, 610] != [790, 615]
+[TRACE]VulkanBackend->resized: w/h/gen: 790/615/73
+[TRACE][790, 615] != [793, 617]
+[TRACE]VulkanBackend->resized: w/h/gen: 793/617/74
+[TRACE][793, 617] != [797, 622]
+[TRACE]VulkanBackend->resized: w/h/gen: 797/622/75
+[TRACE][797, 622] != [798, 624]
+[TRACE]VulkanBackend->resized: w/h/gen: 798/624/76
+[TRACE][798, 624] != [802, 628]
+[TRACE]VulkanBackend->resized: w/h/gen: 802/628/77
+[TRACE][802, 628] != [804, 631]
+[TRACE]VulkanBackend->resized: w/h/gen: 804/631/78
+[TRACE][804, 631] != [807, 635]
+[TRACE]VulkanBackend->resized: w/h/gen: 807/635/79
+[TRACE][807, 635] != [808, 636]
+[TRACE]VulkanBackend->resized: w/h/gen: 808/636/80
+[TRACE][808, 636] != [810, 639]
+[TRACE]VulkanBackend->resized: w/h/gen: 810/639/81
+[TRACE][810, 639] != [811, 641]
+[TRACE]VulkanBackend->resized: w/h/gen: 811/641/82
+[TRACE][811, 641] != [813, 642]
+[TRACE]VulkanBackend->resized: w/h/gen: 813/642/83
+[TRACE][813, 642] != [813, 643]
+[TRACE]VulkanBackend->resized: w/h/gen: 813/643/84
+[TRACE][813, 643] != [814, 644]
+[TRACE]VulkanBackend->resized: w/h/gen: 814/644/85
+[TRACE][814, 644] != [814, 645]
+[TRACE]VulkanBackend->resized: w/h/gen: 814/645/86
+[TRACE][814, 645] != [815, 645]
+[TRACE]VulkanBackend->resized: w/h/gen: 815/645/87
+[TRACE][815, 645] != [816, 645]
+[TRACE]VulkanBackend->resized: w/h/gen: 816/645/88
+[TRACE][816, 645] != [816, 646]
+[TRACE]VulkanBackend->resized: w/h/gen: 816/646/89
+[TRACE][816, 646] != [815, 646]
+[TRACE]VulkanBackend->resized: w/h/gen: 815/646/90
+[INFO]Destroying swapchain... 
+[INFO]Destroyed.
+[INFO]Swapchain created...
+[INFO]Graphics command buffers created [3]
+[INFO]Resized. Booting...
+[TRACE][815, 646] != [815, 645]
+[TRACE]VulkanBackend->resized: w/h/gen: 815/645/91
+[TRACE][815, 645] != [814, 645]
+[TRACE]VulkanBackend->resized: w/h/gen: 814/645/92
+[TRACE][814, 645] != [813, 645]
+[TRACE]VulkanBackend->resized: w/h/gen: 813/645/93
+[TRACE][813, 645] != [813, 644]
+[TRACE]VulkanBackend->resized: w/h/gen: 813/644/94
+[TRACE][813, 644] != [812, 643]
+[TRACE]VulkanBackend->resized: w/h/gen: 812/643/95
+[TRACE][812, 643] != [811, 642]
+[TRACE]VulkanBackend->resized: w/h/gen: 811/642/96
+[TRACE][811, 642] != [810, 641]
+[TRACE]VulkanBackend->resized: w/h/gen: 810/641/97
+[TRACE][810, 641] != [809, 639]
+[TRACE]VulkanBackend->resized: w/h/gen: 809/639/98
+[TRACE][809, 639] != [808, 638]
+[TRACE]VulkanBackend->resized: w/h/gen: 808/638/99
+[TRACE][808, 638] != [805, 636]
+[TRACE]VulkanBackend->resized: w/h/gen: 805/636/100
+[TRACE][805, 636] != [801, 631]
+[TRACE]VulkanBackend->resized: w/h/gen: 801/631/101
+[TRACE][801, 631] != [800, 630]
+[TRACE]VulkanBackend->resized: w/h/gen: 800/630/102
+[TRACE][800, 630] != [798, 628]
+[TRACE]VulkanBackend->resized: w/h/gen: 798/628/103
+[TRACE][798, 628] != [797, 626]
+[TRACE]VulkanBackend->resized: w/h/gen: 797/626/104
+[TRACE][797, 626] != [794, 623]
+[TRACE]VulkanBackend->resized: w/h/gen: 794/623/105
+[TRACE][794, 623] != [791, 620]
+[TRACE]VulkanBackend->resized: w/h/gen: 791/620/106
+[TRACE][791, 620] != [787, 617]
+[TRACE]VulkanBackend->resized: w/h/gen: 787/617/107
+[TRACE][787, 617] != [784, 613]
+[TRACE]VulkanBackend->resized: w/h/gen: 784/613/108
+[TRACE][784, 613] != [774, 602]
+[TRACE]VulkanBackend->resized: w/h/gen: 774/602/109
+[TRACE][774, 602] != [771, 599]
+[TRACE]VulkanBackend->resized: w/h/gen: 771/599/110
+[TRACE][771, 599] != [761, 589]
+[TRACE]VulkanBackend->resized: w/h/gen: 761/589/111
+[TRACE][761, 589] != [754, 582]
+[TRACE]VulkanBackend->resized: w/h/gen: 754/582/112
+[TRACE][754, 582] != [753, 580]
+[TRACE]VulkanBackend->resized: w/h/gen: 753/580/113
+[TRACE][753, 580] != [751, 579]
+[TRACE]VulkanBackend->resized: w/h/gen: 751/579/114
+[TRACE][751, 579] != [749, 576]
+[TRACE]VulkanBackend->resized: w/h/gen: 749/576/115
+[TRACE][749, 576] != [748, 575]
+[TRACE]VulkanBackend->resized: w/h/gen: 748/575/116
+[TRACE][748, 575] != [747, 574]
+[TRACE]VulkanBackend->resized: w/h/gen: 747/574/117
+[TRACE][747, 574] != [743, 570]
+[TRACE]VulkanBackend->resized: w/h/gen: 743/570/118
+[TRACE][743, 570] != [742, 569]
+[TRACE]VulkanBackend->resized: w/h/gen: 742/569/119
+[TRACE][742, 569] != [742, 568]
+[TRACE]VulkanBackend->resized: w/h/gen: 742/568/120
+[TRACE][742, 568] != [740, 567]
+[TRACE]VulkanBackend->resized: w/h/gen: 740/567/121
+[TRACE][740, 567] != [738, 564]
+[TRACE]VulkanBackend->resized: w/h/gen: 738/564/122
+[TRACE][738, 564] != [735, 562]
+[TRACE]VulkanBackend->resized: w/h/gen: 735/562/123
+[TRACE][735, 562] != [734, 560]
+[TRACE]VulkanBackend->resized: w/h/gen: 734/560/124
+[TRACE][734, 560] != [733, 559]
+[TRACE]VulkanBackend->resized: w/h/gen: 733/559/125
+[TRACE][733, 559] != [730, 556]
+[TRACE]VulkanBackend->resized: w/h/gen: 730/556/126
+[TRACE][730, 556] != [729, 555]
+[TRACE]VulkanBackend->resized: w/h/gen: 729/555/127
+[TRACE][729, 555] != [728, 554]
+[TRACE]VulkanBackend->resized: w/h/gen: 728/554/128
+[TRACE][728, 554] != [727, 553]
+[TRACE]VulkanBackend->resized: w/h/gen: 727/553/129
+[TRACE][727, 553] != [726, 553]
+[TRACE]VulkanBackend->resized: w/h/gen: 726/553/130
+[TRACE][726, 553] != [726, 552]
+[TRACE]VulkanBackend->resized: w/h/gen: 726/552/131
+[TRACE][726, 552] != [727, 552]
+[TRACE]VulkanBackend->resized: w/h/gen: 727/552/132
+[TRACE][727, 552] != [728, 553]
+[TRACE]VulkanBackend->resized: w/h/gen: 728/553/133
+[TRACE][728, 553] != [739, 565]
+[TRACE]VulkanBackend->resized: w/h/gen: 739/565/134
+[TRACE][739, 565] != [752, 578]
+[TRACE]VulkanBackend->resized: w/h/gen: 752/578/135
+[TRACE][752, 578] != [755, 581]
+[TRACE]VulkanBackend->resized: w/h/gen: 755/581/136
+[TRACE][755, 581] != [768, 590]
+[TRACE]VulkanBackend->resized: w/h/gen: 768/590/137
+[TRACE][768, 590] != [787, 604]
+[TRACE]VulkanBackend->resized: w/h/gen: 787/604/138
+[TRACE][787, 604] != [800, 615]
+[TRACE]VulkanBackend->resized: w/h/gen: 800/615/139
+[TRACE][800, 615] != [810, 622]
+[TRACE]VulkanBackend->resized: w/h/gen: 810/622/140
+[TRACE][810, 622] != [829, 634]
+[TRACE]VulkanBackend->resized: w/h/gen: 829/634/141
+[TRACE][829, 634] != [856, 650]
+[TRACE]VulkanBackend->resized: w/h/gen: 856/650/142
+[TRACE][856, 650] != [874, 662]
+[TRACE]VulkanBackend->resized: w/h/gen: 874/662/143
+[TRACE][874, 662] != [884, 668]
+[TRACE]VulkanBackend->resized: w/h/gen: 884/668/144
+[TRACE][884, 668] != [890, 672]
+[TRACE]VulkanBackend->resized: w/h/gen: 890/672/145
+[TRACE][890, 672] != [906, 681]
+[TRACE]VulkanBackend->resized: w/h/gen: 906/681/146
+[TRACE][906, 681] != [918, 688]
+[TRACE]VulkanBackend->resized: w/h/gen: 918/688/147
+[TRACE][918, 688] != [922, 690]
+[TRACE]VulkanBackend->resized: w/h/gen: 922/690/148
+[TRACE][922, 690] != [927, 693]
+[TRACE]VulkanBackend->resized: w/h/gen: 927/693/149
+[TRACE][927, 693] != [932, 696]
+[TRACE]VulkanBackend->resized: w/h/gen: 932/696/150
+[TRACE][932, 696] != [941, 700]
+[TRACE]VulkanBackend->resized: w/h/gen: 941/700/151
+[TRACE][941, 700] != [953, 706]
+[TRACE]VulkanBackend->resized: w/h/gen: 953/706/152
+[TRACE][953, 706] != [958, 708]
+[TRACE]VulkanBackend->resized: w/h/gen: 958/708/153
+[TRACE][958, 708] != [969, 713]
+[TRACE]VulkanBackend->resized: w/h/gen: 969/713/154
+[TRACE][969, 713] != [971, 714]
+[TRACE]VulkanBackend->resized: w/h/gen: 971/714/155
+[TRACE][971, 714] != [976, 717]
+[TRACE]VulkanBackend->resized: w/h/gen: 976/717/156
+[TRACE][976, 717] != [978, 718]
+[TRACE]VulkanBackend->resized: w/h/gen: 978/718/157
+[TRACE][978, 718] != [980, 718]
+[TRACE]VulkanBackend->resized: w/h/gen: 980/718/158
+[TRACE][980, 718] != [984, 721]
+[TRACE]VulkanBackend->resized: w/h/gen: 984/721/159
+[TRACE][984, 721] != [989, 724]
+[TRACE]VulkanBackend->resized: w/h/gen: 989/724/160
+[TRACE][989, 724] != [990, 725]
+[TRACE]VulkanBackend->resized: w/h/gen: 990/725/161
+[TRACE][990, 725] != [995, 727]
+[TRACE]VulkanBackend->resized: w/h/gen: 995/727/162
+[TRACE][995, 727] != [1001, 731]
+[TRACE]VulkanBackend->resized: w/h/gen: 1001/731/163
+[TRACE][1001, 731] != [1009, 736]
+[TRACE]VulkanBackend->resized: w/h/gen: 1009/736/164
+[TRACE][1009, 736] != [1015, 739]
+[TRACE]VulkanBackend->resized: w/h/gen: 1015/739/165
+[TRACE][1015, 739] != [1020, 743]
+[TRACE]VulkanBackend->resized: w/h/gen: 1020/743/166
+[TRACE][1020, 743] != [1022, 744]
+[TRACE]VulkanBackend->resized: w/h/gen: 1022/744/167
+[TRACE][1022, 744] != [1029, 748]
+[TRACE]VulkanBackend->resized: w/h/gen: 1029/748/168
+[TRACE][1029, 748] != [1032, 749]
+[TRACE]VulkanBackend->resized: w/h/gen: 1032/749/169
+[TRACE][1032, 749] != [1034, 750]
+[TRACE]VulkanBackend->resized: w/h/gen: 1034/750/170
+[TRACE][1034, 750] != [1035, 751]
+[TRACE]VulkanBackend->resized: w/h/gen: 1035/751/171
+[TRACE][1035, 751] != [1037, 752]
+[TRACE]VulkanBackend->resized: w/h/gen: 1037/752/172
+[TRACE][1037, 752] != [1038, 752]
+[TRACE]VulkanBackend->resized: w/h/gen: 1038/752/173
+[TRACE][1038, 752] != [1038, 753]
+[TRACE]VulkanBackend->resized: w/h/gen: 1038/753/174
+[INFO]Destroying swapchain... 
+[INFO]Destroyed.
+[INFO]Swapchain created...
+[INFO]Graphics command buffers created [3]
+[INFO]Resized. Booting...
 [INFO]EVENT_CODE_APPLICATION_QUIT received. Shutting down...
 [INFO]Shutting down application

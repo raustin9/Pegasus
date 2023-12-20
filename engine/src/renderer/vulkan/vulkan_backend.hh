@@ -21,6 +21,8 @@ class VulkanBackend : public RendererBackend {
         void UpdateGlobalState(qmath::Mat4<float> projection, qmath::Mat4<float> view, qmath::Vec3<float> view_position, qmath::Vec4<float> ambient_color, int32_t mode) override;
         bool EndFrame(float delta_time) override;
 
+        void UpdateObject(qmath::Mat4<float> model) override;
+
     private:
         // Backend Members
         // uint32_t m_framebuffer_width;
