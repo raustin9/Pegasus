@@ -263,6 +263,15 @@ const Vec3<T> operator== (const Vec3<T>& v1, const Vec3<T>& v2) {
     );
 }
 
+template <typename T>
+const Vec3<T> operator!= (const Vec3<T>& v1, const Vec3<T>& v2) {
+    return (
+        v1.x != v2.x ||
+        v1.y != v2.y ||
+        v1.z != v2.z
+    );
+}
+
 // Cross Product
 template <typename T>
 Vec3<T> operator% (const Vec3<T>& v1, const Vec3<T>& v2) {

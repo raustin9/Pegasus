@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "clock.hh"
 
 struct ApplicationState {
     Pegasus::Game* game_inst;
@@ -22,6 +23,8 @@ struct ApplicationState {
     bool is_running = false;
     bool is_suspended = true;
     bool initialized = false;
+
+    qtime::clock clock;
     float last_time;
 
     char last_fps[32];
@@ -136,30 +139,40 @@ Application::~Application() {
 // Event loop of the application
 bool
 Application::run() {
+    // app_state->timer.Tick(nullptr);
+    // app_state->last_time = app_state->timer.GetElapsedSeconds();
+    // float running_time = 0.0f;
+    // static auto startTime = std::chrono::high_resolution_clock::now();
+    // auto currentTime = std::chrono::high_resolution_clock::now();
+    // float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    app_state->clock.start();
+    app_state->clock.update();
+    app_state->last_time = app_state->clock.elapsed_time;
+
     app_state->is_running = true;
 
-    Vector<uint64_t> v = Vector<uint64_t>(MEMORY_TAG_APPLICATION);
-    v.push(25);
-    v.push(26);
-    v.push(27);
-    v.push(28);  
+    // Vector<uint64_t> v = Vector<uint64_t>(MEMORY_TAG_APPLICATION);
+    // v.push(25);
+    // v.push(26);
+    // v.push(27);
+    // v.push(28);  
 
     qlogger::Debug(QAllocator::GetUsageString().c_str());
 
     // create temporary objects using the renderer API
     // TODO: remove these and do this through UI
-    Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
-    Pegasus::GameObject obj2 = Pegasus::Game::NewGameObject();
+    // Pegasus::GameObject obj = Pegasus::Game::NewGameObject();
+    // Pegasus::GameObject obj2 = Pegasus::Game::NewGameObject();
     
-    obj.vertices = {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
-    };
-    obj.indices = {
-        0, 1, 2, 2, 3, 0
-    };
+    // obj.vertices = {
+    //     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
+    //     {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
+    //     {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
+    //     {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
+    // };
+    // obj.indices = {
+    //     0, 1, 2, 2, 3, 0
+    // };
     // obj.vertices = {
     //     { {-0.5f, -0.5f,  0.5f}, {0.0f, 1.0f, 1.0f} },
     //     { {0.5f,  -0.5f,  0.5f}, {1.0f, 0.0f, 1.0f} },
@@ -189,38 +202,49 @@ Application::run() {
     //     0, 1, 5, 5, 4, 0,
     // };
     
-    obj2.vertices = {
-        {{-0.5f, -0.5f, 0.5f}, {0.3f, 0.87f, 0.0f}},
-        {{0.5f, -0.5f, 0.5f}, {0.81f, 1.0f, 0.9f}},
-        {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.43f}},
-        {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.5f, 0.0f}}
-    };
-    obj2.indices = {
-        0, 1, 2, 3, 0, 2
-    };
+    // obj2.vertices = {
+    //     {{-0.5f, -0.5f, 0.5f}, {0.3f, 0.87f, 0.0f}},
+    //     {{0.5f, -0.5f, 0.5f}, {0.81f, 1.0f, 0.9f}},
+    //     {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.43f}},
+    //     {{-0.5f, 0.5f, 0.5f}, {1.0f, 0.5f, 0.0f}}
+    // };
+    // obj2.indices = {
+    //     0, 1, 2, 3, 0, 2
+    // };
 
-    Renderer::CreateModel(obj);
-    Renderer::CreateModel(obj2);
+    // Renderer::CreateModel(obj);
+    // Renderer::CreateModel(obj2);
 
     // Application Event loop
     while (app_state->is_running) {
+
         if (!Platform::pump_messages())
             app_state->is_running = false;
 
         if (!app_state->is_suspended) {
             // Update timer
+            app_state->clock.update();
+            double current_time = app_state->clock.elapsed_time;
+            double delta = (current_time - app_state->last_time);
             app_state->timer.Tick(nullptr);
-            static auto startTime = std::chrono::high_resolution_clock::now();
-            auto currentTime = std::chrono::high_resolution_clock::now();
-            float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-            if (!app_state->game_inst->Update(time)) {
+            // uint64_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            // uint64_t delta = (current_time - app_state->last_time);
+            // float current_time = app_state->timer.GetElapsedSeconds();
+            // float delta = (current_time - app_state->last_time);
+            
+            // static auto startTime = std::chrono::high_resolution_clock::now();
+            // auto currentTime = std::chrono::high_resolution_clock::now();
+            // float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+            
+            // if (!app_state->game_inst->Update(time)) {
+            if (!app_state->game_inst->Update((float)delta)) {
                 qlogger::Fatal("Game update failed. Shutting down.");
                 app_state->is_running = false;
                 break;
             }
 
-            if (!app_state->game_inst->Render(time)) {
+            // if (!app_state->game_inst->Render(time)) {
+            if (!app_state->game_inst->Render((float)delta)) {
                 qlogger::Fatal("Game render failed. Shutting down.");
                 app_state->is_running = false;
                 break;
@@ -229,7 +253,8 @@ Application::run() {
             UBO ubo{};
             glm::mat4 model = glm::rotate(
                 glm::mat4(1.0f), 
-                time * glm::radians(90.0f),
+                (float)delta * glm::radians(90.0f),
+                // time * glm::radians(90.0f),
                 glm::vec3(0.0f, 0.0f, 1.0f));
 
             glm::mat4 view = glm::lookAt(
@@ -251,10 +276,14 @@ Application::run() {
             // Render a frame
             RenderPacket packet = {};
             packet.ubo = ubo;
-            packet.delta_time = time;
+            packet.delta_time = (float)delta;
+            // packet.delta_time = time;
             Renderer::DrawFrame(packet);
 
-            InputHandler::Update(time);
+            // InputHandler::Update(time);
+            InputHandler::Update((float)delta);
+
+            app_state->last_time = current_time;
         }
         
         if (app_state->framecounter % 300 == 0) {

@@ -579,12 +579,12 @@ template <typename T>
 Mat4<T>
 Mat4<T>::EulerXYZ(T xrad, T yrad, T zrad) {
     Mat4<T> rx = Mat4<T>::EulerX(xrad);
-    Mat4<T> ry = Mat4<T>::EulerY(xrad);
-    Mat4<T> rz = Mat4<T>::EulerZ(xrad);
+    Mat4<T> ry = Mat4<T>::EulerY(yrad);
+    Mat4<T> rz = Mat4<T>::EulerZ(zrad);
 
     Mat4<T> matrix = rx * ry;
     matrix = matrix * rz;
-    return out_matrix;
+    return matrix;
 }
 
 template <typename T>
@@ -594,7 +594,7 @@ Mat4<T>::Forward(const Mat4<T>& matrix) {
     forward.x = -matrix.data[2];
     forward.y = -matrix.data[6];
     forward.z = -matrix.data[10];
-    forward.Normalize();
+    forward.normalize();
     return forward;
 }
 
@@ -605,7 +605,7 @@ Mat4<T>::Backward(const Mat4<T>& matrix) {
     forward.x = matrix.data[2];
     forward.y = matrix.data[6];
     forward.z = matrix.data[10];
-    forward.Normalize();
+    forward.normalize();
     return forward;
 }
 
@@ -616,7 +616,7 @@ Mat4<T>::Up(const Mat4<T>& matrix) {
     forward.x = -matrix.data[1];
     forward.y = -matrix.data[5];
     forward.z = -matrix.data[9];
-    forward.Normalize();
+    forward.normalize();
     return forward;
 }
 
@@ -627,7 +627,7 @@ Mat4<T>::Down(const Mat4<T>& matrix) {
     forward.x = matrix.data[1];
     forward.y = matrix.data[5];
     forward.z = matrix.data[9];
-    forward.Normalize();
+    forward.normalize();
     return forward;
 }
 
@@ -638,8 +638,18 @@ Mat4<T>::Left(const Mat4<T>& matrix) {
     forward.x = -matrix.data[0];
     forward.y = -matrix.data[4];
     forward.z = -matrix.data[8];
-    forward.Normalize();
+    forward.normalize();
     return forward;
 }
 
+template <typename T>
+Vec3<T>
+Mat4<T>::Right(const Mat4<T>& matrix) {
+    Vec3<T> forward;
+    forward.x = matrix.data[0];
+    forward.y = matrix.data[4];
+    forward.z = matrix.data[8];
+    forward.normalize();
+    return forward;
+}
 } // qmath

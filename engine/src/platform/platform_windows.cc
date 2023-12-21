@@ -16,6 +16,9 @@ struct PlatformState {
 // static PlatformState windows_state = {};
 static PlatformState *windows_state_ptr;
 
+static double clock_frequency;
+static LARGE_INTEGER start_time;
+
 Platform::Platform(std::string name, uint32_t width, uint32_t height) 
 	: name{name} , width{width} , height{height} {
 
@@ -83,6 +86,12 @@ Platform::Startup(uint64_t& memory_requirements, void* state, std::string name, 
 		);
 		return false;
 	}
+
+	// Clock
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	clock_frequency = 1.0f / static_cast<double>(frequency.QuadPart);
+	QueryPerformanceCounter(&start_time);
 
 	Platform::create_window();
 	qlogger::Info("Window Created...");
@@ -261,13 +270,17 @@ Platform::WindowProc(
 				} else if (GetKeyState(VK_LMENU) & 0x8000) {
 					key = KEY_LALT;
 				}
-			} else if (w_param == VK_SHIFT) {
+			} 
+			
+			if (w_param == VK_SHIFT) {
 				if (GetKeyState(VK_RSHIFT) & 0x8000) {
 					key = KEY_RSHIFT;
 				} else if (GetKeyState(VK_LSHIFT) & 0x8000) {
 					key = KEY_LSHIFT;
 				}
-			} else if (w_param == VK_CONTROL) {
+			} 
+			
+			if (w_param == VK_CONTROL) {
 				if (GetKeyState(VK_RCONTROL) & 0x8000) {
 					key = KEY_RCONTROL;
 				} else if (GetKeyState(VK_LCONTROL) & 0x8000) {
@@ -374,4 +387,14 @@ Platform::ConsoleError(const char* message, uint8_t color) {
 	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
 	SetConsoleTextAttribute(console_handle, Attributes);
 }
+
+// Get the current time
+double 
+Platform::get_absolute_time() {
+	LARGE_INTEGER now_time;
+	QueryPerformanceCounter(&now_time);
+	return static_cast<double>(now_time.QuadPart) * clock_frequency;
+}
+
+
 #endif /* Q_PLATFORM_WINDOWS */

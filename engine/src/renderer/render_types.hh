@@ -71,7 +71,8 @@ enum renderer_backend_type : uint32_t {
 class RendererBackend {
     public:
         RendererBackend() 
-            : projection(qmath::Mat4<float>::Identity())
+            : projection(qmath::Mat4<float>::Identity()),
+              view(qmath::Mat4<float>::Identity())
         {
 
         }
@@ -93,6 +94,7 @@ class RendererBackend {
         inline uint64_t GetFrameNumber()            { return m_frame_number; }
         
         qmath::Mat4<float> projection;
+        qmath::Mat4<float> view;
         float near_clip;
         float far_clip;
         

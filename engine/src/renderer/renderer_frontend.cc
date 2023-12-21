@@ -41,8 +41,10 @@ Renderer::Initialize(std::string name, std::string asset_path, uint32_t width, u
         qmath::deg_to_rad(45), 
         (float)800 / (float)600, 
         backend->near_clip, 
-        backend->far_clip
-    );
+        backend->far_clip);
+    // backend->view = qmath::Mat4<float>::GetTranslation(
+    //     qmath::Vec3<float>::New(0.0f, 0.0f, 30.0f));
+    // backend->view.Invert();
 
     return true;
 }
@@ -82,23 +84,12 @@ Renderer::CreateModel(Pegasus::GameObject& obj) {
 
 bool 
 Renderer::DrawFrame(RenderPacket packet) {
-    // auto projection = qmath::Mat4<float>::Perspective(qmath::deg_to_rad(45), static_cast<float>(800/600), 0.1f, 1000.0f);
- 
     if (backend->BeginFrame(packet.delta_time)) {
-        static float z = 0.0f;
-        z += 0.01f;
-        qmath::Mat4<float> view = qmath::Mat4<float>::GetTranslation(
-            // qmath::Vec3<float>::New(0.0f, 0.0f, -30.0f)
-            qmath::Vec3<float>::New(0.0f, 0.0f, z)
-        );
-        view.Invert();
-        // view = qmath::Mat4<float>::GetInverse(view);
-
         backend->UpdateGlobalState(
             backend->projection,
-            view,
+            backend->view,
             qmath::Vec3<float>::Zero(),
-            qmath::Vec4<float>::New(0.1, 0.4, 0.3, 1.0),
+            qmath::Vec4<float>::One(),
             0 
         );
 
@@ -122,4 +113,13 @@ Renderer::DrawFrame(RenderPacket packet) {
         }
     }
     return true;
+}
+  
+// API Method to expose being able to set the view matrix from 
+// anywhere in the application
+void 
+Renderer::SetView(qmath::Mat4<float> view) {
+    backend->view = view;
+
+    return;
 }
