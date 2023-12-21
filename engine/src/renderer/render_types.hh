@@ -70,7 +70,12 @@ enum renderer_backend_type : uint32_t {
 // type that we want to support.
 class RendererBackend {
     public:
-        RendererBackend() {}
+        RendererBackend() 
+            : projection(qmath::Mat4<float>::Identity())
+        {
+
+        }
+
         virtual bool Initialize(std::string& name) { return false; }
         virtual void Shutdown() {}
 
@@ -87,7 +92,12 @@ class RendererBackend {
         inline void     SetFrameNumber(uint64_t fn) { m_frame_number = fn; }
         inline uint64_t GetFrameNumber()            { return m_frame_number; }
         
+        qmath::Mat4<float> projection;
+        float near_clip;
+        float far_clip;
+        
         renderer_backend_type type;
     private:
         uint64_t m_frame_number;
+
 };
