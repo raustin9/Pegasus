@@ -309,6 +309,7 @@ VulkanBackend::BeginFrame(float delta_time) {
         0, 
         m_context.image_index
     )) {
+        qlogger::Warn("acquire next image from swapchain failed...");
         return false;
     }
 
