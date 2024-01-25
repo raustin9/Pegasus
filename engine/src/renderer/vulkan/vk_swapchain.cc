@@ -172,7 +172,21 @@ VKSwapchain::create(VKContext& context, uint32_t width, uint32_t height) {
         qlogger::Info("Failed to find a supported depth format");
     }
 
-    (void)vkimage_create(
+    // (void)vkimage_create(
+    //     context,
+    //     VK_IMAGE_TYPE_2D,
+    //     swapchain_extent.width,
+    //     swapchain_extent.height,
+    //     context.device.depth_format,
+    //     VK_IMAGE_TILING_OPTIMAL,
+    //     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+    //     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+    //     true,
+    //     VK_IMAGE_ASPECT_DEPTH_BIT,
+    //     this->depth_attachment
+    // );
+    // TODO: make sure that this implementation works properly
+    this->depth_attachment.create(
         context,
         VK_IMAGE_TYPE_2D,
         swapchain_extent.width,
@@ -182,8 +196,7 @@ VKSwapchain::create(VKContext& context, uint32_t width, uint32_t height) {
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         true,
-        VK_IMAGE_ASPECT_DEPTH_BIT,
-        this->depth_attachment
+        VK_IMAGE_ASPECT_DEPTH_BIT
     );
 
     qlogger::Info("Swapchain created...");
@@ -194,7 +207,8 @@ void
 VKSwapchain::destroy(VKContext& context) {
     qlogger::Info("Destroying swapchain... ");
     vkDeviceWaitIdle(context.device.logical_device);
-    vkimage_destroy(context, this->depth_attachment);
+    // vkimage_destroy(context, this->depth_attachment);
+    this->depth_attachment.destroy(context);
 
     // Only destroy the views not images since those are owned by the swapchain
     // and are destroyed when it is

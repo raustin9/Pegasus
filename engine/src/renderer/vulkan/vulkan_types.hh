@@ -86,6 +86,20 @@ struct VKImage {
     VkImageView view;
     uint32_t width;
     uint32_t height;
+
+    void create(
+        VKContext& context,
+        VkImageType image_type,
+        uint32_t width,
+        uint32_t height,
+        VkFormat format,
+        VkImageTiling tiling,
+        VkImageUsageFlags usage,
+        VkMemoryPropertyFlags memory_flags,
+        bool create_view,
+        VkImageAspectFlags view_aspect_flags
+    );
+    void destroy(VKContext& context);
 };
 
 struct VKRenderpass {
