@@ -1,6 +1,8 @@
 #include "vulkan_types.hh"
 #include "vk_image.hh"
 #include "vulkan_utils.hh"
+#include "core/qmemory.hh"
+#include "core/qlogger.hh"
 
 
 void 
@@ -16,6 +18,7 @@ VKImage::create(
     bool create_view,
     VkImageAspectFlags view_aspect_flags
 ) {
+    this->context = &context;
     this->width = width;
     this->height = height;
 
@@ -56,7 +59,7 @@ VKImage::create(
     );
 
     if (mem_type == -1) {
-        std::cout << "Error: Required memory type not found. Image is not valid." << std::endl;
+        qlogger::Error("Error: Required memory type not found. Image is not valid.");
     }
 
     // Allocate memory for the image
@@ -86,6 +89,11 @@ VKImage::create(
     }
 }
 
+
+void
+VKImage::view_create(VkFormat format, VkImageAspectFlags flags) {
+    
+}
 
 void 
 vkimage_create(
@@ -141,7 +149,7 @@ vkimage_create(
     );
 
     if (mem_type == -1) {
-        std::cout << "Error: Required memory type not found. Image is not valid." << std::endl;
+        qlogger::Error("Required memory type not found. Image is not valid");
     }
 
     // Allocate memory for the image
@@ -214,6 +222,7 @@ vkimage_destroy(VKContext& context, VKImage& image) {
     }
 }
 
+// Destruction behavior for VKImage
 void
 VKImage::destroy(VKContext& context) {
     if (this->view) {
@@ -227,4 +236,105 @@ VKImage::destroy(VKContext& context) {
     if (this->handle) {
         vkDestroyImage(context.device.logical_device, this->handle, context.allocator);
     }
+}
+
+/**
+    * Transitions the provided image from old_layout to new_layout
+*/
+void 
+VKImage::transition_layout(
+    // VKContext& context,
+    VKCommandBuffer& command_buffer,
+    VkFormat format,
+    VkImageLayout old_layout,
+    VkImageLayout new_layout
+) {
+    VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
+    barrier.srcQueueFamilyIndex = this->context->device.graphics_queue_index;
+    barrier.dstQueueFamilyIndex = this->context->device.graphics_queue_index;
+    barrier.image = this->handle;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkPipelineStageFlags source_stage;
+    VkPipelineStageFlags dest_stage;
+
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        // Dont care what stage the pipeline is in at the start
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+        // Used for copying
+        dest_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        // Transitioning from a transfer destination layout to a shader readonly layout
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        // From a copying stage to...
+        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+        // The fragment stage
+        dest_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        qlogger::Fatal("VKImage::transition_layout: unsupported layout transition");
+        return;
+    }
+
+    vkCmdPipelineBarrier(
+        command_buffer.handle,
+        source_stage,
+        dest_stage,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        &barrier
+    );
+}
+
+/**
+    * Copies the data in from the buffer to this image
+    * @param context The vulkan context
+    * @param image The image to copy the buffer's data to
+    * @param buffer The buffer whose data will be copied
+*/
+void 
+VKImage::copy_from_buffer(
+    // VKContext& context,
+    VkBuffer buffer,
+    VKCommandBuffer& command_buffer
+) {
+    // Region to copy
+    VkBufferImageCopy region {};
+    QAllocator::Zero(&region, sizeof(VkBufferImageCopy));
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageExtent.width = this->width;
+    region.imageExtent.height = this->height;
+    region.imageExtent.depth = 1;
+
+    vkCmdCopyBufferToImage(
+        command_buffer.handle,
+        buffer,
+        this->handle,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region
+    );
 }

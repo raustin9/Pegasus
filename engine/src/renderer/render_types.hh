@@ -4,6 +4,8 @@
 #include "stdafx.hh"
 #include <glm/glm.hpp>
 #include <qmath/qmath.hh>
+#include "containers/qvector.inl"
+#include "resources/resource_types.hh"
 // Uniform Buffer Object
 struct UBO {
     alignas (16) glm::mat4 projectionView{1.f};
@@ -88,6 +90,18 @@ class RendererBackend {
 
 
         virtual void UpdateObject(qmath::Mat4<float> model) {}
+
+        virtual void CreateTexture(
+            std::string& name,
+            bool auto_release,
+            int32_t width,
+            int32_t height,
+            int32_t channel_count,
+            Vector<uint8_t> pixels,
+            texture& out_texture
+        ) {}
+
+        virtual void DestroyTexture(texture& texture) {}
 
         // Mutators and Accessors
         inline void     SetFrameNumber(uint64_t fn) { m_frame_number = fn; }

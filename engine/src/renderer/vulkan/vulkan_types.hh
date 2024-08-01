@@ -81,12 +81,16 @@ struct VKDevice {
 };
 
 struct VKImage {
+    VKContext* context;
     VkImage handle;
     VkDeviceMemory memory;
     VkImageView view;
     uint32_t width;
     uint32_t height;
 
+    /**
+     * Create and destroy the image
+    */
     void create(
         VKContext& context,
         VkImageType image_type,
@@ -99,7 +103,31 @@ struct VKImage {
         bool create_view,
         VkImageAspectFlags view_aspect_flags
     );
+    void view_create(VkFormat format, VkImageAspectFlags flags);
     void destroy(VKContext& context);
+
+    /**
+     * Transitions the provided image from old_layout to new_layout
+    */
+    void transition_layout(
+        // VKContext& context,
+        VKCommandBuffer& command_buffer,
+        VkFormat format,
+        VkImageLayout old_layout,
+        VkImageLayout new_layout
+    );
+
+    /**
+     * Copies the data in from the buffer to this image
+     * @param context The vulkan context
+     * @param image The image to copy the buffer's data to
+     * @param buffer The buffer whose data will be copied
+    */
+    void copy_from_buffer(
+        // VKContext& context,
+        VkBuffer buffer,
+        VKCommandBuffer& command_buffer
+    );
 };
 
 struct VKRenderpass {
@@ -243,6 +271,7 @@ struct VKSwapchain {
         VkSemaphore render_complete_semaphore,
         uint32_t present_image_index
     );
+
 
 };
 

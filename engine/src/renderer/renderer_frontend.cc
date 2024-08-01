@@ -123,3 +123,29 @@ Renderer::SetView(qmath::Mat4<float> view) {
 
     return;
 }
+
+void 
+Renderer::CreateTexture(
+    std::string& name,
+    bool auto_release,
+    int32_t width,
+    int32_t height,
+    int32_t channel_count,
+    Vector<uint8_t>& pixels,
+    texture& out_texture
+) {
+    backend->CreateTexture(
+        name,
+        auto_release,
+        width,
+        height,
+        channel_count,
+        pixels,
+        out_texture 
+    );
+}
+
+void 
+Renderer::DestroyTexture(texture& texture) {
+    backend->DestroyTexture(texture);
+}

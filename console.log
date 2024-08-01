@@ -72,12 +72,328 @@
  JOB        : 0.00B
  TEXTURE    : 0.00B
  MAT_ISNT   : 0.00B
- RENDERER   : 2.87Kib
+ RENDERER   : 2.88Kib
  GAME       : 0.00B
  TRANSFORM  : 0.00B
  ENTITY     : 0.00B
  ENTITY_NODE: 0.00B
  SCENE      : 0.00B
 
+[DEBUG]'A' key pressed in window
+[DEBUG]'D' key pressed in window
+[DEBUG]'A' key released in window
+[DEBUG]'A' key pressed in window
+[DEBUG]'D' key released in window
+[DEBUG]'A' key released in window
+[DEBUG]'D' key pressed in window
+[DEBUG]'D' key released in window
+[DEBUG]'W' key pressed in window
+[DEBUG]'W' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]'%' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]''' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]'%' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]''' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]'%' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]''' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]'%' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]''' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]''' key pressed in window
+[DEBUG]'%' key released in window
+[DEBUG]''' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]'%' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]''' key released in window
+[DEBUG]'&' key pressed in window
+[DEBUG]'&' key released in window
+[DEBUG]'(' key pressed in window
+[DEBUG]'(' key released in window
+[DEBUG]'W' key pressed in window
+[DEBUG]'W' key released in window
+[DEBUG]LSHIFT
+
+[DEBUG]' ' key pressed in window
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]' ' key pressed in window
+[DEBUG]' ' key released in window
+[DEBUG]'(' key pressed in window
+[DEBUG]'(' key released in window
+[DEBUG]RSHIFT
+
+[DEBUG]'¡' key pressed in window
+[DEBUG]RSHIFT
+
+[DEBUG]RSHIFT
+
+[DEBUG]RSHIFT
+
+[DEBUG]'' key pressed in window
+[DEBUG]'' key released in window
+[DEBUG]LSHIFT
+
+[DEBUG]' ' key pressed in window
+[DEBUG]' ' key released in window
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]LSHIFT
+
+[DEBUG]' ' key pressed in window
+[DEBUG]' ' key released in window
+[DEBUG]'(' key pressed in window
+[DEBUG]'(' key released in window
+[DEBUG]'(' key pressed in window
+[DEBUG]'(' key released in window
+[DEBUG]'W' key pressed in window
+[DEBUG]'&' key pressed in window
+[DEBUG]'&' key released in window
+[DEBUG]'W' key released in window
+[DEBUG]'W' key pressed in window
+[DEBUG]'A' key pressed in window
+[DEBUG]'W' key released in window
+[DEBUG]'A' key released in window
+[DEBUG]'D' key pressed in window
+[DEBUG]'D' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]'&' key pressed in window
+[DEBUG]'&' key released in window
+[DEBUG]''' key released in window
+[DEBUG]''' key pressed in window
+[DEBUG]''' key released in window
+[DEBUG]'&' key pressed in window
+[DEBUG]'&' key released in window
+[DEBUG]' ' key pressed in window
+[DEBUG]' ' key released in window
+[DEBUG]'(' key pressed in window
+[DEBUG]'(' key released in window
+[DEBUG]'A' key pressed in window
+[DEBUG]'A' key released in window
+[DEBUG]'%' key pressed in window
+[DEBUG]'A' key pressed in window
+[DEBUG]'A' key released in window
+[DEBUG]'%' key released in window
+[DEBUG]'W' key pressed in window
+[DEBUG]'&' key pressed in window
+[DEBUG]''' key pressed in window
+[DEBUG]'D' key pressed in window
+[DEBUG]'W' key released in window
+[DEBUG]'D' key released in window
+[DEBUG]'&' key released in window
+[DEBUG]''' key released in window
 [INFO]EVENT_CODE_APPLICATION_QUIT received. Shutting down...
 [INFO]Shutting down application
