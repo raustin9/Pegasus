@@ -12,13 +12,14 @@
 */
 
 #include "stdafx.hh"
+#include "defines.hh"
 #include "render_types.hh"
-#include "vulkan/vulkan_backend.hh"
+// #include "vulkan/vulkan_backend.hh"
 #include "game_types.hh"
 
 
 
-class Renderer {
+class QAPI Renderer {
 public:
   static bool Initialize(std::string name, std::string asset_path, uint32_t width, uint32_t height, RendererSettings settings);
   static void Shutdown();
@@ -26,4 +27,15 @@ public:
 
   static void OnResize(uint16_t width, uint16_t height);
   static bool DrawFrame(RenderPacket packet);
+  static void SetView(qmath::Mat4<float> view);
+  static void CreateTexture(
+      std::string& name,
+      bool auto_release,
+      int32_t width,
+      int32_t height,
+      int32_t channel_count,
+      Vector<uint8_t>& pixels,
+      texture& out_texture
+  );
+  static void DestroyTexture(texture& texture);
 };

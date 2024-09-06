@@ -38,7 +38,8 @@ namespace Pegasus {
       bool Render(float delta_time);
       void Resize(uint32_t width, uint32_t height);
 
-    private:
       void* state;
+      void* application_state; // application state
+    private:
   };
 }

@@ -3,7 +3,7 @@ OBJ_DIR := obj
 
 ASSEMBLY := engine
 EXTENSION := .so
-COMPILER_FLAGS := -g -fdeclspec -fPIC -std=c++17
+COMPILER_FLAGS := -g -fdeclspec -Werror=vla  -fPIC -std=c++17
 INCLUDE_FLAGS := -Iengine/src -I$(VULKAN_SDK)/include
 LINKER_FLAGS := -g -shared -lvulkan  -lX11  -L$(VULKAN_SDK)/lib 
 DEFINES := -D_QDEBUG -DQEXPORT

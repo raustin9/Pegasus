@@ -8,6 +8,7 @@ int main() {
     if (!Pegasus::Game::Create(game)) {
         std::cerr << "ERROR: failed to create game" << std::endl;
     }
-    Application app = Application(game, "Pegasus Engine", 800, 600);
-    app.run();
+    // Application app = Application(game, "Pegasus Engine", 800, 600);
+    Application::Create(game, "Pegasus Engine", 800, 600);
+    Application::run();
 }

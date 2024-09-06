@@ -59,3 +59,12 @@ typedef double f64;
 #define QAPI
 #endif
 #endif
+
+// Inlining
+#ifdef _MSC_VER
+#define PINLINE __forceinline
+#define PNOINLINE __declspec(noinline)
+#else
+#define PINLINE static inline
+#define PNOINLINE 
+#endif

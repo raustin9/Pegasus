@@ -6,10 +6,10 @@ ASSEMBLY := engine
 SHADERS := assets/shaders
 EXTENSION := .dll
 GLSLC := tooling/glslc.exe
-COMPILER_FLAGS := -g -fdeclspec -std=c++17
+COMPILER_FLAGS := -g -fdeclspec -std=c++17 -Werror=vla
 INCLUDE_FLAGS := -Iengine\src -I$(VULKAN_SDK)\include
 LINKER_FLAGS := -g -shared -luser32 -lvulkan-1 -L$(VULKAN_SDK)\Lib -L$(OBJ_DIR)\engine
-DEFINES := -D_QDEBUG -DQEXPORT -D_CRT_SECURE_NO_WARNINGS
+DEFINES := -DP_DEBUG -DQEXPORT -D_CRT_SECURE_NO_WARNINGS
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))

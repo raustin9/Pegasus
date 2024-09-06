@@ -1,24 +1,30 @@
 #include "events.hh"
 
-static EventState event_state = {};
+// static EventState event_state_ptr = {};
+static EventState *event_state_ptr = nullptr;
 
-bool EventHandler::Startup() {
-    if (event_state.initialized)
-        return false;
+bool EventHandler::Startup(uint64_t& memory_requirements, void* state) {
+    memory_requirements = sizeof(EventState);
+    if (state == nullptr) {
+        return true;
+    }
+    
+    event_state_ptr = new (static_cast<EventState*>(state)) EventState;
 
     for (size_t i = 0; i < MAX_MESSAGE_CODES; i++)
-        event_state.registered[i].events.clear();
+        event_state_ptr->registered[i].events.clear();
 
-    event_state.initialized = true;
+    event_state_ptr->initialized = true;
     return true;
 }
 
 void EventHandler::Shutdown() {
     for (size_t i = 0; i < MAX_MESSAGE_CODES; i++) {
-        event_state.registered[i].events.clear();
+        event_state_ptr->registered[i].events.clear();
     }
 
-    event_state.initialized = false;
+    event_state_ptr->initialized = false;
+    event_state_ptr = nullptr;
 }
 
 // Registers to listen to events that are sent with the specified code
@@ -29,9 +35,9 @@ bool EventHandler::Register(
         CallbackFunc callback
         ) {
     // Check if the listener has already been registered
-    size_t registered_count = event_state.registered[code].events.size();
+    size_t registered_count = event_state_ptr->registered[code].events.size();
     for (size_t i = 0; i < registered_count; i++) {
-        if (event_state.registered[code].events[i].listener == listener)
+        if (event_state_ptr->registered[code].events[i].listener == listener)
             return false;
     }
 
@@ -39,7 +45,7 @@ bool EventHandler::Register(
     RegisteredEvent event = {};
     event.listener = listener;
     event.callback = callback;
-    event_state.registered[code].events.push_back(event);
+    event_state_ptr->registered[code].events.push_back(event);
     return true;
 }
 
@@ -51,7 +57,7 @@ bool EventHandler::Unregister(
         void* listener
         ) {
     // Check that the listener is actually registered for the event
-    if (event_state.registered[code].events.size() == 0)
+    if (event_state_ptr->registered[code].events.size() == 0)
         return false;
 
     // Iterate through the list of listeners registered for the event
@@ -60,11 +66,11 @@ bool EventHandler::Unregister(
     // Removing element from vector at an index is obviously not efficient, but for
     // the sake of prototyping this is fine for now. Also there are not too many elements
     // that would be registered for an event, so even in worst case it is not that bad
-    size_t registered_count = event_state.registered[code].events.size();
+    size_t registered_count = event_state_ptr->registered[code].events.size();
     for (size_t i = 0; i < registered_count; i++) {
-        RegisteredEvent ev = event_state.registered[code].events[i];
+        RegisteredEvent ev = event_state_ptr->registered[code].events[i];
         if (ev.listener == listener) {
-            event_state.registered[code].events.erase(event_state.registered[code].events.begin() + i);
+            event_state_ptr->registered[code].events.erase(event_state_ptr->registered[code].events.begin() + i);
             return true;
         }
     }
@@ -76,12 +82,12 @@ bool EventHandler::Unregister(
 // If the handler returns true, the event is considered handled
 // If not, the handler passes on to any more listeners
 bool EventHandler::Fire(uint16_t code, void* sender, EventContext context) {
-    if (event_state.registered[code].events.size() == 0) {
+    if (event_state_ptr->registered[code].events.size() == 0) {
         return false;
     }
 
-    for (size_t i = 0; i < event_state.registered[code].events.size(); i++) {
-        RegisteredEvent ev = event_state.registered[code].events[i];
+    for (size_t i = 0; i < event_state_ptr->registered[code].events.size(); i++) {
+        RegisteredEvent ev = event_state_ptr->registered[code].events[i];
         auto func = ev.callback;
         if (ev.callback(code, sender, ev.listener, context)) {
             // message was handled if callback returned true
@@ -93,4 +99,4 @@ bool EventHandler::Fire(uint16_t code, void* sender, EventContext context) {
 }
 
 // Accessors
-bool EventHandler::GetInitialized() { return event_state.initialized; }
+bool EventHandler::GetInitialized() { return event_state_ptr->initialized; }

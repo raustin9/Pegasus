@@ -1,986 +1,561 @@
+/**
+ * This is the implementation for a Vulkan rendering backend
+*/
+
 #include "vulkan_backend.hh"
+#include "vulkan_types.hh"
 #include "core/application.hh"
-#include "vkcommon.hh"
-#include "debug.hh"
-#include "vkdevice.hh"
-#include "vkpipeline.hh"
-#include "vkswapchain.hh"
-#include "vkmodel.hh"
+#include "vk_device.hh"
+#include "qmath/qmath.hh"
+#include "core/qlogger.hh"
+#include "core/qmemory.hh"
 
-// STD
-#include <chrono>
-#include <cstdint>
-#include <stdexcept>
-#include <vulkan/vulkan_core.h>
-#include <stdlib.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <vendor/stb_image.h>
-
-// GLM
-#define GLM_FORCE_RADIANS 
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-// Constructor for the renderer 
-VKBackend::VKBackend()
-{
-}
-
-// Initialization behavior for the Vulkan Backend of the renderer
-void
-VKBackend::Initialize(std::string name, std::string assetPath, uint32_t width, uint32_t height, RendererSettings settings) {
-    m_settings = settings;
-    m_title = name;
-    m_assetPath = assetPath;
-    m_width = width;
-    m_height = height;
-    
-    m_aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-    m_vkparams.Allocator = nullptr;
-    m_current_frame_index = 0;
-    InitVulkan();
-    SetupPipeline();
-}
-
-// Init behavior
-void
-VKBackend::OnInit() {
-    m_current_frame_index = 0;
-    InitVulkan();
-    SetupPipeline();
-}
-
-// Set the window's title text
-const std::string 
-VKBackend::GetDeviceName() {
-    return std::string(m_deviceProperties.deviceName);
-}
-
-
-// Resize behavior
-void
-VKBackend::WindowResize(uint32_t w, uint32_t h) {
-    if (!m_initialized)
-        return;
-    
-    m_initialized = false;
-    // Ensure all operations on GPU are done before destroying resources
-    vkDeviceWaitIdle(m_vkparams.Device.Device);
-
-
-
-    // Recreate swapchain
-    m_width = w;
-    m_height = h;
-    CreateSwapchain(&m_width, &m_height, false);
-
-    // Recreate the framebuffers
-    for (size_t i = 0; i < m_vkparams.Framebuffers.size(); i++) {
-        vkDestroyFramebuffer(
-                m_vkparams.Device.Device,
-                m_vkparams.Framebuffers[i],
-                m_vkparams.Allocator);
-    }
-    CreateFrameBuffers();
-
-    // Command buffers need to be recreated as they may store
-    // references to the recreated framebuffer
-    vkFreeCommandBuffers(
-            m_vkparams.Device.Device,
-            m_vkparams.GraphicsCommandPool,
-            static_cast<uint32_t>(m_vkparams.GraphicsCommandBuffers.size()),
-            m_vkparams.GraphicsCommandBuffers.data());
-
-    AllocateCommandBuffers();
-
-    vkDeviceWaitIdle(m_vkparams.Device.Device);
-    m_initialized = true;
-}
-
-VkResult
-VKBackend::AcquireNextImage(uint32_t* imageIndex) {
-    // TODO: wait for fences
-    return vkAcquireNextImageKHR( // acquires the next image in the swapchain
-            m_vkparams.Device.Device, 
-            m_vkparams.SwapChain.Handle, 
-            UINT64_MAX,
-            m_vkparams.ImageAvailableSemaphore,
-            VK_NULL_HANDLE,
-            imageIndex);
-}
+static uint32_t cached_framebuffer_width = 0;
+static uint32_t cached_framebuffer_height = 0;
 
 void
-VKBackend::BeginFrame() {
-    // Get the index of the next available image in the swapchain
-    VkResult acquire = AcquireNextImage(&m_current_frame_index);
-    if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR))) {
-        if (acquire == VK_ERROR_OUT_OF_DATE_KHR)
-            WindowResize(m_width, m_height);
-        else
-            VK_CHECK(acquire);
-    }
-
-    // PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
-}
-
-void
-VKBackend::EndFrame(RenderPacket packet) {
-    PopulateCommandBuffer(m_command_buffer_index, m_current_frame_index);
-    SubmitCommandBuffer(m_command_buffer_index);
-    PresentImage(m_current_frame_index);
-
-    // Wait for the GPU to complete the frame before continuing is best practice
-    // vkQueueWaitIdle is used for simplicity
-    // (so that we can reuse the command buffer indexed with m_command_buffer_index)
-    // THIS IS SUBOPTIMAL because we are waiting on GPU to complete 1 image at a time 
-    // before the CPU creates anther. We can use a fence or semaphores later on
-    // to do better synchronization, but for now this works fine
-    VK_CHECK(vkQueueWaitIdle(m_vkparams.GraphicsQueue.Handle)); // "wait for GPU to idle"
-
-    // Update the command buffer
-    m_command_buffer_index = (m_command_buffer_index + 1) % m_command_buffer_count;
-   
-    // Update the uniform buffer
-    m_uboBuffers[m_current_frame_index]->WriteToBuffer(&packet.ubo);
-    m_current_frame_index = (m_current_frame_index + 1) % VKBackend::MAX_FRAMES_IN_FLIGHT;
-}
-
-void
-VKBackend::PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex) {
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.pNext = nullptr;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    // We use a single color attachment that is cleared at the start of the sub pass
-    VkClearValue clearValues[1];
-    clearValues[0].color = {
-        {0.0f, 0.2f, 0.4f, 1.0f},
-    };
-
-    VkRenderPassBeginInfo beginRenderpassInfo = {};
-    beginRenderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    beginRenderpassInfo.pNext = nullptr;
-    // set the render area that is affected by the render pass instance
-    beginRenderpassInfo.renderArea.offset.x = 0;
-    beginRenderpassInfo.renderArea.offset.y = 0;
-    beginRenderpassInfo.renderArea.extent.width = m_width;
-    beginRenderpassInfo.renderArea.extent.height = m_height;
-    // Set clear values for all framebuffer attachments with loadOp set to clear
-    beginRenderpassInfo.clearValueCount = 1;
-    beginRenderpassInfo.pClearValues = clearValues;
-    // Set the renderpass object used to begin an instance of
-    beginRenderpassInfo.renderPass = m_vkparams.RenderPass;
-    // Set the framebuffer to specify the color attachment (render target) where to draw the current frame
-    beginRenderpassInfo.framebuffer = m_vkparams.Framebuffers[imgIndex];
-
-    // Puts the command buffer into a recording state
-    // ONE_TIME_SUBMIT means each recording of the command buffer will
-    // be submitted once, and the command buffer will be reset and rerecorded
-    // between each submission.
-    VK_CHECK(vkBeginCommandBuffer(
-                m_vkparams.GraphicsCommandBuffers[bufferIndex],
-                &beginInfo));
-
-    // Begin the render pass instance
-    // This will clear the color attachment
-    // The render pass provides the actual image views for the attachment descriptors
-    // After beginnign the render pass, command buffers are ready to record the commands
-    // for the first subpass of that render pass.
-    // The application can record the commands one subpass at a time (if the render pass
-    // is composed of multiple subpasses) before ending the render pass instance.
-    vkCmdBeginRenderPass(
-            m_vkparams.GraphicsCommandBuffers[bufferIndex],
-            &beginRenderpassInfo,
-            VK_SUBPASS_CONTENTS_INLINE);
-
-    // Update the dynamic viewport state
-    // Defines rectangular area withing the framebuffer that rendering operations
-    // will be mapped to.
-    VkViewport viewport = {};
-    viewport.height = static_cast<float>(m_height);
-    viewport.width = static_cast<float>(m_width);
-    viewport.minDepth = static_cast<float>(0.0f);
-    viewport.maxDepth = static_cast<float>(1.0f);
-    vkCmdSetViewport(
-            m_vkparams.GraphicsCommandBuffers[bufferIndex],
-            0,
-            1,
-            &viewport);
-
-    // Update dynaic scissor state
-    // Scissor defines a rectangular area withing the framebuffer where rendering
-    // operations will be restricted.
-    VkRect2D scissor = {};
-    scissor.extent.width = m_width;
-    scissor.extent.height = m_height;
-    scissor.offset.x = 0;
-    scissor.offset.y = 0;
-    vkCmdSetScissor(
-            m_vkparams.GraphicsCommandBuffers[bufferIndex],
-            0,
-            1,
-            &scissor);
-
-    // Bind the graphics pipeline
-    m_pipeline->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-
-
-    // Bind the triangle vertex buffer (contains position and color)
-    for (size_t i = 0; i < m_models.size(); i++) {
-        m_models[i]->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-        m_models[i]->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
-    }
-    // m_model->Bind(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-    // m_model->Draw(m_vkparams.GraphicsCommandBuffers[bufferIndex], m_current_frame_index);
-
-    // Ending the render pass will add an implicit barrier, transitioning the frame buffer
-    // color attachment to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for presenting it to the windowing system
-    vkCmdEndRenderPass(m_vkparams.GraphicsCommandBuffers[bufferIndex]);
-
-    VK_CHECK(vkEndCommandBuffer(m_vkparams.GraphicsCommandBuffers[bufferIndex]));
-}
-
-void
-VKBackend::SubmitCommandBuffer(uint64_t index) {
-    // Pipeline stage at which the queue submission will wait (via a semaphore)
-    VkPipelineStageFlags waitStateMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    // The submit info structure specifies a command buffer queue submission batch
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pWaitDstStageMask = &waitStateMask;                          // pointer to the list of pipeline stages that the semaphore waits will happen at
-    submitInfo.waitSemaphoreCount = 1;                                      // one wait semaphore
-    submitInfo.signalSemaphoreCount =1;                                     // one signal semaphore
-    submitInfo.pCommandBuffers = &m_vkparams.GraphicsCommandBuffers[index]; // command buffers(s) to execute in this batch (submission)
-    submitInfo.commandBufferCount = 1;                                      // one command buffer
-
-    submitInfo.pWaitSemaphores = &m_vkparams.ImageAvailableSemaphore;      // semaphore(s) to wait upon before the submitted command buffers begin executing
-    submitInfo.pSignalSemaphores = &m_vkparams.RenderingFinishedSemaphore; // semaphore(s) to signal when command buffers have been completed
-
-    VK_CHECK(vkQueueSubmit(
-                m_vkparams.GraphicsQueue.Handle,
-                1,
-                &submitInfo,
-                VK_NULL_HANDLE));
-}
-
-void
-VKBackend::PresentImage(uint32_t index) {
-    // Present current image to the presentation engine
-    // Pass the semaphore from the submit info as the wait semaphore for swap chain presentation
-    // This ensures that the image is not presented to the windowing system until all commands have been executed
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pNext = nullptr;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &m_vkparams.SwapChain.Handle;
-    presentInfo.pImageIndices = &index;
-
-    // Check if a wait semaphore has been specified to wait for before presenting the image
-    if (m_vkparams.RenderingFinishedSemaphore != VK_NULL_HANDLE) {
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &m_vkparams.RenderingFinishedSemaphore;
-    }
-
-    VkResult present = vkQueuePresentKHR(m_vkparams.GraphicsQueue.Handle, &presentInfo);
-    if (!((present == VK_SUCCESS) || (present == VK_SUBOPTIMAL_KHR))) {
-        if (present == VK_ERROR_OUT_OF_DATE_KHR)
-            WindowResize(m_width, m_height);
-        else 
-            VK_CHECK(present)
-    }
-}
-
-
-// Destroy in reverse order of creation
-void
-VKBackend::OnDestroy() {
-    std::cout << "Destroying renderer" << std::endl;
-    m_initialized = false;
-
-    // Ensure all operations on the device have finished before destroying resources
-    vkDeviceWaitIdle(m_vkparams.Device.Device);
-
-    // Destroy vertex buffer object and deallocate backing memory
-    std::cout << "Destroying vertex buffer and memory...";
-    for (size_t i = 0; i < m_models.size(); i++) {
-        m_models[i]->Destroy();
-    }
-    std::cout << "destroyed & freed" << std::endl;
-    
-    std::cout << "Destroying Uniform Buffers... ";
-    for (size_t i = 0; i < m_uboBuffers.size(); i++) {
-        m_uboBuffers[i]->Unmap();
-        m_uboBuffers[i]->Destroy();
-    }
-    std::cout << "destroyed" << std::endl;
-
-    // Destroy pipeline layout and pipeline layout objects
-    std::cout << "Destroying pipeline layout and graphics pipeline...";
-    m_pipeline->Destroy();
-    std::cout << "destroyed" << std::endl;
-
-    std::cout << "Destroying Framebuffers... ";
-    // Destroy frame buffers
-    for (size_t i = 0; i < m_vkparams.Framebuffers.size(); i++) {
-        vkDestroyFramebuffer(
-                m_vkparams.Device.Device,
-                m_vkparams.Framebuffers[i],
-                m_vkparams.Allocator);
-    }
-    std::cout << "destroyed" << std::endl;
-
-    std::cout << "Destroying Swapchain Images... ";
-    // Destroy the swapchain and its images
-    for (size_t i = 0; i < m_vkparams.SwapChain.Images.size(); i++) {
-        vkDestroyImageView(
-                m_vkparams.Device.Device,
-                m_vkparams.SwapChain.Images[i].View,
-                m_vkparams.Allocator);
-    }
-    std::cout << "destroyed" << std::endl;
-
-    std::cout << "Destroying Swapchain... ";
-    vkDestroySwapchainKHR(
-            m_vkparams.Device.Device,
-            m_vkparams.SwapChain.Handle,
-            m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-
-    std::cout << "Destroying Descriptor Pool... ";
-    vkDestroyDescriptorPool(
-            m_vkparams.Device.Device, 
-            m_vkparams.DescriptorPool,
-            m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-    std::cout << "Destroying Descriptor Set Layout... ";
-    vkDestroyDescriptorSetLayout(
-            m_vkparams.Device.Device, 
-            m_vkparams.DescriptorSetLayout,
-            m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-
-    // Free allocated commad buffers
-    std::cout << "Freeing Graphics Command Pool... ";
-    vkFreeCommandBuffers(
-            m_vkparams.Device.Device,
-            m_vkparams.GraphicsCommandPool,
-            static_cast<uint32_t>(m_vkparams.GraphicsCommandBuffers.size()),
-            m_vkparams.GraphicsCommandBuffers.data());
-    std::cout << "freed" << std::endl;
-
-    // Destroy the renderpass
-    std::cout << "Destroying Renderpass... ";
-    vkDestroyRenderPass(
-            m_vkparams.Device.Device,
-            m_vkparams.RenderPass,
-            m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-    // Destroy semaphores
-    std::cout << "Destroying Semaphores... ";
-    vkDestroySemaphore(
-            m_vkparams.Device.Device,
-            m_vkparams.ImageAvailableSemaphore,
-            m_vkparams.Allocator);
-    vkDestroySemaphore(
-            m_vkparams.Device.Device,
-            m_vkparams.RenderingFinishedSemaphore,
-            m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-    // Destroy command pool
-    std::cout << "Destroying Command Pool... ";
-    vkDestroyCommandPool(
-            m_vkparams.Device.Device,
-            m_vkparams.GraphicsCommandPool,
-            m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-    // Destroy device
-    std::cout << "Destroying Device... ";
-    vkDestroyDevice(m_vkparams.Device.Device, m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-    // Destroy surface
-    std::cout << "Destroying Surface... ";
-    vkDestroySurfaceKHR(m_vkparams.Instance, m_vkparams.PresentationSurface, m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-
-    // Destroy debug messenger
-    if (m_settings.enable_validation) {
-        std::cout << "Destroying Debug Messenger... ";
-        pfnDestroyDebugUtilsMessengerEXT(m_vkparams.Instance, debugUtilsMessenger, m_vkparams.Allocator);
-        std::cout << "destroyed" << std::endl;
-    }
-
-    // m_platform.destroy_window();
-    Platform::destroy_window();
-
-    // Destroy vulkan instance
-    std::cout << "Destroying Instance... ";
-    vkDestroyInstance(m_vkparams.Instance, m_vkparams.Allocator);
-    std::cout << "destroyed" << std::endl;
-}
-
-void 
-VKBackend::InitVulkan() {
-
-    CreateInstance();
-    CreateSurface();
-    CreateDevice();
-    GetDeviceQueue(
-            m_vkparams.Device.Device, 
-            m_vkparams.GraphicsQueue.FamilyIndex, 
-            m_vkparams.GraphicsQueue.Handle);
-    CreateSwapchain(&m_width, &m_height, m_settings.enable_vsync);
-    CreateRenderPass();
-    CreateFrameBuffers();
-    AllocateCommandBuffers();
-    // CreateDepthResources();
-    CreateSyncObjects();
-    CreateDescriptorSetLayout();
-    CreateUniformBuffer();
-    CreateDescriptorPool();
-    CreateDescriptorSets();
-}
-
-void
-VKBackend::SetupPipeline() {
-    // CreateVertexBuffer();
-    CreatePipelineLayout();
-    CreatePipelineObjects();
-    m_initialized = true;
-    std::cout << "PIPELINE SETUP\n";
-}
-
-void
-VKBackend::AddModel(Builder builder) {
-    m_models.push_back(std::make_unique<VKModel>(m_vkparams, builder));
-
-    return;
-}
-
-void 
-VKBackend::CreateDescriptorSetLayout() {
-
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
-
-    VK_CHECK(
-        vkCreateDescriptorSetLayout(m_vkparams.Device.Device, &layoutInfo, m_vkparams.Allocator, &m_vkparams.DescriptorSetLayout)
+upload_data_range(VKContext& context, VkCommandPool pool, VkFence fence, VkQueue queue, VKBuffer& buffer, uint64_t offset, uint64_t size, void* data) {
+    VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VKBuffer staging;
+    staging.Create(
+        context,
+        size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        flags,
+        true
     );
+
+    staging.LoadData(context, 0, size, 0, data);
+    staging.CopyTo(context, pool, fence, queue, 0, buffer.handle, offset, size);
+    staging.Destroy(context);
+}
+
+// Initialize the backend for the vulkan renderer
+bool
+VulkanBackend::Initialize(std::string& name) {
+ 
+    qlogger::Info("Vulkan Backend Initialized");
+    m_context.allocator = nullptr; // TODO: eventually create custom allocator
+    Application::GetFramebufferSize(
+        cached_framebuffer_width,
+        cached_framebuffer_height
+    );
+
+    m_context.framebuffer_width = (cached_framebuffer_width != 0) ? cached_framebuffer_width : 800;
+    m_context.framebuffer_height = (cached_framebuffer_height != 0) ? cached_framebuffer_height : 600;
+    m_context.framebuffer_size_generation = 0;
+    m_context.framebuffer_size_last_generation = 0;
+    cached_framebuffer_width = 0;
+    cached_framebuffer_height = 0;
+
+
+    // Initialize all vulkan properties
+    if (!create_instance(name.c_str())) {
+        return false;
+    }
+
+    create_debug_messenger();
+
+    if (!create_surface()) {
+        qlogger::Info("Error: failed to create vulkan surface");
+        return false;
+    }
+
+    if (!create_device()) {
+        qlogger::Info("Error: Failed to create vulkan device");
+        return false;
+    }
+
+    if (!create_swapchain(
+        m_context.framebuffer_width,
+        m_context.framebuffer_height,
+        m_context.swapchain
+    )) {
+        qlogger::Info("Error: Failed to create swapchain...");
+    }
+
+    if (!create_renderpass(
+        m_context.main_renderpass,
+        0.0f, 0.0f, m_context.framebuffer_width, m_context.framebuffer_height,
+        0.0f, 0.0f, 0.2f, 1.0f,
+        1.0f,
+        0
+    )) {
+        qlogger::Info("Error: failed to create main renderpass.");
+        return false;
+    }
+
+    // Create swapchain framebuffers
+    m_context.swapchain.framebuffers.resize(m_context.swapchain.image_count);
+    regenerate_framebuffers(m_context.swapchain, m_context.main_renderpass);
+
+    create_command_buffers();
+
+    // Create synchronization objects
+    qlogger::Info("Creating synch objects...");
+    m_context.image_available_semaphores.resize(m_context.swapchain.max_frames_in_flight);
+    m_context.queue_complete_semaphores.resize(m_context.swapchain.max_frames_in_flight);
+    m_context.in_flight_fences.resize(m_context.swapchain.max_frames_in_flight);
+
+    for (uint32_t i = 0; i < m_context.swapchain.max_frames_in_flight; i++) {
+        VkSemaphoreCreateInfo sem_info {};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        vkCreateSemaphore(m_context.device.logical_device, &sem_info, m_context.allocator, &m_context.image_available_semaphores[i]);
+        vkCreateSemaphore(m_context.device.logical_device, &sem_info, m_context.allocator, &m_context.queue_complete_semaphores[i]);
+
+        // Create this fence in a simplified state indicating that the first frame
+        // has already been 'rendrered'. This prevents the application from waiting
+        // indefinitely for the first frame to rendersince it cannot be rendered
+        // until a frame is "rendered before it"
+        m_context.in_flight_fences[i].create(m_context, true);
+    }
+
+    m_context.images_in_flight.resize(m_context.swapchain.image_count);
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        // m_context.images_in_flight[i] = VK_NULL_HANDLE;
+        m_context.images_in_flight[i] = 0;
+    }
+
+    if (!m_context.object_shader.Create(m_context)) {
+        qlogger::Error("Unable to load built-in object shader");
+        return false;
+    }
+
+    create_buffers();
+
+    // TEMP TEST GEOMETRY
+    constexpr uint32_t vert_count = 4;
+    qmath::Vertex3D vertices[vert_count];
+    QAllocator::Zero(vertices, sizeof(qmath::Vertex3D) * vert_count); 
+
+    const float f = 10.0f;
+
+    vertices[0].position.x = f * -0.5;
+    vertices[0].position.y = f * -0.5;
+    // vertices[0].position.z = 1.0;
+    
+    vertices[1].position.x = f * 0.5;
+    vertices[1].position.y = f * 0.5;
+    // vertices[1].position.z = 1.0;
+    
+    vertices[2].position.x = f * -0.5;
+    vertices[2].position.y = f * 0.5;
+    // vertices[2].position.z = 1.0;
+    
+    vertices[3].position.x = f * 0.5;
+    vertices[3].position.y = f * -0.5;
+
+    constexpr uint32_t index_count = 6;
+    uint32_t indices[index_count] = {0, 1, 2, 0, 3, 1};
+
+    upload_data_range(
+        m_context,
+        m_context.device.graphics_command_pool,
+        nullptr,
+        m_context.device.graphics_queue,
+        m_context.object_vertex_buffer,
+        0,
+        sizeof(qmath::Vertex3D) * vert_count,
+        vertices
+    );
+
+    upload_data_range(
+        m_context,
+        m_context.device.graphics_command_pool,
+        nullptr,
+        m_context.device.graphics_queue,
+        m_context.object_index_buffer,
+        0,
+        sizeof(uint32_t) * index_count,
+        indices
+    );
+    // END TEST CODE
+
+    qlogger::Info("Vulkan Backend initialized successfully.");
+    return true;
 }
 
 void
-VKBackend::CreateDescriptorSets() {
-    std::vector <VkDescriptorSetLayout> layouts(VKBackend::MAX_FRAMES_IN_FLIGHT, m_vkparams.DescriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_vkparams.DescriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(VKBackend::MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
+VulkanBackend::Shutdown() {
+    vkDeviceWaitIdle(m_context.device.logical_device);
 
-    m_vkparams.DescriptorSets.resize(VKBackend::MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(
-                m_vkparams.Device.Device,
-                &allocInfo,
-                m_vkparams.DescriptorSets.data()));
+    destroy_buffers();
 
-    for (size_t i = 0; i < layouts.size(); i++) {
-        VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = m_uboBuffers[i]->GetBuffer();
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UBO);
+    // Destroy builtin shader modules
+    m_context.object_shader.Destroy(m_context);
 
-        VkWriteDescriptorSet descriptorWrite = {};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_vkparams.DescriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-        descriptorWrite.pImageInfo = nullptr;
-        descriptorWrite.pTexelBufferView = nullptr;
+    // Sync objects
+    qlogger::Info("Destroying sync objects... ");
+    for (uint32_t i = 0; i < m_context.swapchain.max_frames_in_flight; i++) {
+        if (m_context.image_available_semaphores[i]) {
+            vkDestroySemaphore(
+                m_context.device.logical_device,
+                m_context.image_available_semaphores[i],
+                m_context.allocator
+            );
+        }
+        if (m_context.queue_complete_semaphores[i]) {
+            vkDestroySemaphore(
+                m_context.device.logical_device,
+                m_context.queue_complete_semaphores[i],
+                m_context.allocator
+            );
+        }
+        m_context.in_flight_fences[i].destroy(m_context);
+    }
+    m_context.image_available_semaphores.clear();
+    m_context.queue_complete_semaphores.clear();
+    m_context.in_flight_fences.clear();
+    m_context.images_in_flight.clear(); // we do not destroy these fences because we do not own them
+    qlogger::Info("Destroyed.");
 
-        vkUpdateDescriptorSets(m_vkparams.Device.Device, 1, &descriptorWrite, 0, nullptr);
+    // Command Buffers
+    qlogger::Info("Freeing command buffers... ");
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        if (m_context.graphics_command_buffers[i].handle) {
+            m_context.graphics_command_buffers[i].free(
+                m_context,
+                m_context.device.graphics_command_pool
+            );
+            m_context.graphics_command_buffers[i].handle = nullptr;
+        }
+    }
+    m_context.graphics_command_buffers.clear();
+    qlogger::Info("Freed.");
+
+    // Framebuffers
+    qlogger::Info("Destroying framebuffers... ");
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        destroy_framebuffer(m_context.swapchain.framebuffers[i]);
+    }
+    qlogger::Info("Destroyed ");
+
+    destroy_renderpass(m_context.main_renderpass);
+
+    destroy_swapchain();
+
+    destroy_device();
+
+    qlogger::Info("Destroying surface... ");
+    vkDestroySurfaceKHR(m_context.instance, m_context.surface, m_context.allocator);
+    qlogger::Info("Destroyed ");
+
+#if defined(P_DEBUG)
+    qlogger::Info("Destroying debug messenger... ");
+    PFN_vkDestroyDebugUtilsMessengerEXT func = 
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_context.instance, "vkDestroyDebugUtilsMessengerEXT");
+    func(m_context.instance, m_context.debug_messenger, m_context.allocator);
+    qlogger::Info("Destroyed");
+#endif // P_DEBUG
+
+    qlogger::Info("Destroying instance... ");
+    vkDestroyInstance(m_context.instance, m_context.allocator);
+    qlogger::Info("Destroyed");
+}
+
+void
+VulkanBackend::Resized(uint32_t width, uint32_t height) {
+    cached_framebuffer_width = width;
+    cached_framebuffer_height = height;
+    m_context.framebuffer_size_generation++;
+
+    qlogger::Trace("VulkanBackend->resized: w/h/gen: %i/%i/%i", width, height, m_context.framebuffer_size_generation);
+}
+
+bool
+VulkanBackend::BeginFrame(float delta_time) {
+    VKDevice& device = m_context.device;
+
+    if (m_context.recreating_swapchain) {
         
+        VkResult result = vkDeviceWaitIdle(device.logical_device);
+        if (!vkresult_is_success(result)) {
+            qlogger::Info("VulkanBackend::BeginFrame() vkDeviceWaitIdle(1) failed: %s", vkresult_string(result, true));
+            return false;
+        }
+        qlogger::Info("Recreating swapchain. Booting...");
     }
+
+    // Check if the framebuffer has been resized to 
+    // see if we need to recreate the swapchain
+    if (m_context.framebuffer_size_generation != m_context.framebuffer_size_last_generation) {
+        VkResult result = vkDeviceWaitIdle(device.logical_device);
+        if (!vkresult_is_success(result)) {
+            qlogger::Info("VulkanBackend::BeginFrame() vkDeviceWaitIdle(2) failed: %s", vkresult_string(result, true));
+            return false;
+        }
+
+        if (!recreate_swapchain()) {
+            return false;
+        }
+
+        qlogger::Info("Resized. Booting...");
+        return false;
+    }
+
+    // Wait for the execution of teh current frame to complete
+    // This will move on once the fence is free
+    if(!m_context.in_flight_fences[m_context.current_frame].wait(m_context, UINT64_MAX)) {
+        qlogger::Info("Warning: In-Flight fence wait failure");
+        return false;
+    }
+
+    // Acquire the swapchain next image. Pass along the semaphore that shuold be signaled when this completes
+    // This same semaphore will be waited on by the queue submission to ensure this image will be available
+    if (!m_context.swapchain.acquire_next_image_index(
+        m_context, 
+        UINT64_MAX, 
+        m_context.image_available_semaphores[m_context.current_frame], 
+        0, 
+        m_context.image_index
+    )) {
+        qlogger::Warn("acquire next image from swapchain failed...");
+        return false;
+    }
+
+    // Begin recording the command buffers
+    VKCommandBuffer& command_buffer = m_context.graphics_command_buffers[m_context.image_index];
+    command_buffer.reset();
+    command_buffer.begin(false, false, false);
+
+    // Dynamic states
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = static_cast<float>(m_context.framebuffer_height);
+    viewport.width = static_cast<float>(m_context.framebuffer_width);
+    viewport.height = -static_cast<float>(m_context.framebuffer_height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor  = {};
+    scissor.offset.x = scissor.offset.y = 0;
+    scissor.extent.width = m_context.framebuffer_width;
+    scissor.extent.height = m_context.framebuffer_height;
+
+    vkCmdSetViewport(
+        command_buffer.handle,
+        0,
+        1,
+        &viewport
+    );
+    vkCmdSetScissor(
+        command_buffer.handle,
+        0,
+        1,
+        &scissor
+    );
+
+    m_context.main_renderpass.begin(
+        command_buffer,
+        m_context.swapchain.framebuffers[m_context.image_index]
+    );
+
+    return true;
 }
 
 void
-VKBackend::CreateDescriptorPool() {
-    VkDescriptorPoolSize poolSize = {};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(VKBackend::MAX_FRAMES_IN_FLIGHT);
+VulkanBackend::UpdateGlobalState(
+    qmath::Mat4<float> projection,
+    qmath::Mat4<float> view,
+    qmath::Vec3<float> view_position,
+    qmath::Vec4<float> ambient_color,
+    int32_t mode
+) {
+    VKCommandBuffer& command_buffer = m_context.graphics_command_buffers[m_context.image_index];
+    m_context.object_shader.Use(m_context);
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(VKBackend::MAX_FRAMES_IN_FLIGHT);
+    m_context.object_shader.global_ubo.projection = projection;
+    m_context.object_shader.global_ubo.view = view;
 
-    VK_CHECK(vkCreateDescriptorPool(
-                m_vkparams.Device.Device,
-                &poolInfo,
-                m_vkparams.Allocator,
-                &m_vkparams.DescriptorPool));
+    // TODO: other UBO properties
+
+    m_context.object_shader.UpdateGlobalState(m_context);
+
 }
 
+bool 
+VulkanBackend::EndFrame(float delta_time) {
+    VKCommandBuffer& command_buffer = m_context.graphics_command_buffers[m_context.image_index];
+    m_context.main_renderpass.end(
+        command_buffer
+    );
 
-// Create the uniform buffer
-// This is where uniforms that go to the shaders will go
+    command_buffer.end();
+
+    // Make sure that the previous frame is not using this image
+    if (m_context.images_in_flight[m_context.image_index] != VK_NULL_HANDLE) {
+        m_context.images_in_flight[m_context.image_index]->wait(m_context, UINT64_MAX);
+    }
+
+    // Mark the image fence as in use by this frame
+    m_context.images_in_flight[m_context.image_index] = &m_context.in_flight_fences[m_context.current_frame];
+
+    // Reset the image fence for use by hte next frame
+    m_context.in_flight_fences[m_context.current_frame].reset(m_context);
+
+    // Begin queue submission
+    VkSubmitInfo submit_info {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer.handle;
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &m_context.queue_complete_semaphores[m_context.current_frame];
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &m_context.image_available_semaphores[m_context.current_frame];
+    
+    VkPipelineStageFlags flags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submit_info.pWaitDstStageMask = flags;
+
+    // submit the commands to be executed
+    VkResult result = vkQueueSubmit(
+        m_context.device.graphics_queue,
+        1,
+        &submit_info,
+        m_context.in_flight_fences[m_context.current_frame].handle
+    );
+
+    if (result != VK_SUCCESS) {
+        qlogger::Info("Error: vkQueueSubmit failed with result: %s", vkresult_string(result, true));
+        return false;
+    }
+
+    command_buffer.update_submitted();
+    // End queue submission
+
+    // Presentation
+    m_context.swapchain.present(
+        m_context,
+        m_context.device.graphics_queue,
+        m_context.device.present_queue,
+        m_context.queue_complete_semaphores[m_context.current_frame],
+        m_context.image_index
+    );
+
+    return true;
+}
+
+// Recreate the swapchain for things like resizing the window
+bool
+VulkanBackend::recreate_swapchain() {
+    if (m_context.recreating_swapchain) {
+        qlogger::Info("VulkanBackend::recreate_swapchain() called when already recreating swapchain. Booting...");
+        return false;
+    }
+
+    if (m_context.framebuffer_height == 0 || m_context.framebuffer_width == 0) {
+        qlogger::Info("VulkanBackend::recreate_swapchain() called when windows < 1 in a dimension. Booting...");
+        return false;
+    }
+
+    // Mark as recreating
+    m_context.recreating_swapchain = true;
+
+    // Wait for any operations to complete
+    vkDeviceWaitIdle(m_context.device.logical_device);
+
+    // Clear in case
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        m_context.images_in_flight[i] = nullptr;
+    }
+
+    // Requery support
+    vkdevice_query_swapchain_support(
+        m_context.device,
+        m_context.surface,
+        m_context.device.swapchain_support
+    );
+    vkdevice_detect_depth_format(m_context.device);
+
+    // Recreate the swapchain
+    m_context.swapchain.recreate(
+        m_context, 
+        cached_framebuffer_width, 
+        cached_framebuffer_height
+    );
+
+    m_context.framebuffer_height = cached_framebuffer_height;
+    m_context.framebuffer_width = cached_framebuffer_width;
+    m_context.main_renderpass.w = m_context.framebuffer_width;
+    m_context.main_renderpass.h = m_context.framebuffer_height;
+    cached_framebuffer_height = 0;
+    cached_framebuffer_width = 0;
+
+    // Update the framebuffer size generation
+    m_context.framebuffer_size_last_generation = m_context.framebuffer_size_generation;
+
+    // Cleanup the swapchain
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        m_context.graphics_command_buffers[i].free(m_context, m_context.device.graphics_command_pool);
+    }
+
+    for (uint32_t i = 0; i < m_context.swapchain.image_count; i++) {
+        destroy_framebuffer(m_context.swapchain.framebuffers[i]);
+    }
+
+    m_context.main_renderpass.x = 0;
+    m_context.main_renderpass.y = 0;
+    m_context.main_renderpass.h = m_context.framebuffer_height;
+    m_context.main_renderpass.w = m_context.framebuffer_width;
+
+    regenerate_framebuffers(m_context.swapchain, m_context.main_renderpass);
+    create_command_buffers();
+
+    // Clear the recreating flag
+    m_context.recreating_swapchain = false;
+    return true;
+}
+
+// Create the index and vertex buffers
+bool
+VulkanBackend::create_buffers() {
+    VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    const uint64_t vertex_buffer_size = sizeof(qmath::Vertex3D) * 1024 * 1024;
+    if (!m_context.object_vertex_buffer.Create(
+        m_context,
+        vertex_buffer_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        memory_property_flags,
+        true
+    )) {
+        qlogger::Error("Failed to create object vertex buffer");
+        return false;
+    }
+
+    m_context.geometry_vertex_offset = 0;
+
+    const uint64_t index_buffer_size = sizeof(uint32_t) * 1024 * 1024;
+    if (!m_context.object_index_buffer.Create(
+        m_context,
+        index_buffer_size,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        memory_property_flags,
+        true
+    )) {
+        qlogger::Error("Failed to create object index buffer");
+        return false;
+    }
+    m_context.geometry_index_offset = 0;
+
+    return true;
+}
+
+void
+VulkanBackend::destroy_buffers() {
+    m_context.object_index_buffer.Destroy(m_context);
+    m_context.object_vertex_buffer.Destroy(m_context);
+}
+
 void 
-VKBackend::CreateUniformBuffer() {
-    m_uboBuffers.resize(VKBackend::MAX_FRAMES_IN_FLIGHT);
-    for (size_t i = 0; i < m_uboBuffers.size(); i++) {
-        m_uboBuffers[i] = std::make_unique<VKBuffer>(
-            m_vkparams,
-            sizeof(UBO),
-            1,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        );
-        m_uboBuffers[i]->Map();
-    }
-
-
-
-}
-
-void
-VKBackend::CreateVertexBuffer() {
-    std::vector<Vertex> vertices {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.87f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.51f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.43f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.5f, 0.0f}}
-    };
-
-    std::vector<uint32_t> indices {
-        0, 1, 2, 2, 3, 0 
-    };
-
-    Builder triangleBuilder = Builder();
-    triangleBuilder.vertices = vertices;
-    triangleBuilder.indices = indices;
-
-    std::unique_ptr<VKModel> newmodel = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
-
-    // m_model = std::make_unique<VKModel>(m_vkparams, triangleBuilder);
-    m_models.push_back(std::move(newmodel));
-
-}
-
-// Create the layout for the pipeline
-void
-VKBackend::CreatePipelineLayout() {
-    // Create pipeline layout that will be used to create one or more pipeline objects
-    VkPipelineLayoutCreateInfo pPipelineCreateInfo = {};
-    pPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pPipelineCreateInfo.pNext = nullptr;
-    pPipelineCreateInfo.setLayoutCount = 1;
-    pPipelineCreateInfo.pSetLayouts = &m_vkparams.DescriptorSetLayout;
-
-    VK_CHECK(
-        vkCreatePipelineLayout(m_vkparams.Device.Device, &pPipelineCreateInfo, m_vkparams.Allocator, &m_vkparams.PipelineLayout));
-}
-
-void 
-VKBackend::CreatePipelineObjects() {
-    VKPipelineConfig pipelineConfig = {};
-    m_pipeline = std::make_unique<VKPipeline>(m_vkparams, pipelineConfig);
-
-    m_pipeline->CreateGraphicsPipeline(
-            GetAssetsPath()+"/shaders/vert/triangle.vert.spv", 
-            GetAssetsPath()+"/shaders/frag/triangle.frag.spv");
-}
-
-
-void 
-VKBackend::CreateInstance() {
-    VkApplicationInfo appinfo = {};
-    appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appinfo.pApplicationName = GetTitle();
-    appinfo.pEngineName = GetTitle();
-    appinfo.apiVersion = VK_API_VERSION_1_2;
-
-    std::vector<const char*> instanceExtensions = {
-        VK_KHR_SURFACE_EXTENSION_NAME
-    };
-
-    // TODO: platform specific ext names
-#if defined(Q_PLATFORM_LINUX)
-    instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#elif defined (Q_PLATFORM_WINDOWS)
-    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#endif
-
-    // Validation layer ext
-    if (m_settings.enable_validation) {
-        instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-
-    // Get the supported extensions
-    std::cout << "Supported extensions:" << std::endl;
-    uint32_t extensionCount = 0;
-    std::vector<std::string> extensionNames;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    if (extensionCount > 0) {
-        std::vector<VkExtensionProperties> supportedExtensions(extensionCount);
-
-        if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, &supportedExtensions.front()) == VK_SUCCESS) {
-            for (size_t i = 0; i < supportedExtensions.size(); i++) {
-                std::cout << "\t" << supportedExtensions[i].extensionName << std::endl;
-                extensionNames.push_back(supportedExtensions[i].extensionName);
-            }
-        } else {
-            printf("vkEnumerateInstanceExtensionProperties did not return VK_SUCCESS\n");
-            exit(1);
-        }
-    }
-
-    // Create the vulkan instance
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pNext = NULL;
-    createInfo.pApplicationInfo = &appinfo;
-
-    // Print out required extensions
-    std::cout << "Required extensions:" << std::endl;
-
-    // Check that the extensions we need are supported
-    if (instanceExtensions.size() > 0) {
-        for (size_t i = 0; i < instanceExtensions.size(); i++) {
-            std::cout << "\t" << instanceExtensions[i] << std::endl;
-            // Output if requested ext is not available
-            if (std::find(extensionNames.begin(), extensionNames.end(), instanceExtensions[i]) == extensionNames.end()) {
-                printf("Extension %s not found\n", instanceExtensions[i]);
-                exit(1);
-            }
-        }
-
-        // set extension to enable
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
-        createInfo.ppEnabledExtensionNames = instanceExtensions.data();
-    }
-
-    // Validation layer setup
-    const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
-    if (m_settings.enable_validation) {
-        // Check if this layer is available at instance level
-        uint32_t instanceLayerCount;
-        vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
-        std::vector <VkLayerProperties> instanceLayerProps(instanceLayerCount);
-        vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayerProps.data());
-        bool validationPresent = false;
-
-        for (size_t i = 0; i < instanceLayerProps.size(); i++) {
-            if (strcmp(instanceLayerProps[i].layerName, validationLayerName) == 0) {
-                validationPresent = true;
-                break;
-            }
-        }
-
-        if (validationPresent) {
-            createInfo.enabledLayerCount = 1;
-            createInfo.ppEnabledLayerNames = &validationLayerName;
-        } else {
-            std::cout << "Validation layer VK_LAYER_KHRONOS_validation not present. Validation is disabled" << std::endl;
-            exit(1);
-        }
-
-        VK_CHECK(vkCreateInstance(&createInfo, m_vkparams.Allocator, &m_vkparams.Instance));
-
-        // Set callback to handle validation
-        if (m_settings.enable_validation)
-            setupDebugUtil(m_vkparams.Instance);
-    }
-}
-
-// Create the window surface
-void
-VKBackend::CreateSurface() {
-    // Use platform-specific surface creation function
-    // m_platform.create_vulkan_surface(m_vkparams);
-    Platform::create_vulkan_surface(m_vkparams);
-    std::cout << "Surface created" << std::endl;
-}
-
-// Create the swapchain
-// NOTE: this is not just used on startup
-//       this is also used to recreate the swapchain
-//       for events that require it like 
-//       window resizing
-void
-VKBackend::CreateSwapchain(uint32_t *width, uint32_t *height, bool vsync) {
-    RecreateSwapchain(m_vkparams, width, height, vsync, m_command_buffer_count);
-    std::cout << "Swapchain Created" << std::endl;
-}
-
-// Creata a renderpass object
-void
-VKBackend::CreateRenderPass() {
-    // This will use a single renderpass with one subpass
-
-    // Descriptors for the attachments used by this renderpass
-    std::array<VkAttachmentDescription, 1> attachments = {};
-
-    // Color attachment
-    attachments[0].format = m_vkparams.SwapChain.Format;
-    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    // Setup attachment references
-    VkAttachmentReference colorRef = {};
-    colorRef.attachment = 0;                                    // attachment 0 is color
-    colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // attachment layout is used as color during the subpass
+VulkanBackend::UpdateObject(qmath::Mat4<float> model) {
+    VKCommandBuffer &command_buffer = m_context.graphics_command_buffers[m_context.image_index];
+    m_context.object_shader.Object(m_context, model);
     
-    // Setup a single subpass reference
-    VkSubpassDescription subdesc = {};
-    subdesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subdesc.colorAttachmentCount = 1;            // subpass uses one color attachment
-    subdesc.pColorAttachments = &colorRef;       // reference to the color attachment in slot 0
-    subdesc.pDepthStencilAttachment = nullptr;   // (Depth attachments cannot be used by this sample)
-    subdesc.inputAttachmentCount = 0;            // Input attachments can be used to sample from contents of a previous subpass
-    subdesc.pInputAttachments = nullptr;         // Input attachments not used yet
-    subdesc.preserveAttachmentCount = 0;         // Preserved attachments can be used to loop (and preserve) attachments through subpasses
-    subdesc.pPreserveAttachments = nullptr;      // (Preserve attachments not used yet) 
-    subdesc.pResolveAttachments = nullptr;       // Resolve attachments are resolved at the end of a sub pass and can be used for things like multisampling
-
-    // Setup subpass dependencies
-    std::array<VkSubpassDependency, 1> dependencies = {};
-
-    // Setup dependency and add implicit layout transition from final
-    // to initial layout for the color attachment
-    // (The actual usage layout is preserved through the layout specified in the attachmetn reference)
-    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask = VK_ACCESS_NONE;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-
-    // Create the render pass object
-    VkRenderPassCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());  // number of attachments used by this render pass
-    createInfo.pAttachments = attachments.data();  // descriptions of attachments used by the render pass
-    createInfo.subpassCount = 1;                                             // we only use one subpass for now
-    createInfo.pSubpasses = &subdesc;                                        // Description of the subpass we are using
-    createInfo.dependencyCount = static_cast<uint32_t>(dependencies.size()); // number of subpass dependencies
-    createInfo.pDependencies = dependencies.data();                          // subpass dependencies used by the render pass
-    
-    VK_CHECK(vkCreateRenderPass(
-            m_vkparams.Device.Device,
-            &createInfo,
-            m_vkparams.Allocator,
-            &m_vkparams.RenderPass));
-
-    std::cout << "Renderpass Created" << std::endl;
-}
-
-void
-VKBackend::CreateDevice() {
-    // Get the physical device
-    uint32_t gpuCount = 0;
-
-    // Get number of physical devices
-    vkEnumeratePhysicalDevices(m_vkparams.Instance, &gpuCount, nullptr);
-    if (gpuCount == 0) {
-        std::cout << "No device with Vulkan support found" << std::endl;
-        exit(1);
-    }
-
-    // Enumerate the devices
-    std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
-    VkResult err = vkEnumeratePhysicalDevices(m_vkparams.Instance, &gpuCount, &physicalDevices.front());
-    if (err) {
-        throw std::runtime_error("Could not enumerate physical devices\n");
-    }
-
-    // Select physical device that has a graphics queue
-    for (size_t i = 0; i < gpuCount; i++) {
-        if (CheckPhysicalDeviceProperties(physicalDevices[i], m_vkparams)) {
-            m_vkparams.Device.PhysicalDevice = physicalDevices[i];
-            vkGetPhysicalDeviceProperties(m_vkparams.Device.PhysicalDevice, &m_deviceProperties);
-            break;
-        }
-    }
-
-    // Make sure we have a valid physical device
-    if (m_vkparams.Device.PhysicalDevice == VK_NULL_HANDLE
-        || m_vkparams.GraphicsQueue.FamilyIndex == UINT32_MAX) {
-        throw std::runtime_error("Could not select physical device based on chosen properties\n");
-    } else {
-        vkGetPhysicalDeviceFeatures(m_vkparams.Device.PhysicalDevice, &m_vkparams.Device.DeviceFeatures);
-        vkGetPhysicalDeviceMemoryProperties(m_vkparams.Device.PhysicalDevice, &m_vkparams.Device.DeviceMemoryProperties);
-    }
-
-    // Desired queues need to be requested upon logical devices
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-
-    // Array of normalized vector floating point values (between 0 and 1 inclusive)
-    // specifying priotities of work to each requested queue.
-    // Higher vals mean higher prio with 0.0 being the lowest
-    // Within the same device, queues with higher prio may be allotted more 
-    // processing time than queues with lower prio
-    const float queuePriorities[] = {1.0f};
-
-    // Request a single graphics queue
-    VkDeviceQueueCreateInfo queueInfo{};
-    queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueInfo.queueFamilyIndex = m_vkparams.GraphicsQueue.FamilyIndex;
-    queueInfo.queueCount = 1;
-    queueInfo.pQueuePriorities = queuePriorities;
-    queueCreateInfos.push_back(queueInfo);
-
-    // Add swapchain extension
-    std::vector <const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
-    // Get the list of supported device extensions
-    uint32_t extCount = 0;
-    std::vector <std::string> supportedDeviceExtensions;
-    vkEnumerateDeviceExtensionProperties(m_vkparams.Device.PhysicalDevice, nullptr, &extCount, nullptr);
-    if (extCount > 0) {
-        std::vector <VkExtensionProperties> extensions(extCount);
-        if (vkEnumerateDeviceExtensionProperties(m_vkparams.Device.PhysicalDevice, nullptr, &extCount, &extensions.front()) == VK_SUCCESS) {
-            for (size_t i = 0; i < extensions.size(); i++) {
-                supportedDeviceExtensions.push_back(extensions[i].extensionName);
-            }
-        }
-    }
-
-
-
-    // Create the logical device
-    if (CreateLogicalDevice(queueCreateInfos, deviceExtensions, supportedDeviceExtensions, m_vkparams) != VK_SUCCESS) {
-        throw std::runtime_error("CreateLogicalDevice() could not create vulkan logical device");
-    }
-
-    std::cout << "Device created" << std::endl;
-}
-
-// Create a framebuffer to attach color to
-// We need to create one for each image in the swapchain
-void
-VKBackend::CreateFrameBuffers() {
-    VkImageView attachments[1] = {};
-    
-    VkFramebufferCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    createInfo.pNext = nullptr;
-    createInfo.renderPass = m_vkparams.RenderPass;
-    createInfo.attachmentCount = 1;
-    createInfo.pAttachments = attachments;
-    createInfo.width = m_width;
-    createInfo.height = m_height;
-    createInfo.layers = 1;
-
-    // Create a framebuffer for each swapchain image
-    m_vkparams.Framebuffers.resize(m_vkparams.SwapChain.Images.size());
-    for (size_t i = 0; i < m_vkparams.Framebuffers.size(); i++) {
-        attachments[0] = m_vkparams.SwapChain.Images[i].View;
-        VK_CHECK(vkCreateFramebuffer(
-                    m_vkparams.Device.Device,
-                    &createInfo,
-                    m_vkparams.Allocator,
-                    &m_vkparams.Framebuffers[i]));
-    }
-
-    std::cout << "Framebuffers Created: [" << m_vkparams.Framebuffers.size() << "]" << std::endl;
-}
-
-void
-VKBackend::AllocateCommandBuffers() {
-    if (!m_vkparams.GraphicsCommandPool) {
-        VkCommandPoolCreateInfo cmdPoolInfo = {};
-        cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        cmdPoolInfo.pNext = nullptr;
-        cmdPoolInfo.queueFamilyIndex = m_vkparams.GraphicsQueue.FamilyIndex;
-        cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        VK_CHECK(vkCreateCommandPool(m_vkparams.Device.Device, &cmdPoolInfo, m_vkparams.Allocator, &m_vkparams.GraphicsCommandPool));
-    }
-
-    // Create one command buffer for each image in the swapchain
-    m_vkparams.GraphicsCommandBuffers.resize(m_command_buffer_count);
-
-    VkCommandBufferAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = m_vkparams.GraphicsCommandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = static_cast<uint32_t>(m_vkparams.GraphicsCommandBuffers.size());
-
-    VK_CHECK(vkAllocateCommandBuffers(
-                m_vkparams.Device.Device,
-                &allocInfo,
-                m_vkparams.GraphicsCommandBuffers.data()));
-
-    std::cout << "Command Buffers Allocated: [" << m_vkparams.GraphicsCommandBuffers.size() << "]" << std::endl;
-}
-
-void
-VKBackend::CreateSyncObjects() {
-    // Create semaphores to synchronize acquiring presentable images before
-    // rendering and waiting for drawing to be completed before presenting
-    VkSemaphoreCreateInfo semInfo = {};
-    semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semInfo.pNext = nullptr;
-
-    // Return an unsignaled semaphore
-    VK_CHECK(vkCreateSemaphore(
-                m_vkparams.Device.Device,
-                &semInfo,
-                m_vkparams.Allocator,
-                &m_vkparams.ImageAvailableSemaphore));
-
-    // Return an unsignaled semaphore
-    VK_CHECK(vkCreateSemaphore(
-                m_vkparams.Device.Device,
-                &semInfo,
-                m_vkparams.Allocator,
-                &m_vkparams.RenderingFinishedSemaphore));
-
-    std::cout << "Sync Objects Created" << std::endl;
-    
-}
-
-
-//
-// Destroy Vulkan items
-//
-
-
-void
-VKBackend::DestroyInstance() {
-    // TODO: destroy vulkan instance
-}
-
-
-void
-VKBackend::DestroySurface() {
-    // TODO: destroy vulkan surface 
+    // TODO: TEMP TEST CODE
+    m_context.object_shader.Use(m_context);
+    VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(command_buffer.handle, 0, 1, &m_context.object_vertex_buffer.handle, static_cast<VkDeviceSize*>(offsets));
+    vkCmdBindIndexBuffer(command_buffer.handle, m_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(command_buffer.handle, 6, 1, 0, 0, 0);
+    // TODO: END TEST CODE
 }

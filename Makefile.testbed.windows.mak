@@ -4,10 +4,10 @@ OBJ_DIR := obj
 
 ASSEMBLY := testbed
 EXTENSION := .exe
-COMPILER_FLAGS := -g -Wno-missing-braces -fdeclspec -std=c++17
+COMPILER_FLAGS := -g -Wno-missing-braces -Werror=vla -fdeclspec -std=c++17
 INCLUDE_FLAGS := -Iengine\src -Iengine -Itestbed\src -I$(VULKAN_SDK)\include 
 LINKER_FLAGS := -g -lengine.lib -L$(OBJ_DIR)\engine -L$(BUILD_DIR) #-Wl,-rpath,.
-DEFINES := -D_QDEBUG -DQIMPORT
+DEFINES := -DP_DEBUG -DQIMPORT
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))

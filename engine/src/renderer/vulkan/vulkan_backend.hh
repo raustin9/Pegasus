@@ -1,149 +1,69 @@
 #pragma once
-
-#include "stdafx.hh"
-#include "vkcommon.hh"
+#include "defines.hh"
+#include "vulkan_types.hh"
+#include "vulkan_utils.hh"
 #include "platform/platform.hh"
-#include "vkmodel.hh"
-#include "vkpipeline.hh"
-#include "../render_types.hh"
+#include "renderer/render_types.hh"
+#include "qmath/qmath.hh"
 
-#include <cstdint>
+#include <vulkan/vulkan.h>
 
-// Math lib
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#include <glm/glm.hpp>
-#include <vulkan/vulkan_core.h>
-
-// Settings to be passed to the renderer backed
-struct RendererSettings {
-  bool enable_validation = false;
-  bool enable_vsync = false;
-};
-
-// Structure for Uniform Buffer Object
-// struct UBO {
-//     alignas (16) glm::mat4 projectionView{1.f};
-//     // glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
-// };
-
-// // Structure for a render packet
-// // This is sent from the application to the renderer
-// // The renderer uses information in this as data to render
-// struct RenderPacket {
-//     UBO ubo;
-//     float time;
-// };
-
-class VKBackend {
+class VulkanBackend : public RendererBackend {
     public:
-        VKBackend();
+        // VulkanBackend() {}
+        // ~VulkanBackend() {}
+        bool Initialize(std::string& name) override;
+        void Shutdown() override;
 
-        void Initialize(std::string title, std::string assetPath,  uint32_t width, uint32_t height, RendererSettings settings);
-        void OnInit();
-        void OnDestroy();
+        void Resized(uint32_t width, uint32_t height) override;
 
-        const std::string GetDeviceName();
+        bool BeginFrame(float delta_time) override;
+        void UpdateGlobalState(qmath::Mat4<float> projection, qmath::Mat4<float> view, qmath::Vec3<float> view_position, qmath::Vec4<float> ambient_color, int32_t mode) override;
+        bool EndFrame(float delta_time) override;
 
-        void WindowResize(uint32_t width, uint32_t height);
+        void UpdateObject(qmath::Mat4<float> model) override;
 
-        void OnKeyDown(uint8_t) {}
-        void OnKeyUp(uint8_t) {}
-
-        // void RenderFrame(RenderPacket packet);
-
-        // Accessors
-        uint32_t GetWidth() const { return m_width; }
-        uint32_t GetHeight() const { return m_height; }
-        std::string GetAssetsPath() const { return m_assetPath; }
-        const char* GetTitle() const { return m_title.c_str(); }
-
-        bool IsInitialized() const { return m_initialized; }
-
-        // // Mutators
-        void SetWidth(uint32_t width) { m_width = width; }
-        void SetHeight(uint32_t height) { m_height = height; }
-
-        // Public Interface
-        void BeginFrame();
-        void EndFrame(RenderPacket packet);
-
-        // Static members
-        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-        static uint32_t GetMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags props, VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
-        static VkShaderModule LoadShader(VKCommonParameters& vkparams, std::string filename);
-        static VkCommandBuffer BeginSingleTimeCommands(VKCommonParameters& params);
-        static void EndSingleTimeCommands(VKCommonParameters& params, VkCommandBuffer commandBuffer);
-
-        void CreateVertexBuffer();
-        void CreateUniformBuffer();
-        void AddModel(Builder builder);
     private:
-        void InitVulkan();
-        void SetupPipeline();
+        // Backend Members
+        // uint32_t m_framebuffer_width;
+        // uint32_t m_framebuffer_height;
+        // uint32_t m_framebuffer_size_generation;
+        // uint64_t m_framebuffer_size_last_generation;
 
-        void CreateInstance();
-        void CreateSurface();
-        void CreateDevice();
-        void CreateSwapchain(uint32_t *w, uint32_t *h, bool vsync);
-        void CreateRenderPass();
-        void CreateFrameBuffers();
-        void AllocateCommandBuffers();
-        void CreateSyncObjects();
-        void CreateDescriptorSetLayout();
-        void CreateDescriptorSets();
-        void CreateDescriptorPool();
-        void CreateTextureImage();
-        void CreateDepthResources();
+        VKContext m_context;
 
-        void PopulateCommandBuffer(uint64_t bufferIndex, uint64_t imgIndex);
-        void SubmitCommandBuffer(uint64_t index);
-        void PresentImage(uint32_t index);
+        // Member Functions
+        bool create_instance(const char* name);
+        void create_debug_messenger();
+        bool create_surface();
+        bool create_device();
+        bool create_swapchain(uint32_t width, uint32_t height, VKSwapchain& out_swapchain);
+        bool create_renderpass(
+            VKRenderpass& out_renderpass,
+            float x, float y, float w, float h,
+            float r, float g, float b, float a,
+            float depth,
+            uint32_t stencil
+        );
+        void create_framebuffer(
+            VKRenderpass& renderpass,
+            uint32_t width,
+            uint32_t height,
+            uint32_t attachment_count,
+            std::vector<VkImageView> &attachments,
+            VKFramebuffer& out_framebuffer
+        );
+        void create_command_buffers();
+        bool create_buffers(); // create vertex and index buffers
 
-        void DestroyInstance();
-        void DestroySurface();
+        void destroy_device();
+        void destroy_swapchain();
+        void destroy_renderpass(VKRenderpass& renderpass);
+        void destroy_framebuffer(VKFramebuffer& framebuffer);
+        void destroy_buffers();
 
-        void CreatePipelineLayout();
-        void CreatePipelineObjects();
-
-        VkResult AcquireNextImage(uint32_t* imageIndex);
-
-        std::string m_title;
-        std::vector<std::unique_ptr<VKModel> > m_models;
-        std::unique_ptr<VKModel> m_model;
-        std::unique_ptr<VKPipeline> m_pipeline;
-
-
-        // Vertex layout
-        // struct Vertex {
-        //     float position[3];
-        //     float color[4];
-        // };
-
-        // Vertex buffer
-        struct {
-            VkDeviceMemory memory; // handle to the device memory backing the vertex buffer
-            VkBuffer buffer;       // handle to the vulkan buffer object that the memory is bound to
-        } m_vertices;
-
-
-        std::string m_assetPath;
-        uint32_t m_width;
-        uint32_t m_height;
-        float m_aspect_ratio;
-        // Platform &m_platform;
-        RendererSettings m_settings;
-
-        bool m_initialized;
-        uint32_t m_current_frame_index = 0;
-        uint32_t m_command_buffer_index = 0;
-        uint32_t m_command_buffer_count = 0;
-
-        std::vector <std::unique_ptr<VKBuffer> > m_uboBuffers;
-
-        VkPhysicalDeviceProperties m_deviceProperties;
-        VkPhysicalDeviceFeatures m_deviceFeatures;
-        VkPhysicalDeviceMemoryProperties m_deviceMemoryProperties;
-
-        VKCommonParameters m_vkparams;
+        bool recreate_swapchain();
+        void regenerate_framebuffers(VKSwapchain& swapchain, VKRenderpass& renderpass);
+        // void free_command_buffer(VkCommandPool pool, VKCommandBuffer& command_buffer);
+        // void allocate_command_buffer(VkCommandPool pool, bool is_primary, VKCommandBuffer& command_buffer);
 };

@@ -1,0 +1,23 @@
+#pragma once
+#include "defines.hh"
+#define Q_PI 3.14159265358979323846f
+#define Q_PI_2 2.0f * P_PI
+#define Q_HALF_PI 0.5f * P_PI
+#define Q_QUARTER_PI 0.25f * P_PI
+#define Q_ONE_OVER_PI 1.0f / P_PI
+#define Q_ONE_OVER_TWO_PI 1.0f / P_PI_2
+#define Q_SQRT_TWO 1.41421356237309504880f
+#define Q_SQRT_THREE 1.73205080756887729352f
+#define Q_SQRT_ONE_OVER_TWO 0.70710678118654752440f
+#define Q_SQRT_ONE_OVER_THREE 0.57735026918962576450f
+#define Q_DEG2RAD_MULTIPLIER P_PI / 180.0f
+#define Q_RAD2DEG_MULTIPLIER 180.0f / P_PI
+
+#define P_SEC_TO_MS_MULTIPLIER 1000.0f
+
+#define P_MS_TO_SEC_MULTIPLIER 0.001f
+
+#define P_INFINITY 1e30f
+
+// Smallest possible number where 1.0 + epsilon != 0
+#define P_FLOAT_EPSILON 1.9209286e-07f

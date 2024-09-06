@@ -1,4 +1,5 @@
 #include "platform.hh"
+#include "core/qlogger.hh"
 
 #ifdef Q_PLATFORM_WINDOWS
 
@@ -12,7 +13,11 @@ struct PlatformState {
 };
 
 // Global state for windows platform
-static PlatformState windows_state = {};
+// static PlatformState windows_state = {};
+static PlatformState *windows_state_ptr;
+
+static double clock_frequency;
+static LARGE_INTEGER start_time;
 
 Platform::Platform(std::string name, uint32_t width, uint32_t height) 
 	: name{name} , width{width} , height{height} {
@@ -45,20 +50,28 @@ Platform::Platform(std::string name, uint32_t width, uint32_t height)
 
 // Startup behavior for the platform layer subsystem
 bool
-Platform::Startup(std::string name, uint32_t width, uint32_t height) {
-	windows_state.hInstance = GetModuleHandle(0);
-	windows_state.width = width;
-	windows_state.height = height;
-	windows_state.name = name;
+Platform::Startup(uint64_t& memory_requirements, void* state, std::string name, uint32_t width, uint32_t height) {
+	memory_requirements = sizeof(PlatformState);
+	if (state == nullptr) {
+		return true;
+	}
+
+	windows_state_ptr = new (static_cast<PlatformState*>(state)) PlatformState;
+
+	windows_state_ptr = new (static_cast<PlatformState*>(state)) PlatformState;
+	windows_state_ptr->hInstance = GetModuleHandle(0);
+	windows_state_ptr->width = width;
+	windows_state_ptr->height = height;
+	windows_state_ptr->name = name;
 
 	// Setup and register window class
-	HICON icon = LoadIcon(windows_state.hInstance, IDI_APPLICATION);
+	HICON icon = LoadIcon(windows_state_ptr->hInstance, IDI_APPLICATION);
 	WNDCLASSA wc { 0 };
 	wc.style = CS_DBLCLKS;
 	wc.lpfnWndProc = Platform::WindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = windows_state.hInstance;
+	wc.hInstance = windows_state_ptr->hInstance;
 	wc.hIcon = icon;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;
@@ -74,8 +87,14 @@ Platform::Startup(std::string name, uint32_t width, uint32_t height) {
 		return false;
 	}
 
+	// Clock
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	clock_frequency = 1.0f / static_cast<double>(frequency.QuadPart);
+	QueryPerformanceCounter(&start_time);
+
 	Platform::create_window();
-	std::cout << "Window Created..." << std::endl;
+	qlogger::Info("Window Created...");
 
 	return true;
 }
@@ -83,10 +102,12 @@ Platform::Startup(std::string name, uint32_t width, uint32_t height) {
 // Shutdown for platform layer
 void
 Platform::Shutdown() {
-	if (windows_state.hWindow) {
-		DestroyWindow(windows_state.hWindow);
-		windows_state.hWindow = nullptr;
+	if (windows_state_ptr->hWindow) {
+		DestroyWindow(windows_state_ptr->hWindow);
+		windows_state_ptr->hWindow = nullptr;
 	}
+
+	windows_state_ptr = nullptr;
 }
 
 // Windows implementation for getting the current time
@@ -98,7 +119,7 @@ Platform::get_current_time() {
 // Set the title of the window
 void
 Platform::set_title(std::string title) {
-	SetWindowTextA(windows_state.hWindow, static_cast<LPCSTR>(title.c_str()));
+	SetWindowTextA(windows_state_ptr->hWindow, static_cast<LPCSTR>(title.c_str()));
 }
 
 // Create the window for the application
@@ -107,8 +128,8 @@ Platform::create_window() {
 	// Create the window
 	uint32_t client_x = 300;
 	uint32_t client_y = 100;
-	uint32_t client_width = windows_state.width;
-	uint32_t client_height = windows_state.height;
+	uint32_t client_width = windows_state_ptr->width;
+	uint32_t client_height = windows_state_ptr->height;
 
 	uint32_t window_x = client_x;
 	uint32_t window_y = client_y;
@@ -134,10 +155,10 @@ Platform::create_window() {
 	window_height += border_rect.bottom - border_rect.top;
 
 	// Create the window
-	windows_state.hWindow = CreateWindowExA(
+	windows_state_ptr->hWindow = CreateWindowExA(
 		window_ex_style,
 		"Pegasus Window Class",
-		windows_state.name.c_str(),
+		windows_state_ptr->name.c_str(),
 		window_style,
 		window_x,
 		window_y,
@@ -145,11 +166,11 @@ Platform::create_window() {
 		window_height,
 		nullptr,
 		nullptr,
-		windows_state.hInstance,
+		windows_state_ptr->hInstance,
 		nullptr
 	);
 
-	if (windows_state.hWindow == nullptr) {
+	if (windows_state_ptr->hWindow == nullptr) {
 		MessageBoxA(NULL, "Window creation failed", "Error!", MB_ICONEXCLAMATION | MB_OK);
 		return;
 	}
@@ -158,7 +179,7 @@ Platform::create_window() {
 	bool should_activate = true;
 	int32_t show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 
-	ShowWindow(windows_state.hWindow, show_window_command_flags);
+	ShowWindow(windows_state_ptr->hWindow, show_window_command_flags);
 }
 
 // Destroy the window
@@ -181,16 +202,21 @@ Platform::pump_messages() {
 	return true;
 }
 
-// Windows implementation for getting a vulkan surface
+void
+Platform::get_vulkan_extensions(std::vector<const char*>& exts) {
+		exts.push_back("VK_KHR_win32_surface");
+}
+
+// // Windows implementation for getting a vulkan surface
 bool
-Platform::create_vulkan_surface(VKCommonParameters &params) {
+Platform::create_vulkan_surface(VKContext& context) {
 		VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
 		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-		surfaceCreateInfo.hinstance = windows_state.hInstance;
-		surfaceCreateInfo.hwnd = windows_state.hWindow;
+		surfaceCreateInfo.hinstance = windows_state_ptr->hInstance;
+		surfaceCreateInfo.hwnd = windows_state_ptr->hWindow;
 		
 		VkResult err = vkCreateWin32SurfaceKHR(
-			params.Instance, &surfaceCreateInfo, params.Allocator, &params.PresentationSurface);
+			context.instance, &surfaceCreateInfo, context.allocator, &context.surface);
 		
 		return (err == VK_SUCCESS) ? true : false;
 }
@@ -237,6 +263,31 @@ Platform::WindowProc(
 			bool pressed = (code == WM_KEYDOWN || code == WM_SYSKEYDOWN);
 			Keys key = static_cast<Keys>(w_param);
 
+			// keypress for alt key
+			if (w_param == VK_MENU) {
+				if (GetKeyState(VK_RMENU) & 0x8000) {
+					key = KEY_RALT;
+				} else if (GetKeyState(VK_LMENU) & 0x8000) {
+					key = KEY_LALT;
+				}
+			} 
+			
+			if (w_param == VK_SHIFT) {
+				if (GetKeyState(VK_RSHIFT) & 0x8000) {
+					key = KEY_RSHIFT;
+				} else if (GetKeyState(VK_LSHIFT) & 0x8000) {
+					key = KEY_LSHIFT;
+				}
+			} 
+			
+			if (w_param == VK_CONTROL) {
+				if (GetKeyState(VK_RCONTROL) & 0x8000) {
+					key = KEY_RCONTROL;
+				} else if (GetKeyState(VK_LCONTROL) & 0x8000) {
+					key = KEY_LCONTROL;
+				}
+			}
+			
 			// Pass the input subsystem
 			InputHandler::ProcessKey(key, pressed);
 		}
@@ -261,5 +312,89 @@ Platform::WindowProc(
 	
 	return DefWindowProc(hWnd, code, w_param, l_param);
 }
+    
+void* 
+Platform::Allocate(uint64_t size, bool aligned) {
+	(void)aligned;
+	return malloc(size);
+}
+    
+void  
+Platform::Free(void* block, bool aligned) {
+	(void)aligned;
+	free(block);
+}
+    
+void* 
+Platform::ZeroMem(void* block, uint64_t size) {
+	return memset(block, 0, size);
+}
+    
+void* 
+Platform::CopyMem(void* dst, const void* src, uint64_t size) {
+	return memcpy(dst, src, size);
+}
+    
+void* 
+Platform::SetMem(void* dst, int32_t value, uint64_t size) {
+	return memset(dst, value, size);
+}
+
+void
+Platform::ConsoleWrite(const char* message, uint8_t color) {
+	CONSOLE_SCREEN_BUFFER_INFO Info;
+	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(console_handle, &Info);
+	WORD Attributes = Info.wAttributes;
+
+	static uint8_t levels[6] = {
+		64, 
+		4,
+		6,
+		2,
+		1,
+		8,
+	};
+	SetConsoleTextAttribute(console_handle, levels[color]);
+
+	OutputDebugStringA(message);
+	uint64_t length = strlen(message);
+	LPDWORD number_written = 0;
+	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
+	SetConsoleTextAttribute(console_handle, Attributes);
+}
+
+void
+Platform::ConsoleError(const char* message, uint8_t color) {
+	CONSOLE_SCREEN_BUFFER_INFO Info;
+	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(console_handle, &Info);
+	WORD Attributes = Info.wAttributes;
+
+	static uint8_t levels[6] = {
+		64, 
+		4,
+		6,
+		2,
+		1,
+		8,
+	};
+	SetConsoleTextAttribute(console_handle, levels[color]);
+
+	OutputDebugStringA(message);
+	uint64_t length = strlen(message);
+	LPDWORD number_written = 0;
+	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
+	SetConsoleTextAttribute(console_handle, Attributes);
+}
+
+// Get the current time
+double 
+Platform::get_absolute_time() {
+	LARGE_INTEGER now_time;
+	QueryPerformanceCounter(&now_time);
+	return static_cast<double>(now_time.QuadPart) * clock_frequency;
+}
+
 
 #endif /* Q_PLATFORM_WINDOWS */
